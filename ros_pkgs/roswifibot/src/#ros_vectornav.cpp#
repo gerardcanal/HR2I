@@ -1,0 +1,52 @@
+#include "vectornav.h" // it contains link to vn100.h and math.h
+#include "vn100.h" //need to access vn100 functions
+#include "vncp_services.h"
+#include "ros_vectornav.h" //define the interface of the class
+#include "ros/ros.h"
+#include "vectornav/vn100_msg.h" //define the message type of vn100
+
+
+VectorNav::VectorNav(const ros::NodeHandle& nh)
+  : _VNNodeHandle (nh)
+  , _yaw(0.0)
+  , _pitch(0.0)
+  , _roll(0.0)
+{
+
+       VnYpr ypr;
+	int i;
+         //findCOMPort ();
+        const char* const COM_PORT = "//dev//ttyUSB0";
+        const int BAUD_RATE = 115200;
+        Vn100 vn100;
+	
+        // if the port does not open, use the following command is terminal
+        // sudo chmod 777 /dev/ttyUSB0
+        // assuming that VN100 is connected to /dev/ttyUSB0 
+        int err_val = vn100_connect(&vn100, COM_PORT, BAUD_RATE);
+        printf("COM_PORT = %s err_vale = %d\n", COM_PORT, err_val);
+if  (err_val ==0)
+	for (i = 0; i < 10; i++) {
+		vn100_getYawPitchRoll(&vn100, &ypr);
+		printf("YPR: %+#7.2f %+#7.2f %+#7.2f\n", ypr.yaw, ypr.pitch, ypr.roll);
+		sleep(1);
+	}
+	
+	vn100_disconnect(&vn100);
+
+
+}
+
+VectorNav::~VectorNav()
+{
+  ROS_INFO("[VectorNav::~VectorNav()] Destructor Called! ");
+}
+
+int main (int argc, char **argv)
+{
+  ros::init(argc, argv, "vectornav_base");
+  ROS_INFO("Wlecome to VectorNav ROS Driver");
+  VectorNav _self(ros::NodeHandle("")); 
+  
+  return 0;
+}
