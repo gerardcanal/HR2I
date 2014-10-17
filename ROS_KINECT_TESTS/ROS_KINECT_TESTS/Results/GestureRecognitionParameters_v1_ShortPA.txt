@@ -1,0 +1,5 @@
+ALPHA = 0.25
+MU = 9 8
+restTh = 0.25
+gestOverlapings = 0.45399 0.391292
+bestOverlapping = 0.422641
