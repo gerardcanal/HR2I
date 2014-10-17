@@ -1,0 +1,49 @@
+float GestureRecognition::RealTimeDTW(int gestureId, const std::vector<std::vector<float>>& model, int nInputFrames, float ALPHA, float MU) {
+	int NM = model.size() + 1; // rows
+	int NI = nInputFrames; // columns
+
+	std::ofstream of; of.open("DTWrealtime.txt");
+
+	// Initialize matrix M
+	SlidingMatrix<float> M(NM, NI, INF); // Access in the matrix is by M[column][row]
+	for (int j = 0; j < NI; ++j) M[j][0] = 0; // First row set to 0
+
+	// Computing M matrix
+	int t = 1; bool slide = false; bool found = false;
+	while (!found) { // For t = 0..INF //FIXME add some other breaking criteria...
+		while (inputFrames[gestureId].empty()); // Wait until we have a new frame...
+		std::vector<float> input = getNextFrame(gestureId);
+		if (input[0] == -1.0 && input[1] == -1) break; // Frame which means end of sequence... nothing was recognized
+
+		for (int i = 1; i < NM; ++i) {
+			float neighbors[] = { M[t][i - 1], M[t - 1][i - 1], M[t - 1][i] }; // Upper, upper-left and left neighbors
+			M[t][i] = Utils::L1Distance(model[i-1], input, ALPHA) + *std::min_element(neighbors, neighbors + 3); // i-1 as i goes from 1 to N, and the indices in model from 0 to N-1
+		}
+
+		// Check for gesture recognition
+		if (M[t][NM-1] < MU) of << t << " " << M[t][NM-1] << std::endl; // return M[t][NM-1]; // FIXMEE
+
+		// End of loop checks
+		if (slide)  // Reached the limit of the matrix...
+			M.slide();
+		else {
+			slide = t == (NI - 1);
+			t = (slide)? NI-1 : t+1;
+		}
+		#pragma omp critical (gesturefound)
+			found = gestureFound; // To avoid race conditions
+	}
+
+	of << M << std::endl;
+	for (int j = 0; j < NI; ++j) { // for each column...
+		if (M[j][NM - 1] < MU) {
+			std::cout << j << " ";
+			std::deque<int> W = getWPath(M, j); // Warping path
+			for (int i = 0; i < W.size(); ++i) of << W[i] << " ";
+			of << std::endl;
+		}
+	}
+	of.close();
+
+	return INF;
+}
