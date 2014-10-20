@@ -7,7 +7,7 @@ using namespace std;
 
 void trainDTWParameters() {
 	string resPath = "Results\\GestureRecognitionParameters.txt";
-	string gestPath = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\";
+	string gestPath = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\HR2I\\GestureRecorder\\GestureRecorder\\gestures\\";
 
 	// Get the models...
 	cout << "Loading the models..." << endl;

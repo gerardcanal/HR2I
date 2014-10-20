@@ -24,7 +24,7 @@ struct GroundTruth {
 };
 
 struct GRParameters {
-	float ALPHA; // L1 distance threshold
+	float ALPHA[N_GESTURES]; // L1 distance threshold
 	float restTh; // Resting threshold
 	float gestTh[N_GESTURES]; // MU - threshold per each gesture type for the DTW
 	float ovlps[N_GESTURES]; // Overlap per gesture

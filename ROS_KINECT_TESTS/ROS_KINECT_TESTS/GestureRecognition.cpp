@@ -33,7 +33,7 @@ Gesture GestureRecognition::DTW(std::vector<std::vector<std::vector<float>>> mod
 
 	#pragma omp parallel for num_threads(N_GESTURES) schedule(static, 1) shared(gest) // Should create only one thread per iteration/gesture
 	for (int i = 0; i < N_GESTURES; ++i) {
-		float cost = RealTimeDTW(i, models[i], iFrames, params.ALPHA, params.gestTh[i]);
+		float cost = RealTimeDTW(i, models[i], iFrames, params.ALPHA[i], params.gestTh[i]);
 		
 		#pragma omp critical (gesturefound) // So the gestureFound variable is safely updated for the other threads to see
 		{
@@ -268,15 +268,14 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 
 	// Return variable:
 	GRParameters params;
-	params.bestOvlp = -1; // Best accuracy
+	params.bestOvlp = -1; // Best overlap
+	for (int i = 0; i < N_GESTURES; ++i) params.ovlps[i] = -1; // Best overlap for each gesture
 	
 	omp_set_num_threads(omp_get_max_threads()); // Force use of max number of threads
 	#pragma omp parallel for
 	for (int a = 0; a < alphas.size(); ++a) {// For each ALPHA - distance threshold
-		GRParameters temp;
 		// For each type of gesture
 		for (int g = 0; g < gestTh.size(); ++g) {
-			temp.ovlps[g] = -1; // Find best accuracy for gesture g and alpha a
 			// Check all the thresholds of the gesture with current ALPHA
 			for (int t = 0; t < gestTh[g].size(); ++t) {
 				if (static_cast<Gesture>(g) == POINT_AT) { // If the gesture is a Point At we have to look for the restTh
@@ -287,10 +286,15 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 							for (int k = 0; k < seqs[s].size(); ++k) inputSkeletons[s][k].addExtendedGRFeature(seqs[s][k], rightBody, restTh[r]);
 						}
 						float ovlp = getSequencesOverlap(g, models[g], seqs, gt_sets, alphas[a], gestTh[g][t]);
-						if (ovlp > temp.ovlps[g]) {
-							temp.ovlps[g] = ovlp;
-							temp.gestTh[g] = gestTh[g][t];
-							temp.restTh = restTh[r];
+						#pragma omp critical (paramsUpdate)
+						{
+							if (ovlp > params.ovlps[g]) {
+								params.ovlps[g] = ovlp;
+								params.gestTh[g] = gestTh[g][t];
+								params.restTh = restTh[r];
+								params.ALPHA[g] = alphas[a];
+								#pragma omp flush
+							}
 						}
 						if (verbose) {
 							#pragma omp critical (print)
@@ -300,9 +304,14 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 				}
 				else {
 					float ovlp = getSequencesOverlap(g, models[g], Inputsequences, gt_sets, alphas[a], gestTh[g][t]);
-					if (ovlp > temp.ovlps[g]) {
-						temp.ovlps[g] = ovlp;
-						temp.gestTh[g] = gestTh[g][t];
+					#pragma omp critical (paramsUpdate)
+					{
+						if (ovlp > params.ovlps[g]) {
+							params.ovlps[g] = ovlp;
+							params.gestTh[g] = gestTh[g][t];
+							params.ALPHA[g] = alphas[a];
+							#pragma omp flush
+						}
 					}
 					if (verbose) {
 						#pragma omp critical (print)
@@ -311,18 +320,18 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 				}
 			}
 		}
-		temp.bestOvlp = std::accumulate(temp.ovlps, temp.ovlps + N_GESTURES, 0.0f) / N_GESTURES;
+		float Ovlp = std::accumulate(params.ovlps, params.ovlps + N_GESTURES, 0.0f) / N_GESTURES;
 		#pragma omp critical (paramsUpdate)
 		{
-			if (temp.bestOvlp > params.bestOvlp) {
-				params = temp;
-				params.ALPHA = alphas[a];
+			if (Ovlp > params.bestOvlp) {
+				params.bestOvlp = Ovlp;
+				#pragma omp flush
 			}
 		}
 	}
 	if (verbose) {
 		std::cout << "\nDone! Parameters are:" << std::endl;
-		std::cout << "\tAlpha: " << params.ALPHA << std::endl;
+		for (int i = 0; i < N_GESTURES; ++i) std::cout << "\tALPHA for gesture " << i << ": " << params.ALPHA[i] << std::endl;
 		for (int i = 0; i < N_GESTURES; ++i) std::cout << "\tMU for gesture " << i << ": " << params.gestTh[i] << std::endl;
 		std::cout << "\trestThreshold: " << params.restTh << std::endl;
 		for (int i = 0; i < N_GESTURES; ++i) std::cout << "\tOverlap for gesture " << i << ": " << params.ovlps[i] << std::endl;
@@ -376,9 +385,9 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 			if (static_cast<Gesture>(j) == POINT_AT) { // add third feature...
 				std::vector<std::vector<float>> seq = Inputsequences[i];
 				for (int k = 0; k < seq.size(); ++k) inputSkeletons[i][k].addExtendedGRFeature(seq[k], rightBody, gr.restTh);
-				gest_overlap += getSequenceOverlap(_models[j], seq, gt_sets[i][j], gr.ALPHA, gr.gestTh[j]);
+				gest_overlap += getSequenceOverlap(_models[j], seq, gt_sets[i][j], gr.ALPHA[j], gr.gestTh[j]);
 			}
-			else gest_overlap += getSequenceOverlap(_models[j], Inputsequences[i], gt_sets[i][j], gr.ALPHA, gr.gestTh[j]);
+			else gest_overlap += getSequenceOverlap(_models[j], Inputsequences[i], gt_sets[i][j], gr.ALPHA[j], gr.gestTh[j]);
 		}
 		overlap += gest_overlap / N_GESTURES;
 	}
@@ -399,7 +408,9 @@ std::vector<std::vector<float>> GestureRecognition::addThirdFeature(std::vector<
 void GestureRecognition::writeParameters(GRParameters params, std::string path) {
 	std::ofstream of;
 	of.open(path);
-	of << "ALPHA = " << params.ALPHA << std::endl;
+	of << "ALPHA = ";
+	for (int i = 0; i < N_GESTURES; ++i) of << " " << params.ALPHA[i]; 
+	of << std::endl;
 	of << "MU =";
 	for (int i = 0; i < N_GESTURES; ++i) of << " " << params.gestTh[i];
 	of << std::endl;
@@ -417,7 +428,8 @@ GRParameters GestureRecognition::readParameters(std::string path) {
 	ifs.open(path);
 	std::string s;
 	// ALPHA
-	ifs >> s >> s >> params.ALPHA; // ALPHA = x
+	ifs >> s >> s; // ALPHA =
+	for (int i = 0; i < N_GESTURES; ++i) ifs >> params.ALPHA[i]; //values
 	
 	// MU
 	ifs >> s >> s; // MU =
