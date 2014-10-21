@@ -21,9 +21,10 @@ GestureRecognition::~GestureRecognition()
 }
 
 ///Returns the gesture ID, from the Gesture enum.
-Gesture GestureRecognition::DTW(std::vector<std::vector<std::vector<float>>> models, GRParameters params) {
-	assert(models.size() == N_GESTURES);
+Gesture GestureRecognition::RecognizeGesture(std::vector<std::vector<std::vector<float>>> models, GRParameters params) {
+	assert(models.size() == N_DYNAMIC_GESTURES);
 	#ifndef _OPENMP
+		std::cerr << "OpenMP is required to execute the code. Please enable it." << std::endl;
 		throw std::exception("OpenMP is required to execute the code. Please enable it.");
 	#endif
 	
@@ -33,7 +34,9 @@ Gesture GestureRecognition::DTW(std::vector<std::vector<std::vector<float>>> mod
 
 	#pragma omp parallel for num_threads(N_GESTURES) schedule(static, 1) shared(gest) // Should create only one thread per iteration/gesture
 	for (int i = 0; i < N_GESTURES; ++i) {
-		float cost = RealTimeDTW(i, models[i], iFrames, params.ALPHA[i], params.gestTh[i]);
+		float cost;
+		if (static_cast<Gesture>(i) == POINT_AT) cost = staticGetureRecognition(i, params.pointAtTh);
+		else cost = RealTimeDTW(i, models[i], iFrames, params.ALPHA[i], params.gestTh[i]);
 		
 		#pragma omp critical (gesturefound) // So the gestureFound variable is safely updated for the other threads to see
 		{
@@ -46,6 +49,28 @@ Gesture GestureRecognition::DTW(std::vector<std::vector<std::vector<float>>> mod
 	int i_min = std::distance(gest.begin(), std::min_element(gest.begin(), gest.end()));
 
 	return static_cast<Gesture>(i_min);
+}
+
+float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh[3]) {
+	bool found = false;
+	int consFrames = 0; // consecutive frames
+	while (!found) { // For t = 0..INF
+		while (inputFrames[gestureId].empty()); // Wait until we have a new frame...
+		std::vector<float> input = getNextFrame(gestureId);
+		if (input[0] == -1.0 && input[1] == -1) break; // Frame which means end of sequence... nothing was recognized
+
+		if (input[0] > pointAtTh[0] && input[1] > pointAtTh[1]) {
+			++consFrames;
+			if (consFrames > pointAtTh[2]) return 0.0;
+		}
+		else {
+			consFrames = 0;
+		}
+
+		#pragma omp critical (gesturefound)
+			found = gestureFound; // To avoid race conditions
+	}
+	return INF; // Not found!
 }
 
 float GestureRecognition::RealTimeDTW(int gestureId, const std::vector<std::vector<float>>& model, int nInputFrames, float ALPHA, float MU) {
@@ -149,7 +174,20 @@ std::deque<int> GestureRecognition::getWPath(const SlidingMatrix<float> &M, int 
 	return path;
 }
 
-void GestureRecognition::addFrame(const std::vector<float>& frame) {
+void GestureRecognition::addFrame(const std::vector<float>& Dynamic_feat, const std::vector<float>& Static_feat) {
+	omp_set_lock(&omp_lock);
+	// Dynamic frames
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) {
+		inputFrames[i].push(Dynamic_feat);
+	}
+	// Static frames
+	for (int i = POINT_AT; i < (POINT_AT + N_STATIC_GESTURES); ++i) {
+		inputFrames[i].push(Static_feat);
+	}
+	omp_unset_lock(&omp_lock);
+}
+
+/*void GestureRecognition::addFrame(const std::vector<float>& frame) {
 	omp_set_lock(&omp_lock);
 	for (int i = 0; i < N_GESTURES; ++i) 
 		inputFrames[i].push(frame);
@@ -175,7 +213,7 @@ void GestureRecognition::addFrames(std::vector<std::vector<float>> framelist) {
 	}
 	omp_unset_lock(&omp_lock);
 	#pragma omp flush
-}
+}*/
 
 void GestureRecognition::clearFrames() {
 	omp_set_lock(&omp_lock);
@@ -231,26 +269,26 @@ float GestureRecognition::getSequencesOverlap(int gestureId, const std::vector<s
 
 GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::vector<float>>> models, std::vector<std::vector<std::vector<float>>> Inputsequences,
 												 std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, std::vector<float> alphas,
-												 std::vector<std::vector<float>> gestTh, std::vector<float> restTh, bool verbose) {
+												 std::vector<std::vector<float>> gestTh, bool verbose) {
 	// Initializations
-	assert(N_GESTURES == gestTh.size());
+	assert(N_DYNAMIC_GESTURES == gestTh.size());
 	time_t begin = time(NULL);
 	const bool rightBody = true;
 
 	// Count iterations and prepare output in verbose case
 	int aux = 0;
 	for (int i = 0; i < gestTh.size(); ++i) {
-		if (static_cast<Gesture>(i) == POINT_AT) aux += gestTh[i].size()*restTh.size();
-		else aux += gestTh[i].size();
+		/*if (static_cast<Gesture>(i) == POINT_AT) aux += gestTh[i].size()*restTh.size();
+		else*/ aux += gestTh[i].size();
 	}
 	const int totalIter = alphas.size()*aux;
 	int perc = 0;
 	if (verbose) std::cout << "The number to iterations to perform is " << totalIter << std::endl << "\tWorking... 0.00%";
 
 	// Construct sets of gt frames for each sequence and each gesture for faster overlap computation
-	std::vector<std::vector<std::set<int>>> gt_sets(Inputsequences.size(), std::vector<std::set<int>>(N_GESTURES));
+	std::vector<std::vector<std::set<int>>> gt_sets(Inputsequences.size(), std::vector<std::set<int>>(N_DYNAMIC_GESTURES));
 	for (int i = 0; i < Inputsequences.size(); ++i) {
-		for (int j = 0; j < N_GESTURES; ++j) {
+		for (int j = 0; j < N_DYNAMIC_GESTURES; ++j) {
 			for (int k = 0; k < gt[i].size(); ++k) {
 				if (j == gt[i][k].type) {
 					//Construct range
@@ -264,12 +302,12 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 	}
 
 	//Set models for the point at
-	models[POINT_AT] = addThirdFeature(models[POINT_AT]);
+	//models[POINT_AT] = addThirdFeature(models[POINT_AT]);
 
 	// Return variable:
 	GRParameters params;
 	params.bestOvlp = -1; // Best overlap
-	for (int i = 0; i < N_GESTURES; ++i) params.ovlps[i] = -1; // Best overlap for each gesture
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) params.ovlps[i] = -1; // Best overlap for each gesture
 	
 	omp_set_num_threads(omp_get_max_threads()); // Force use of max number of threads
 	#pragma omp parallel for
@@ -278,7 +316,7 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 		for (int g = 0; g < gestTh.size(); ++g) {
 			// Check all the thresholds of the gesture with current ALPHA
 			for (int t = 0; t < gestTh[g].size(); ++t) {
-				if (static_cast<Gesture>(g) == POINT_AT) { // If the gesture is a Point At we have to look for the restTh
+				if (static_cast<Gesture>(g) == POINT_AT) { /*// If the gesture is a Point At we have to look for the restTh
 					for (int r = 0; r < restTh.size(); ++r) { // For each restTh
 						// Add the third feature
 						std::vector<std::vector<std::vector<float>>> seqs = Inputsequences;
@@ -300,7 +338,8 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 							#pragma omp critical (print)
 							Utils::printPercentage(++perc, totalIter);
 						}
-					}
+					}*/
+					continue;
 				}
 				else {
 					float ovlp = getSequencesOverlap(g, models[g], Inputsequences, gt_sets, alphas[a], gestTh[g][t]);
@@ -320,7 +359,7 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 				}
 			}
 		}
-		float Ovlp = std::accumulate(params.ovlps, params.ovlps + N_GESTURES, 0.0f) / N_GESTURES;
+		float Ovlp = std::accumulate(params.ovlps, params.ovlps + N_DYNAMIC_GESTURES, 0.0f) / N_DYNAMIC_GESTURES;
 		#pragma omp critical (paramsUpdate)
 		{
 			if (Ovlp > params.bestOvlp) {
@@ -331,10 +370,10 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 	}
 	if (verbose) {
 		std::cout << "\nDone! Parameters are:" << std::endl;
-		for (int i = 0; i < N_GESTURES; ++i) std::cout << "\tALPHA for gesture " << i << ": " << params.ALPHA[i] << std::endl;
-		for (int i = 0; i < N_GESTURES; ++i) std::cout << "\tMU for gesture " << i << ": " << params.gestTh[i] << std::endl;
-		std::cout << "\trestThreshold: " << params.restTh << std::endl;
-		for (int i = 0; i < N_GESTURES; ++i) std::cout << "\tOverlap for gesture " << i << ": " << params.ovlps[i] << std::endl;
+		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tALPHA for gesture " << i << ": " << params.ALPHA[i] << std::endl;
+		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tMU for gesture " << i << ": " << params.gestTh[i] << std::endl;
+		//std::cout << "\trestThreshold: " << params.restTh << std::endl;
+		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tOverlap for gesture " << i << ": " << params.ovlps[i] << std::endl;
 		std::cout << "\tBest overlap: " << params.bestOvlp << std::endl;
 		std::cout << "It took " << float(time(NULL) - begin)/60.0 << " minutes." << std::endl;
 	}
@@ -343,15 +382,15 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 
 float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>>>& models, const std::vector<std::vector<std::vector<float>>>& Inputsequences,
 								std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, const std::vector<float>& alphas,
-								const std::vector<std::vector<float>>& gestTh, const std::vector<float>& restTh, bool verbose) {
+								const std::vector<std::vector<float>>& gestTh, bool verbose) {
 	time_t begin = time(NULL);
 	float overlap = 0;
 	bool rightBody = true;
 
 	// Construct sets of gt frames for each sequence and each gesture for faster overlap computation
-	std::vector<std::vector<std::set<int>>> gt_sets(Inputsequences.size(), std::vector<std::set<int>>(N_GESTURES));
+	std::vector<std::vector<std::set<int>>> gt_sets(Inputsequences.size(), std::vector<std::set<int>>(N_DYNAMIC_GESTURES));
 	for (int i = 0; i < Inputsequences.size(); ++i) {
-		for (int j = 0; j < N_GESTURES; ++j) {
+		for (int j = 0; j < N_DYNAMIC_GESTURES; ++j) {
 			for (int k = 0; k < gt[i].size(); ++k) {
 				if (j == gt[i][k].type) {
 					//Construct range
@@ -365,7 +404,7 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 	}
 
 	std::vector<std::vector<std::vector<float>>> _models = models;
-	_models[POINT_AT] = addThirdFeature(_models[POINT_AT]);
+	//_models[POINT_AT] = addThirdFeature(_models[POINT_AT]);
 	for (int i = 0; i < Inputsequences.size(); ++i) { // i will be the test sequence
 		// Fast and dirty way... copy all the vectors and remove the selected one...
 		std::vector<std::vector<std::vector<float>>> _sequences = Inputsequences;
@@ -379,17 +418,18 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 
 		// Train
 		if (verbose) std::cout << "LOOCV fold number " << i << std::endl << "\t";
-		GRParameters gr = trainThresholds(models, _sequences, _skels, _gt, alphas, gestTh, restTh, verbose); // Note trainThresholds also adds the third feature... 
+		GRParameters gr = trainThresholds(models, _sequences, _skels, _gt, alphas, gestTh, verbose); // Note trainThresholds also adds the third feature... 
 		float gest_overlap = 0;
-		for (int j = 0; j < N_GESTURES; ++j) {
-			if (static_cast<Gesture>(j) == POINT_AT) { // add third feature...
+		for (int j = 0; j < N_DYNAMIC_GESTURES; ++j) {
+			if (static_cast<Gesture>(j) == POINT_AT) { /*// add third feature...
 				std::vector<std::vector<float>> seq = Inputsequences[i];
 				for (int k = 0; k < seq.size(); ++k) inputSkeletons[i][k].addExtendedGRFeature(seq[k], rightBody, gr.restTh);
-				gest_overlap += getSequenceOverlap(_models[j], seq, gt_sets[i][j], gr.ALPHA[j], gr.gestTh[j]);
+				gest_overlap += getSequenceOverlap(_models[j], seq, gt_sets[i][j], gr.ALPHA[j], gr.gestTh[j]);*/
+				continue;
 			}
 			else gest_overlap += getSequenceOverlap(_models[j], Inputsequences[i], gt_sets[i][j], gr.ALPHA[j], gr.gestTh[j]);
 		}
-		overlap += gest_overlap / N_GESTURES;
+		overlap += gest_overlap / N_DYNAMIC_GESTURES;
 	}
 	overlap = overlap / Inputsequences.size();
 	if (verbose) {
@@ -399,24 +439,31 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 	return overlap;
 }
 
-std::vector<std::vector<float>> GestureRecognition::addThirdFeature(std::vector<std::vector<float>> model) {
+/*std::vector<std::vector<float>> GestureRecognition::addThirdFeature(std::vector<std::vector<float>> model) {
 	// For the Point At gesture...
 	for (int i = 0; i < model.size(); ++i) model[i].push_back(0.0f);
 	return model;
-}
+}*/
 
 void GestureRecognition::writeParameters(GRParameters params, std::string path) {
 	std::ofstream of;
 	of.open(path);
+	if (!of.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
 	of << "ALPHA = ";
-	for (int i = 0; i < N_GESTURES; ++i) of << " " << params.ALPHA[i]; 
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) of << " " << params.ALPHA[i]; 
+	of << std::endl;
+	of << "PointAtThresholds =";
+	for (int i = 0; i < _countof(params.pointAtTh); ++i) of << " " << params.pointAtTh[i];
 	of << std::endl;
 	of << "MU =";
-	for (int i = 0; i < N_GESTURES; ++i) of << " " << params.gestTh[i];
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) of << " " << params.gestTh[i];
 	of << std::endl;
-	of << "restTh = " << params.restTh << std::endl;
 	of << "gestOverlapings =";
-	for (int i = 0; i < N_GESTURES; ++i) of << " " << params.ovlps[i];
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) of << " " << params.ovlps[i];
 	of << std::endl;
 	of << "bestOverlapping = " << params.bestOvlp << std::endl;
 	of.close();
@@ -426,21 +473,27 @@ GRParameters GestureRecognition::readParameters(std::string path) {
 	GRParameters params;
 	std::ifstream ifs;
 	ifs.open(path);
+	if (!ifs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
 	std::string s;
 	// ALPHA
 	ifs >> s >> s; // ALPHA =
-	for (int i = 0; i < N_GESTURES; ++i) ifs >> params.ALPHA[i]; //values
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) ifs >> params.ALPHA[i]; //values
 	
+	// POINT AT
+	ifs >> s >> s;
+	for (int i = 0; i < _countof(params.pointAtTh); ++i) ifs >> params.pointAtTh[i];
+
 	// MU
 	ifs >> s >> s; // MU =
-	for (int i = 0; i < N_GESTURES; ++i) ifs >> params.gestTh[i]; //values
-
-	// resTh
-	ifs >> s >> s >> params.restTh; // resTh = x
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) ifs >> params.gestTh[i]; //values
 
 	// ovlps
 	ifs >> s >> s;
-	for (int i = 0; i < N_GESTURES; ++i) ifs >> params.ovlps[i];
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) ifs >> params.ovlps[i];
 
 	// ovl
 	ifs >> s >> s >> params.bestOvlp;
@@ -450,6 +503,11 @@ GRParameters GestureRecognition::readParameters(std::string path) {
 std::vector<GroundTruth> GestureRecognition::readGrountTruth(std::string path) {
 	if (path.substr(path.size() - 4, 4) != ".csv") path = path + ".csv";
 	std::ifstream ifs(path, std::ifstream::in);
+	if (!ifs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
 	std::vector<GroundTruth> gt;
 	std::string line;
 	std::getline(ifs, line); // Read header line

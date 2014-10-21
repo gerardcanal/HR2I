@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Skeleton.h"
+#include <exception>
 #include <assert.h>
 
 Skeleton::Skeleton(HandState left, HandState right,
@@ -112,6 +113,11 @@ std::ostream& operator<<(std::ostream& os, const Skeleton& sk) {
 void Skeleton::gestureToCSV(std::vector<Skeleton> gesture, std::string path) {
 	if (path.substr(path.size() - 4, 4) != ".csv") path = path + ".csv";
 	std::ofstream ofs(path, std::ofstream::out);
+	if (!ofs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
 
 	// Write header
 	ofs << "sep=, " << std::endl;
@@ -130,6 +136,11 @@ void Skeleton::gestureToCSV(std::vector<Skeleton> gesture, std::string path) {
 std::vector<Skeleton> Skeleton::gestureFromCSV(std::string path) {
 	if (path.substr(path.size() - 4, 4) != ".csv") path = path + ".csv";
 	std::ifstream ifs(path, std::ifstream::in);
+	if (!ifs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
 	std::vector<Skeleton> gesture;
 	std::string line;
 	std::getline(ifs, line); // Read header line
@@ -196,13 +207,18 @@ void Skeleton::gestureFeaturesToCSV(std::vector<Skeleton> gesture, std::string p
 	bool rightBody = true;
 	if (path.substr(path.size() - 4, 4) != ".csv") path = path + ".csv";
 	std::ofstream ofs(path, std::ofstream::out);
+	if (!ofs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
 
 	// Write header
 	ofs << "sep=, " << std::endl;
 	ofs << "Hand-Neck Distance (m), Elbow Angle (rad)" << std::endl; // Maybe should be adapted in case we have more features
 	ofs << std::setprecision(std::numeric_limits<float>::max_digits10); // Set max precision
 	for (int i = 0; i < gesture.size(); ++i) {
-		std::vector<float> feat = gesture[i].getGestureRecognitionFeatures(rightBody);
+		std::vector<float> feat = gesture[i].getDynamicGestureRecognitionFeatures(rightBody);
 		for (int j = 0; j < feat.size(); ++j) ofs << feat[j] << ((j + 1 == feat.size()) ? "": ", ");
 		ofs << std::endl;
 	}
@@ -212,6 +228,11 @@ void Skeleton::gestureFeaturesToCSV(std::vector<Skeleton> gesture, std::string p
 std::vector<std::vector<float>> Skeleton::gestureFeaturesFromCSV(std::string path) {
 	if (path.substr(path.size() - 4, 4) != ".csv") path = path + ".csv";
 	std::ifstream ifs(path, std::ifstream::in);
+	if (!ifs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
 	std::vector<std::vector<float>> gestureFeatures;
 	std::string line;
 	std::getline(ifs, line); // Read header line
@@ -236,7 +257,7 @@ std::vector<std::vector<float>> Skeleton::gestureFeaturesFromCSV(std::string pat
 }
 
 /// Returns two features: the distance between neck and hand and the angle of the arm and the elbow
-std::vector<float> Skeleton::getGestureRecognitionFeatures(bool rightBody) {
+std::vector<float> Skeleton::getDynamicGestureRecognitionFeatures(bool rightBody) {
 	float hand_neck_dist, shoulder_elbow_hand_angle;
 	if (rightBody) {
 		hand_neck_dist = Utils::euclideanDistance(joints[JointType_HandRight], joints[JointType_Neck]);
@@ -250,7 +271,22 @@ std::vector<float> Skeleton::getGestureRecognitionFeatures(bool rightBody) {
 	return feature;
 }
 
-/// Same as Skeleton::getGestureRecognitionFeatures but adds distance from elbow to spin_mid as the third feature
+/// Returns two features: the distance between hand and hip and the angle of the arm and the elbow
+std::vector<float> Skeleton::getStaticGestureRecognitionFeatures(bool rightBody) {
+	float hand_hip_dist, shoulder_elbow_hand_angle;
+	if (rightBody) {
+		hand_hip_dist = Utils::euclideanDistance(joints[JointType_HandRight], joints[JointType_HipRight]);
+		shoulder_elbow_hand_angle = Utils::getAngleBetween(joints[JointType_ShoulderRight], joints[JointType_ElbowRight], joints[JointType_HandRight], true);
+	}
+	else {
+		hand_hip_dist = Utils::euclideanDistance(joints[JointType_HandLeft], joints[JointType_HipLeft]);
+		shoulder_elbow_hand_angle = Utils::getAngleBetween(joints[JointType_ShoulderLeft], joints[JointType_ElbowLeft], joints[JointType_HandLeft], true);
+	}
+	std::vector<float> feature = { hand_hip_dist, shoulder_elbow_hand_angle };
+	return feature;
+}
+
+/*/// Same as Skeleton::getGestureRecognitionFeatures but adds distance from elbow to spin_mid as the third feature
 /// used in the "POINT_AT" gesture to disambiguate with resting position
 std::vector<float> Skeleton::getExtendedGestureRecognitionFeatures(bool rightBody, float th) {
 	std::vector<float> feature = getGestureRecognitionFeatures(rightBody);
@@ -266,4 +302,4 @@ void Skeleton::addExtendedGRFeature(std::vector<float>& feature, bool rightBody,
 
 float Skeleton::getElbowSpineDistance(bool rightBody) {
 	return Utils::euclideanDistance(joints[JointType_SpineMid], (rightBody) ? joints[JointType_ElbowRight] : joints[JointType_ElbowLeft]);
-}
+}*/

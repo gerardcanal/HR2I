@@ -42,10 +42,11 @@ public:
 	friend std::ostream& operator<<(std::ostream& os, const Skeleton& sk);
 	bool operator==(const Skeleton& b);
 
-	std::vector<float> getGestureRecognitionFeatures(bool rightBody);
-	std::vector<float> getExtendedGestureRecognitionFeatures(bool rightBody, float th);
-	void addExtendedGRFeature(std::vector<float>& feature, bool rightBody, float th);
-	float getElbowSpineDistance(bool rightBody);
+	std::vector<float> getDynamicGestureRecognitionFeatures(bool rightBody);
+	std::vector<float> getStaticGestureRecognitionFeatures(bool rightBody);
+	//std::vector<float> getExtendedGestureRecognitionFeatures(bool rightBody, float th);
+	//void addExtendedGRFeature(std::vector<float>& feature, bool rightBody, float th);
+	//float getElbowSpineDistance(bool rightBody);
 
 private:
 	// Info about the body

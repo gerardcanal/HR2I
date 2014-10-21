@@ -18,10 +18,13 @@ using namespace std;
 #include "GestureRecognition.h"
 #include "Kinect2Utils.h"
 #include "BodyRGBViewer.h"
+
+// Globals
+const bool RGB = true;
 bool get_data = true;
 mutex mtx;
 
-void dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, BodyRGBViewer* view, GRParameters params) {
+void dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, BodyRGBViewer* view) {
 	bool rightBody = true;
 	mtx.lock();
 	bool _work = get_data;
@@ -34,22 +37,16 @@ void dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, BodyRGBViewer* view, 
 			view->setBodyFrameToDraw(bodyFrame);
 			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, id, first);
 			/// temporal cheat
-			/*if (sk.getTrackingID() > 0) {
-				vector<float> feat = sk.getGestureRecognitionFeatures(rightBody);
-				vector<float> efeat = feat; sk.addExtendedGRFeature(efeat, rightBody, params.restTh);
-				gr->addFrame(feat, efeat);
+			if (sk.getTrackingID() > 0) {
+				gr->addFrame(sk.getDynamicGestureRecognitionFeatures(rightBody), sk.getStaticGestureRecognitionFeatures(rightBody));
 			} // end of cheat
-			else */if (!first && sk.getTrackingID() == id) {
-				vector<float> feat = sk.getGestureRecognitionFeatures(rightBody);
-				vector<float> efeat = feat; sk.addExtendedGRFeature(efeat, rightBody, params.restTh);
-				gr->addFrame(feat, efeat);
+			else if (!first && sk.getTrackingID() == id) {
+				gr->addFrame(sk.getDynamicGestureRecognitionFeatures(rightBody), sk.getStaticGestureRecognitionFeatures(rightBody));
 			}
 			else if (first && id != sk.getTrackingID()) {
 				id = sk.getTrackingID(); // Even though the skeleton is empty -i.e. id == -1- this doesn't change nything
 				first = false;
-				vector<float> feat = sk.getGestureRecognitionFeatures(rightBody);
-				vector<float> efeat = feat; sk.addExtendedGRFeature(efeat, rightBody, params.restTh);
-				gr->addFrame(feat, efeat);
+				gr->addFrame(sk.getDynamicGestureRecognitionFeatures(rightBody), sk.getStaticGestureRecognitionFeatures(rightBody));
 			}
 		}
 		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
@@ -63,8 +60,8 @@ void recognizeGestures(const vector<vector<vector<float>>>& models, Kinect2Utils
 	GestureRecognition gr;
 	GRParameters params = GestureRecognition::readParameters("Results\\GestureRecognitionParameters.txt");
 	get_data = true;
-	thread datagetter(dataGetter, &k2u, &gr, &view, params);
-	Gesture gest = gr.DTW(models, params);
+	thread datagetter(dataGetter, &k2u, &gr, &view);
+	Gesture gest = gr.RecognizeGesture(models, params);
 	mtx.lock();
 	get_data = false;
 	mtx.unlock();
@@ -73,22 +70,21 @@ void recognizeGestures(const vector<vector<vector<float>>>& models, Kinect2Utils
 }
 
 vector<vector<vector<float>>> readModels() {
-	string gestPath = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\";
-	std::vector<std::vector<std::vector<float>>> models(N_GESTURES);
+	string gestPath = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\HR2I\\GestureRecorder\\GestureRecorder\\gestures\\";
+	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
 	models[SALUTE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
-	models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModel_features.csv");
-	models[POINT_AT] = GestureRecognition::addThirdFeature(models[POINT_AT]);
+	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModel_features.csv");
+	//models[POINT_AT] = GestureRecognition::addThirdFeature(models[POINT_AT]);
 	return models;
 }
 extern void testEqualDTWMethods();
 extern void trainDTWParameters();
-extern void showValuesRestTh();
 extern void showValuesGestTh();
 
 // MAIN
 int _tmain(int argc, _TCHAR * argv[])
 {
-	trainDTWParameters();
+	//trainDTWParameters();
 	Kinect2Utils k2u;
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
 	if (!SUCCEEDED(hr)) return -1;
@@ -97,12 +93,14 @@ int _tmain(int argc, _TCHAR * argv[])
 	if (!SUCCEEDED(hr)) return -1;
 
 	BodyRGBViewer view(&k2u);
-	thread iface = view.RunThreaded(false, true, false);
+	thread iface = view.RunThreaded(RGB, true, false);
 	std::vector<std::vector<std::vector<float>>> models = readModels();
 	while (true) { recognizeGestures(models, k2u, view); }
 	iface.join();
 	return 0;
 	// End of test
+
+
 	std::ifstream myfile;
 	myfile.open("ROS_MASTER_HOST.txt");
 	std::string ROS_MASTER_HOST;

@@ -11,9 +11,9 @@ void trainDTWParameters() {
 
 	// Get the models...
 	cout << "Loading the models..." << endl;
-	std::vector<std::vector<std::vector<float>>> models(N_GESTURES);
+	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
 	models[SALUTE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
-	models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModelShort_features.csv");
+	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModelShort_features.csv");
 
 	// Load sequences -> I assume nobody changed the sequences names from TestSequenceX.csv!!!
 	cout << "Loading the test sequences... 0.00%";
@@ -61,10 +61,10 @@ void trainDTWParameters() {
 	std::vector<float> alphas = {0.0f, 0.10f, 0.15f, 0.20f, 0.25f, 0.3f, 0.5f, 0.60f, 0.65f, 0.75f, 0.8f };*/
 
 	/*Extended with info from SHORT PA model -> iteration 1*/
-	std::vector<float> restTh = { 0.2f, 0.23f, 0.25f, 0.27f, 0.3f, 0.32f, 0.35f, 0.4f };
-	std::vector<std::vector<float>> gestTh(N_GESTURES);
+	//std::vector<float> restTh = { 0.2f, 0.23f, 0.25f, 0.27f, 0.3f, 0.32f, 0.35f, 0.4f };
+	std::vector<std::vector<float>> gestTh(N_DYNAMIC_GESTURES);
 	gestTh[SALUTE] = {6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 8.5f, 8.75f, 9.0f, 9.25f };
-	gestTh[POINT_AT] = {6.5f, 7.0f, 7.5f, 7.75f, 8.0f, 8.25f, 8.5f, 8.75f };
+	//gestTh[POINT_AT] = {6.5f, 7.0f, 7.5f, 7.75f, 8.0f, 8.25f, 8.5f, 8.75f };
 	std::vector<float> alphas = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f, 0.5f, 0.55f, 0.60f, 0.65f, 0.75f };
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,8 @@ void trainDTWParameters() {
 	// Train
 	cout << "Beginning the parameter selection..." << endl;
 	GestureRecognition gr;
-	GRParameters params = gr.trainThresholds(models, feat_sequences, skeletons_seq, gt, alphas, gestTh, restTh, true);
+	GRParameters params = gr.trainThresholds(models, feat_sequences, skeletons_seq, gt, alphas, gestTh, true);
+	params.pointAtTh[0] = 0.25f; params.pointAtTh[1] = 2.8f; params.pointAtTh[2] = 25;
 	GestureRecognition::writeParameters(params, resPath);
 	cout << "Parameters were stored in " << resPath;
 }
@@ -184,7 +185,7 @@ void showValuesGestTh() {
 			3.57707 3.8688 3.98691 4.65716 5.96599 5.2421 7.47383 6.54381 6.54292 2.00042 */
 }
 
-void showValuesRestTh() { // To decide the range of the thresholds. Used frames were selected manually
+/*void showValuesRestTh() { // To decide the range of the thresholds. Used frames were selected manually
 	string gestPath = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\";
 	std::vector<float> rest, point;
 
@@ -214,8 +215,8 @@ void showValuesRestTh() { // To decide the range of the thresholds. Used frames 
 	Point distances:
         0.392832 0.251208 0.328018 0.303281 0.391357
 	Rest distances:
-        0.276977 0.267687 0.244142 0.22173 0.251135	*/
-}
+        0.276977 0.267687 0.244142 0.22173 0.251135	* /
+}*/
 
 void testEqualDTWMethods() { // Some changes must be done in GestRec.h and in the RealTimeDTW to make it work
 	string path = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\HelloModel\\HelloModel0_features.csv";

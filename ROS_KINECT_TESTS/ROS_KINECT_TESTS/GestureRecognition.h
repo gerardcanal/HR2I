@@ -8,12 +8,18 @@
 #include "Skeleton.h"
 #include <omp.h>
 
-#define ACC_DIST 5 // distance between the detected frame and the ground truth one
-
 static enum Gesture {
+	/// Add here the Dynamic Gestures
 	SALUTE,
-	POINT_AT,
-	N_GESTURES = (POINT_AT + 1)
+	N_DYNAMIC_GESTURES = (SALUTE + 1), // SHOULD BE <<LAST DYNAMIC GESTURE>> + 1
+
+	/// Add here the Static Gestures
+	POINT_AT = N_DYNAMIC_GESTURES, // FIRST STATIC GESTURE! DO NOT CHANGE!! To make the gesture sequence continuous, it's equal to the last dynamic gesture + 1
+	//NEW_STATIC_GEST, // Example of ne gesture, below N_STATIC should be updated
+	N_STATIC_GESTURES = (POINT_AT - N_DYNAMIC_GESTURES + 1 ),  // SHOULD BE <<LAST STATIC GESTURE>> - N_DYNAMIC_GESTURES +1
+
+	/// Total number of Gestures
+	N_GESTURES = (N_DYNAMIC_GESTURES + N_STATIC_GESTURES)
 };
 
 struct GroundTruth {
@@ -24,10 +30,10 @@ struct GroundTruth {
 };
 
 struct GRParameters {
-	float ALPHA[N_GESTURES]; // L1 distance threshold
-	float restTh; // Resting threshold
-	float gestTh[N_GESTURES]; // MU - threshold per each gesture type for the DTW
-	float ovlps[N_GESTURES]; // Overlap per gesture
+	float ALPHA[N_DYNAMIC_GESTURES]; // L1 distance threshold
+	float pointAtTh[3]; // SIGMA. [0] = hand-hip distance, [1] = elbow angle and [3] consecutive frames -> test values 0.25, 2.8, 25
+	float gestTh[N_DYNAMIC_GESTURES]; // MU - threshold per each gesture type for the DTW
+	float ovlps[N_DYNAMIC_GESTURES]; // Overlap per gesture
 	float bestOvlp; // Best overlap
 };
 
@@ -38,19 +44,20 @@ public:
 	GestureRecognition();
 	~GestureRecognition();
 
-	Gesture DTW(std::vector<std::vector<std::vector<float>>> models, GRParameters params);
-	void addFrame(const std::vector<float>& frame);
-	void addFrame(const std::vector<float>& feat, const std::vector<float>& extendedFeat);
-	void addFrames(std::vector<std::vector<float>> framelist);
+	Gesture RecognizeGesture(std::vector<std::vector<std::vector<float>>> models, GRParameters params);
+	//void addFrame(const std::vector<float>& frame);
+	//void addFrame(const std::vector<float>& feat, const std::vector<float>& extendedFeat);
+	void addFrame(const std::vector<float>& Dynamic_feat, const std::vector<float>& Static_Feat);
+	//void addFrames(std::vector<std::vector<float>> framelist);
 	GRParameters trainThresholds(std::vector<std::vector<std::vector<float>>> models, std::vector<std::vector<std::vector<float>>> Inputsequences,
 						         std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, std::vector<float> alphas,
-								 std::vector<std::vector<float>> gestTh, std::vector<float> restTh, bool verbose);
+								 std::vector<std::vector<float>> gestTh, bool verbose);
 
 	float LOOCV(const std::vector<std::vector<std::vector<float>>>& models, const std::vector<std::vector<std::vector<float>>>& Inputsequences,
 				std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, const std::vector<float>& alphas,
-				const std::vector<std::vector<float>>& gestTh, const std::vector<float>& restTh, bool verbose);
+				const std::vector<std::vector<float>>& gestTh, bool verbose);
 
-	static std::vector<std::vector<float>> addThirdFeature(std::vector<std::vector<float>> model);
+	//static std::vector<std::vector<float>> addThirdFeature(std::vector<std::vector<float>> model);
 	static void writeParameters(GRParameters params, std::string path);
 	static GRParameters readParameters(std::string path);
 	static std::vector<GroundTruth> readGrountTruth(std::string path);
@@ -61,6 +68,7 @@ public:
 private:
 	float RealTimeDTW(int gestureId, const std::vector<std::vector<float>>& model, int nInputframes, float ALPHA, float MU);
 	std::deque<int> getWPath(const SlidingMatrix<float> &M, int t);
+	float staticGetureRecognition(int gestureId, float pointAtTh[3]);
 
 	std::vector<float> getNextFrame(int gestId);
 	void resetCurrentFrames();
