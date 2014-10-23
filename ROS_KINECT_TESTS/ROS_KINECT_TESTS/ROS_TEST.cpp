@@ -84,7 +84,7 @@ extern void showValuesGestTh();
 // MAIN
 int _tmain(int argc, _TCHAR * argv[])
 {
-	//trainDTWParameters();
+	trainDTWParameters();
 	Kinect2Utils k2u;
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
 	if (!SUCCEEDED(hr)) return -1;
