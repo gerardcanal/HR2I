@@ -93,3 +93,33 @@ float Utils::overlap(const std::set<int>& detections, const std::set<int>& gt) {
 	if (_union.size() == 0) return 1.0; // Both are empty... so overlap is total
 	return float(_intersection.size()) / _union.size();
 }
+
+
+float Utils::dotProduct(std::vector<float> a, std::vector<float> b) {
+	assert(a.size() == b.size());
+	float dp = 0;
+	for (int i = 0; i < a.size(); ++i) 
+		dp += a[i] * b[i];
+	return dp;
+}
+
+std::vector<float> Utils::subtract(std::vector<float> a, std::vector<float> b) {
+	assert(a.size() == b.size());
+	std::vector<float> s(a.size());
+	for (int i = 0; i < a.size(); ++i) s[i] = a[i] - b[i];
+	return s;
+}
+
+/// Line-Plane intersection
+/// l0 is a point of the line. l is the vector of the line
+/// p0 is a point of the plane. n is the normal vector to the plane
+std::vector<float> Utils::linePlaneIntersection(std::vector<float> l0, std::vector<float> l, std::vector<float> p0, std::vector<float> n) {
+	float ln = Utils::dotProduct(l, n);
+	if (ln == 0) return std::vector<float>();
+	float ppn = Utils::dotProduct(Utils::subtract(p0, l0), n);
+	float k = ppn / ln;
+
+	std::vector<float> point(l0.size());
+	for (int i = 0; i < point.size(); ++i) point[i] = l0[i] + k*l[i];
+	return point;
+}

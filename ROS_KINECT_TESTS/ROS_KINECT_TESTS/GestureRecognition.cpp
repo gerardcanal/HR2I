@@ -51,9 +51,12 @@ Gesture GestureRecognition::RecognizeGesture(std::vector<std::vector<std::vector
 	return static_cast<Gesture>(i_min);
 }
 
+#define DIST_TH	0.45
 float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh[3]) {
 	bool found = false;
 	int consFrames = 0; // consecutive frames
+	float dist = 0; // Dist of the hand position during the recognition frames
+	std::vector<float> lastHandPose;
 	while (!found) { // For t = 0..INF
 		while (inputFrames[gestureId].empty()); // Wait until we have a new frame...
 		std::vector<float> input = getNextFrame(gestureId);
@@ -61,10 +64,20 @@ float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh
 
 		if (input[0] > pointAtTh[0] && input[1] > pointAtTh[1]) {
 			++consFrames;
-			if (consFrames > pointAtTh[2]) return 0.0;
+			std::vector<float> handPose(input.begin() + 2, input.begin() + 5);
+			if (consFrames > 1) dist += Utils::euclideanDistance(lastHandPose, handPose);
+			lastHandPose = handPose;
+			if (consFrames > pointAtTh[2]) {
+				if (dist < DIST_TH) return 0.0;
+				else {
+					dist = 0;
+					consFrames = 0;
+				}
+			}
 		}
 		else {
 			consFrames = 0;
+			dist = 0;
 		}
 
 		#pragma omp critical (gesturefound)

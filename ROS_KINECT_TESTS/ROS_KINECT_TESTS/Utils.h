@@ -19,6 +19,9 @@ public:
 	static float magnitude(float vec[3]);
 	static void printPercentage(int cur, int total);
 	static float overlap(const std::set<int>& detections, const std::set<int>& gt);
+	static std::vector<float> linePlaneIntersection(std::vector<float> l0, std::vector<float> l, std::vector<float> p0, std::vector<float> n);
+	static float dotProduct(std::vector<float> a, std::vector<float> b);
+	static std::vector<float> subtract(std::vector<float> a, std::vector<float> b);
 };
 
 

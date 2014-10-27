@@ -19,7 +19,6 @@ Skeleton::Skeleton() {
 
 Skeleton::~Skeleton()
 {
-
 }
 
 
@@ -72,6 +71,10 @@ JointOrientation* Skeleton::getJointOrientations() {
 
 Joint* Skeleton::getJoints() {
 	return joints;
+}
+
+CameraSpacePoint Skeleton::getJointPosition(JointType j) {
+	return joints[j].Position;
 }
 
 bool Skeleton::operator==(const Skeleton& b) {
@@ -271,8 +274,9 @@ std::vector<float> Skeleton::getDynamicGestureRecognitionFeatures(bool rightBody
 	return feature;
 }
 
-/// Returns two features: the distance between hand and hip and the angle of the arm and the elbow
-std::vector<float> Skeleton::getStaticGestureRecognitionFeatures(bool rightBody) {
+/// Returns two features: the distance between hand and hip and the angle of the arm and the elbow.
+/// If addHandPose is true, it adds the position of the hand
+std::vector<float> Skeleton::getStaticGestureRecognitionFeatures(bool rightBody, bool addHandPose) {
 	float hand_hip_dist, shoulder_elbow_hand_angle;
 	if (rightBody) {
 		hand_hip_dist = Utils::euclideanDistance(joints[JointType_HandRight], joints[JointType_HipRight]);
@@ -283,6 +287,20 @@ std::vector<float> Skeleton::getStaticGestureRecognitionFeatures(bool rightBody)
 		shoulder_elbow_hand_angle = Utils::getAngleBetween(joints[JointType_ShoulderLeft], joints[JointType_ElbowLeft], joints[JointType_HandLeft], true);
 	}
 	std::vector<float> feature = { hand_hip_dist, shoulder_elbow_hand_angle };
+
+	if (addHandPose) {
+		if (rightBody) {
+			feature.push_back(joints[JointType_HandRight].Position.X);
+			feature.push_back(joints[JointType_HandRight].Position.Y);
+			feature.push_back(joints[JointType_HandRight].Position.Z);
+		}
+		else {
+			feature.push_back(joints[JointType_HandLeft].Position.X);
+			feature.push_back(joints[JointType_HandLeft].Position.Y);
+			feature.push_back(joints[JointType_HandLeft].Position.Z);
+		}
+	}
+
 	return feature;
 }
 

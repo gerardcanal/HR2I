@@ -33,6 +33,7 @@ public:
 	UINT64 getTrackingID();
 	JointOrientation* getJointOrientations();
 	Joint* getJoints();
+	CameraSpacePoint getJointPosition(JointType j);
 
 	static void gestureToCSV(std::vector<Skeleton> gesture, std::string path);
 	static std::vector<Skeleton> gestureFromCSV(std::string path);
@@ -43,7 +44,7 @@ public:
 	bool operator==(const Skeleton& b);
 
 	std::vector<float> getDynamicGestureRecognitionFeatures(bool rightBody);
-	std::vector<float> getStaticGestureRecognitionFeatures(bool rightBody);
+	std::vector<float> getStaticGestureRecognitionFeatures(bool rightBody, bool addHandPose);
 	//std::vector<float> getExtendedGestureRecognitionFeatures(bool rightBody, float th);
 	//void addExtendedGRFeature(std::vector<float>& feature, bool rightBody, float th);
 	//float getElbowSpineDistance(bool rightBody);
