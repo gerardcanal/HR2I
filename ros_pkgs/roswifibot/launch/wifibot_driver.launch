@@ -1,0 +1,6 @@
+<launch>
+<!-- Launch which creates a namespace for the wifibot parameters -->
+	<group ns="wifibot">
+		<node pkg="roswifibot" name="wifibot_base" type="wifibot_node" output="screen"/>
+	</group>
+</launch>

@@ -4,10 +4,10 @@ from wifibot_utils.srv import MoveToService, MoveToServiceResponse
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
-R = 0.07 # Radius 7cm
-L = 0.00 # Istance between wheels
+R = 0.07 # Radius (7cm)
+L = 0.30 # Distance between wheels (30cm)
 
-WB_ODOM_TOPIC = '/odom'
+WB_ODOM_TOPIC = '/wifibot/odom'
 
 class WifiBotMoveToService:
     def __init__(self):
@@ -38,6 +38,12 @@ class WifiBotMoveToService:
         rospy.loginfo('Odom is %s' % self.str_odom(currState))
         self.subscribe_odom()
         return MoveToServiceResponse(True)
+
+    def uni_to_diff(self, v, w):
+        ''' Converts unicycle velocity to the differential model one '''
+        vr = (2*v+w*L)/(2*R)
+        vl = (2*v-w*L)/(2*R)
+        return (vr, vl)
 
 
 
