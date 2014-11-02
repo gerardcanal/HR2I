@@ -9,7 +9,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>pcl_common_debug.lib;pcl_io_debug.lib;pcl_visualization_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pcl_common_debug.lib;pcl_io_debug.lib;pcl_visualization_debug.lib;pcl_sample_consensus_debug.lib;pcl_segmentation_debug.lib;pcl_filters_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

@@ -7,6 +7,7 @@ int main(int argc, char** argv) {
 	pcl::PointCloud<pcl::PointXYZ> pointCloud;
 
 	// Generate the data
+	int lc = 0;
 	for (float y = -0.5f; y <= 0.5f; y += 0.01f) {
 		for (float z = -0.5f; z <= 0.5f; z += 0.01f) {
 			pcl::PointXYZ point;
@@ -14,6 +15,7 @@ int main(int argc, char** argv) {
 			point.y = y;
 			point.z = z;
 			pointCloud.points.push_back(point);
+			++lc;
 		}
 	}
 	pointCloud.width = (uint32_t)pointCloud.points.size();
