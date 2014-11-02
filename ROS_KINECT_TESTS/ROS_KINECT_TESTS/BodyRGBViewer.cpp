@@ -9,8 +9,11 @@ static const float c_TrackedBoneThickness = 8.0f;//6.0f;
 static const float c_InferredBoneThickness = 2.0f;//1.0f;
 static const float c_HandSize = 40.0f;//30.0f;
 
-static const int        cDepthWidth = 640;// 512;
-static const int        cDepthHeight = 360;// 424;
+static const int        cDepthWidthSkel = 640;// 512;
+static const int        cDepthHeightSkel = 360;// 424;
+
+static const int        cDepthWidth = 512;// 512;
+static const int        cDepthHeight = 424;// 424;
 
 static const int        cColorWidth = 1920;
 static const int        cColorHeight = 1080;
@@ -42,6 +45,7 @@ BodyRGBViewer::BodyRGBViewer() :
 
 	// create heap storage for color pixel data in RGBX format
 	m_pColorRGBX = new RGBQUAD[cColorWidth * cColorHeight];
+	m_pDepthRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
 
 	for (int i = 0; i < BODY_COUNT; ++i) ppBodiesToDraw[i] = NULL;
 }
@@ -70,6 +74,7 @@ BodyRGBViewer::BodyRGBViewer(Kinect2Utils* k2u_) :
 
 	// create heap storage for color pixel data in RGBX format
 	m_pColorRGBX = new RGBQUAD[cColorWidth * cColorHeight];
+	m_pDepthRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
 
 	K2U = k2u_;
 	for (int i = 0; i < BODY_COUNT; ++i) ppBodiesToDraw[i] = NULL;
@@ -97,9 +102,9 @@ void BodyRGBViewer::setK2U(Kinect2Utils* k2u_) {
 	K2U = k2u_;
 }
 
-std::thread BodyRGBViewer::RunThreaded(bool sRGB, bool sSkel, bool autoSkel) {
+std::thread BodyRGBViewer::RunThreaded(int sRGB_Depth, bool sSkel, bool autoSkel) {
 	running = true;
-	std::thread t1(&BodyRGBViewer::Run, this, sRGB, sSkel, autoSkel);
+	std::thread t1(&BodyRGBViewer::Run, this, sRGB_Depth, sSkel, autoSkel);
 	return t1;
 }
 
@@ -109,10 +114,10 @@ std::thread BodyRGBViewer::RunThreaded(bool sRGB, bool sSkel, bool autoSkel) {
 /// <param name="sRGB">whether to display the RGB image or not.</param>
 /// <param name="sSkel">whether to display the Skeletons or not.</param>
 //<param name="autoSkel">whether to pick automatically the Skeletons from the kinect or if the user will call to the updateSkeleton from outside</param>
-int BodyRGBViewer::Run(bool sRGB, bool sSkel, bool autoSkel)
+int BodyRGBViewer::Run(int sRGB_Depth, bool sSkel, bool autoSkel)
 {
 	running = true;
-	showRGB = sRGB;
+	showRGB_Depth = sRGB_Depth;
 	showSkeleton = sSkel;
 	HINSTANCE hInstance = GetModuleHandle(NULL);
 
@@ -159,9 +164,10 @@ int BodyRGBViewer::Run(bool sRGB, bool sSkel, bool autoSkel)
 	{
 		bool paintedSkeleton = true;
 		if (sSkel) paintedSkeleton = UpdateSkeleton(autoSkel);
-		if ((showRGB && !sSkel) || (showRGB && !paintedSkeleton)) {
+		if (((showRGB_Depth > 0) && !sSkel) || ((showRGB_Depth > 0) && !paintedSkeleton)) {
 			showSkeleton = false; //To force the updateRGB paint the skeleton.
-			UpdateRGB(); // If only RGB has to be painted, paint it. Alternatevily, if the skeleton was not painted and the RGB should, paint it anyway.
+			if (showRGB_Depth == 1) UpdateRGB(); // If only RGB has to be painted, paint it. Alternatevily, if the skeleton was not painted and the RGB should, paint it anyway.
+			else if (showRGB_Depth == 2) UpdateDepth();
 			showSkeleton = sSkel; // Restore to normal status
 		}
 
@@ -282,7 +288,8 @@ HRESULT BodyRGBViewer::EnsureDirect2DResources()
 		int height = rc.bottom - rc.top;
 		D2D1_SIZE_U size = D2D1::SizeU(width, height);
 
-		if (showRGB) size = D2D1::SizeU(cColorWidth, cColorHeight);
+		if (showRGB_Depth == 1) size = D2D1::SizeU(cColorWidth, cColorHeight);
+		else if (showRGB_Depth == 2) size = D2D1::SizeU(cDepthWidth, cDepthHeight);
 
 		D2D1_RENDER_TARGET_PROPERTIES rtProps = D2D1::RenderTargetProperties();
 		rtProps.pixelFormat = D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE);
@@ -313,7 +320,7 @@ HRESULT BodyRGBViewer::EnsureDirect2DResources()
 			m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 0.5f), &m_pBrushHandOpen);
 			m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Blue, 0.5f), &m_pBrushHandLasso);
 		}
-		if (showRGB) {
+		if (showRGB_Depth > 0) {
 			// Create a bitmap that we can copy image data into and then render to the target
 			hr = m_pRenderTarget->CreateBitmap(
 				size,
@@ -350,7 +357,7 @@ void BodyRGBViewer::DiscardDirect2DResources()
 		SafeRelease(m_pBrushHandOpen);
 		SafeRelease(m_pBrushHandLasso);
 	}
-	if (showRGB) {
+	if (showRGB_Depth > 0) {
 		SafeRelease(m_pRenderTarget);
 		SafeRelease(m_pBitmap);
 	}
@@ -452,16 +459,21 @@ void BodyRGBViewer::ProcessAndPaintBody(INT64 nTime, int nBodyCount, IBody** ppB
 		if (SUCCEEDED(hr) && m_pRenderTarget && m_pCoordinateMapper)
 		{
 			m_pRenderTarget->BeginDraw();
-			if (!showRGB) m_pRenderTarget->Clear(); // To avoid flashes in RGB mode and non updating of the buffer in skeleton mode
-			else UpdateRGB(); //paint image
+			if (showRGB_Depth == 0) m_pRenderTarget->Clear(); // To avoid flashes in RGB mode and non updating of the buffer in skeleton mode
+			else if (showRGB_Depth == 1) UpdateRGB();
+			else UpdateDepth(); //paint image
 
 			RECT rct;
 			GetClientRect(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), &rct);
 			int width = rct.right;
 			int height = rct.bottom;
-			if (showRGB) {
+			if (showRGB_Depth == 1) {
 				width = cColorWidth;
 				height = cColorHeight;
+			}
+			else if (showRGB_Depth == 2) {
+				width = cDepthWidth;
+				height = cDepthHeight;
 			}
 
 			if (body) {
@@ -507,7 +519,7 @@ void BodyRGBViewer::ProcessAndPaintBody(INT64 nTime, int nBodyCount, IBody** ppB
 				DiscardDirect2DResources();
 			}
 		}
-		if (!showRGB) {
+		if (showRGB_Depth == 0) {
 			if (!m_nStartTime)
 			{
 				m_nStartTime = nTime;
@@ -565,7 +577,7 @@ D2D1_POINT_2F BodyRGBViewer::BodyToScreen(const CameraSpacePoint& bodyPoint, int
 {
 	// Calculate the body's position on the screen
 	float screenPointX, screenPointY;
-	if (!showRGB) {
+	if (showRGB_Depth != 1) { // For depth and none cases
 		DepthSpacePoint depthPoint = { 0 };
 		m_pCoordinateMapper->MapCameraPointToDepthSpace(bodyPoint, &depthPoint);
 
@@ -579,6 +591,7 @@ D2D1_POINT_2F BodyRGBViewer::BodyToScreen(const CameraSpacePoint& bodyPoint, int
 		screenPointX = static_cast<float>(colorPoint.X * width) / cColorWidth;
 		screenPointY = static_cast<float>(colorPoint.Y * height) / cColorHeight;
 	}
+
 	return D2D1::Point2F(screenPointX, screenPointY);
 }
 
@@ -782,6 +795,82 @@ void BodyRGBViewer::UpdateRGB()
 
 
 /// <summary>
+/// Main processing function
+/// </summary>
+void BodyRGBViewer::UpdateDepth()
+{
+	if (!K2U)
+	{
+		return;
+	}
+
+	IDepthFrame* pDepthFrame = NULL;
+	HRESULT hr = K2U->openDepthFrameReader();
+	if (SUCCEEDED(hr)) pDepthFrame = K2U->getLastDepthFrameFromDefault();
+	if (!SUCCEEDED(hr) || !pDepthFrame) return;
+
+
+	if (SUCCEEDED(hr))
+	{
+		INT64 nTime = 0;
+		IFrameDescription* pFrameDescription = NULL;
+		int nWidth = 0;
+		int nHeight = 0;
+		USHORT nDepthMinReliableDistance = 0;
+		USHORT nDepthMaxDistance = 0;
+		UINT nBufferSize = 0;
+		UINT16 *pBuffer = NULL;
+
+		hr = pDepthFrame->get_RelativeTime(&nTime);
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pDepthFrame->get_FrameDescription(&pFrameDescription);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Width(&nWidth);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pFrameDescription->get_Height(&nHeight);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pDepthFrame->get_DepthMinReliableDistance(&nDepthMinReliableDistance);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			// In order to see the full range of depth (including the less reliable far field depth)
+			// we are setting nDepthMaxDistance to the extreme potential depth threshold
+			nDepthMaxDistance = USHRT_MAX;
+
+			// Note:  If you wish to filter by reliable depth distance, uncomment the following line.
+			//// hr = pDepthFrame->get_DepthMaxReliableDistance(&nDepthMaxDistance);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			hr = pDepthFrame->AccessUnderlyingBuffer(&nBufferSize, &pBuffer);
+		}
+
+		if (SUCCEEDED(hr))
+		{
+			ProcessDepth(nTime, pBuffer, nWidth, nHeight, nDepthMinReliableDistance, nDepthMaxDistance);
+		}
+
+		SafeRelease(pFrameDescription);
+	}
+
+	SafeRelease(pDepthFrame);
+}
+
+
+/// <summary>
 /// Handle new color data
 /// <param name="nTime">timestamp of frame</param>
 /// <param name="pBuffer">pointer to frame data</param>
@@ -831,6 +920,84 @@ void BodyRGBViewer::ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int 
 	}
 }
 
+/// <summary>
+/// Handle new depth data
+/// <param name="nTime">timestamp of frame</param>
+/// <param name="pBuffer">pointer to frame data</param>
+/// <param name="nWidth">width (in pixels) of input image data</param>
+/// <param name="nHeight">height (in pixels) of input image data</param>
+/// <param name="nMinDepth">minimum reliable depth</param>
+/// <param name="nMaxDepth">maximum reliable depth</param>
+/// </summary>
+void BodyRGBViewer::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth)
+{
+	if (m_hWnd)
+	{
+		if (!m_nStartTime)
+		{
+			m_nStartTime = nTime;
+		}
+
+		double fps = 0.0;
+
+		LARGE_INTEGER qpcNow = { 0 };
+		if (m_fFreq)
+		{
+			if (QueryPerformanceCounter(&qpcNow))
+			{
+				if (m_nLastCounter)
+				{
+					m_nFramesSinceUpdate++;
+					fps = m_fFreq * m_nFramesSinceUpdate / double(qpcNow.QuadPart - m_nLastCounter);
+				}
+			}
+		}
+
+		WCHAR szStatusMessage[64];
+		StringCchPrintf(szStatusMessage, _countof(szStatusMessage), L" FPS = %0.2f    Time = %I64d", fps, (nTime - m_nStartTime));
+
+		if (SetStatusMessage(szStatusMessage, 1000, false))
+		{
+			m_nLastCounter = qpcNow.QuadPart;
+			m_nFramesSinceUpdate = 0;
+		}
+	}
+
+	// Make sure we've received valid data
+	if (m_pDepthRGBX && pBuffer && (nWidth == cDepthWidth) && (nHeight == cDepthHeight))
+	{
+		RGBQUAD* pRGBX = m_pDepthRGBX;
+
+		// end pixel is start + width*height - 1
+		const UINT16* pBufferEnd = pBuffer + (nWidth * nHeight);
+
+		while (pBuffer < pBufferEnd)
+		{
+			USHORT depth = *pBuffer;
+
+			// To convert to a byte, we're discarding the most-significant
+			// rather than least-significant bits.
+			// We're preserving detail, although the intensity will "wrap."
+			// Values outside the reliable depth range are mapped to 0 (black).
+
+			// Note: Using conditionals in this loop could degrade performance.
+			// Consider using a lookup table instead when writing production code.
+			BYTE intensity = static_cast<BYTE>((depth >= nMinDepth) && (depth <= nMaxDepth) ? (depth % 256) : 0);
+
+			pRGBX->rgbRed = intensity;
+			pRGBX->rgbGreen = intensity;
+			pRGBX->rgbBlue = intensity;
+
+			++pRGBX;
+			++pBuffer;
+		}
+
+		// Draw the data with Direct2D
+		RenderImage(reinterpret_cast<BYTE*>(m_pDepthRGBX), cDepthWidth * cDepthHeight * sizeof(RGBQUAD));
+	}
+
+}
+
 
 /// <summary>
 /// Draws a 32 bit per pixel image of previously specified width, height, and stride to the associated hwnd
@@ -841,8 +1008,12 @@ void BodyRGBViewer::ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int 
 HRESULT BodyRGBViewer::RenderImage(BYTE* pImage, unsigned long cbImage)
 {
 	// incorrectly sized image data passed in
-	int m_sourceStride = cColorWidth * sizeof(RGBQUAD);
-	if (cbImage < ((cColorHeight - 1) * m_sourceStride) + (cColorWidth * 4))
+	int m_sourceStride= (showRGB_Depth == 1)? cColorWidth * sizeof(RGBQUAD) : cDepthWidth * sizeof(RGBQUAD);
+	if ((showRGB_Depth == 1) && (cbImage < ((cColorHeight - 1) * m_sourceStride) + (cColorWidth * 4)))
+	{
+		return E_INVALIDARG;
+	}
+	else if ((showRGB_Depth == 2) && (cbImage < ((cDepthHeight - 1) * m_sourceStride) + (cDepthWidth * 4)))
 	{
 		return E_INVALIDARG;
 	}
@@ -902,7 +1073,7 @@ void BodyRGBViewer::setBodyFrameToDraw(IBodyFrame* bf) {
 void BodyRGBViewer::playGesture(std::vector<Skeleton> gesture, bool enableControls, bool closeAfterPlaying) {
 	if (!running) { // Window is closed, create it for the first time...
 		running = true;
-		showRGB = false;
+		showRGB_Depth = 0;
 		showSkeleton = true;
 
 		// Prepare window

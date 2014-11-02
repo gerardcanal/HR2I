@@ -25,8 +25,8 @@ public:
 	BodyRGBViewer();
 	BodyRGBViewer(Kinect2Utils*);
 	~BodyRGBViewer();
-	int Run(bool sRGB, bool sSKel, bool autoSkel);
-	std::thread RunThreaded(bool sRGB, bool sSKel, bool autoSkel);
+	int Run(int sRGB_Depth, bool sSKel, bool autoSkel);
+	std::thread RunThreaded(int sRGB_Depth, bool sSKel, bool autoSkel);
 	static LRESULT CALLBACK MessageRouter(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT CALLBACK        DlgProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void setK2U(Kinect2Utils*);
@@ -37,8 +37,14 @@ public:
 	void nextGestureFrame();
 	void previousGestureFrame();
 
+	enum sRGB {
+		show_NONE,
+		show_RGB,
+		show_DEPTH
+	};
+
 private:
-	bool					showRGB;
+	int						showRGB_Depth; // 0 = None, 1 = RGB, 2 = DEPTH
 	bool					showSkeleton;
 	bool					running;
 	static bool				createdWindow;
@@ -80,11 +86,14 @@ private:
 
 	// RGB
 	RGBQUAD*                m_pColorRGBX;
-	ID2D1Bitmap*             m_pBitmap;
+	RGBQUAD*                m_pDepthRGBX;
+	ID2D1Bitmap*            m_pBitmap;
 
 	bool UpdateSkeleton(bool);
 	void UpdateRGB();
+	void UpdateDepth();
 	void ProcessColor(INT64 nTime, RGBQUAD* pBuffer, int nWidth, int nHeight);
+	void ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth, int nHeight, USHORT nMinDepth, USHORT nMaxDepth);
 	HRESULT RenderImage(BYTE* pImage, unsigned long cbImage);
 
 	// Thread safety

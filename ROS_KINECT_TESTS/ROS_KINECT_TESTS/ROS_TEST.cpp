@@ -21,7 +21,7 @@ using namespace std;
 #include "BodyRGBViewer.h"
 
 // Globals
-const bool RGB = true;
+const int RGB_Depth = 2; // 0 - None, 1 - RGB, 2 - Depth
 bool get_data = true;
 mutex mtx;
 deque<Skeleton> inputFrames;
@@ -133,7 +133,7 @@ int _tmain(int argc, _TCHAR * argv[])
 	if (!SUCCEEDED(hr)) return -1;
 
 	BodyRGBViewer view(&k2u);
-	thread iface = view.RunThreaded(RGB, true, false);
+	thread iface = view.RunThreaded(RGB_Depth, true, false);
 	std::vector<std::vector<std::vector<float>>> models = readModels();
 	while (true) { recognizeGestures(models, k2u, view); }
 	iface.join();
