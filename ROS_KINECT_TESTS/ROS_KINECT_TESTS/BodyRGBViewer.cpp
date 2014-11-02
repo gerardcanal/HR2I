@@ -48,6 +48,7 @@ BodyRGBViewer::BodyRGBViewer() :
 	m_pDepthRGBX = new RGBQUAD[cDepthWidth * cDepthHeight];
 
 	for (int i = 0; i < BODY_COUNT; ++i) ppBodiesToDraw[i] = NULL;
+	playingGesture = false;
 }
 
 BodyRGBViewer::BodyRGBViewer(Kinect2Utils* k2u_) : 
@@ -78,6 +79,7 @@ BodyRGBViewer::BodyRGBViewer(Kinect2Utils* k2u_) :
 
 	K2U = k2u_;
 	for (int i = 0; i < BODY_COUNT; ++i) ppBodiesToDraw[i] = NULL;
+	playingGesture = false;
 }
 
 BodyRGBViewer::~BodyRGBViewer()
@@ -100,6 +102,15 @@ BodyRGBViewer::~BodyRGBViewer()
 
 void BodyRGBViewer::setK2U(Kinect2Utils* k2u_) {
 	K2U = k2u_;
+}
+
+void BodyRGBViewer::changeMode(int sRGB_Depth, bool showSkel) {
+	if (playingGesture) return;
+	mtx_changeMode.lock();
+	showRGB_Depth = sRGB_Depth;
+	showSkeleton = showSkel;
+	DiscardDirect2DResources(); // So they are created again
+	mtx_changeMode.unlock();
 }
 
 std::thread BodyRGBViewer::RunThreaded(int sRGB_Depth, bool sSkel, bool autoSkel) {
@@ -163,6 +174,7 @@ int BodyRGBViewer::Run(int sRGB_Depth, bool sSkel, bool autoSkel)
 	while (WM_QUIT != msg.message)
 	{
 		bool paintedSkeleton = true;
+		mtx_changeMode.lock();
 		if (sSkel) paintedSkeleton = UpdateSkeleton(autoSkel);
 		if (((showRGB_Depth > 0) && !sSkel) || ((showRGB_Depth > 0) && !paintedSkeleton)) {
 			showSkeleton = false; //To force the updateRGB paint the skeleton.
@@ -170,6 +182,7 @@ int BodyRGBViewer::Run(int sRGB_Depth, bool sSkel, bool autoSkel)
 			else if (showRGB_Depth == 2) UpdateDepth();
 			showSkeleton = sSkel; // Restore to normal status
 		}
+		mtx_changeMode.unlock();
 
 		while (PeekMessageW(&msg, NULL, 0, 0, PM_REMOVE))
 		{
@@ -1072,6 +1085,7 @@ void BodyRGBViewer::setBodyFrameToDraw(IBodyFrame* bf) {
 }
 
 void BodyRGBViewer::playGesture(std::vector<Skeleton> gesture, bool enableControls, bool closeAfterPlaying) {
+	playingGesture = true;
 	if (!running) { // Window is closed, create it for the first time...
 		running = true;
 		showRGB_Depth = 0;
@@ -1151,7 +1165,10 @@ void BodyRGBViewer::playGesture(std::vector<Skeleton> gesture, bool enableContro
 			if (sleepTime > 10) Sleep(sleepTime);
 		}
 		else {
-			if (closeAfterPlaying) closeWindow();
+			if (closeAfterPlaying) {
+				playingGesture = false;
+				closeWindow();
+			}
 			else break; // Window won't be closed
 		}
 

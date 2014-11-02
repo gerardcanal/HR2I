@@ -36,6 +36,7 @@ public:
 	void playGesture(std::vector<Skeleton> gesture, bool enableContols, bool closeAfterPlaying);
 	void nextGestureFrame();
 	void previousGestureFrame();
+	void changeMode(int showRGB_Depth, bool showSkel);
 
 	enum sRGB {
 		show_NONE,
@@ -49,6 +50,7 @@ private:
 	bool					running;
 	static bool				createdWindow;
 	int						playerControl; // -1: left, 0 stop, 1 right
+	bool					playingGesture;
 
 	HWND                    m_hWnd;
 	INT64                   m_nStartTime;
@@ -98,6 +100,7 @@ private:
 
 	// Thread safety
 	std::mutex mtx;
+	std::mutex mtx_changeMode;
 	IBody* ppBodiesToDraw[BODY_COUNT]; //Bodies to to draw from the outside
 	void paintJointsAndHands(Joint joints[], HandState rightHandState, HandState leftHandState, int width, int height);
 
