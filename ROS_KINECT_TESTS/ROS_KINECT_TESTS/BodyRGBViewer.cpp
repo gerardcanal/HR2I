@@ -850,7 +850,7 @@ void BodyRGBViewer::UpdateDepth()
 			nDepthMaxDistance = USHRT_MAX;
 
 			// Note:  If you wish to filter by reliable depth distance, uncomment the following line.
-			//// hr = pDepthFrame->get_DepthMaxReliableDistance(&nDepthMaxDistance);
+			hr = pDepthFrame->get_DepthMaxReliableDistance(&nDepthMaxDistance);
 		}
 
 		if (SUCCEEDED(hr))
@@ -982,7 +982,8 @@ void BodyRGBViewer::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth,
 
 			// Note: Using conditionals in this loop could degrade performance.
 			// Consider using a lookup table instead when writing production code.
-			BYTE intensity = static_cast<BYTE>((depth >= nMinDepth) && (depth <= nMaxDepth) ? (depth % 256) : 0);
+			//BYTE intensity = static_cast<BYTE>((depth >= nMinDepth) && (depth <= nMaxDepth) ? (depth % 256) : 0);
+			BYTE intensity = depth < nMinDepth || depth > nMaxDepth ? 0 : (BYTE)(((float)depth / nMaxDepth) * 255.0f);
 
 			pRGBX->rgbRed = intensity;
 			pRGBX->rgbGreen = intensity;

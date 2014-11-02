@@ -135,7 +135,13 @@ int _tmain(int argc, _TCHAR * argv[])
 	BodyRGBViewer view(&k2u);
 	thread iface = view.RunThreaded(RGB_Depth, true, false);
 	std::vector<std::vector<std::vector<float>>> models = readModels();
-	while (true) { recognizeGestures(models, k2u, view); }
+	int loopCount = 0; int changeMode = 10000;
+	while (true) { 
+		recognizeGestures(models, k2u, view); 
+		if (loopCount++ == changeMode) {
+			//view.changeMode(1, true);
+		}
+	}
 	iface.join();
 	return 0;
 	// End of test
