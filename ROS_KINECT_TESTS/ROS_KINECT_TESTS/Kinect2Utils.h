@@ -16,8 +16,10 @@ public:
 	HRESULT OpenDefaultSensor();
 	HRESULT openBodyFrameReader();
 	HRESULT openColorFrameReader();
+	HRESULT openDepthFrameReader();
 	IBodyFrame* getLastBodyFrameFromDefault();
 	IColorFrame* getLastColorFrameFromDefault();
+	IDepthFrame* getLastDepthFrameFromDefault();
 	HRESULT getCoordinateMapper(ICoordinateMapper*&);
 	
 	static Skeleton IBodyToSkeleton(IBody* body);
@@ -29,5 +31,6 @@ private:
 	IKinectSensor* default_sensor; // Default sensor FIXME should be static
 	IBodyFrameReader* bfReader;
 	IColorFrameReader* cfReader;
+	IDepthFrameReader* dfReader;
 };
 

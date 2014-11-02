@@ -7,6 +7,7 @@ Kinect2Utils::Kinect2Utils()
 	default_sensor = NULL;
 	bfReader = NULL;
 	cfReader = NULL;
+	dfReader = NULL;
 }
 
 
@@ -15,6 +16,7 @@ Kinect2Utils::~Kinect2Utils()
 	closeDefaultSensor();
 	SafeRelease(bfReader);
 	SafeRelease(cfReader);
+	SafeRelease(dfReader);
 }
 
 
@@ -81,6 +83,18 @@ HRESULT Kinect2Utils::openColorFrameReader() {
 	return S_OK; //Already opened
 }
 
+HRESULT Kinect2Utils::openDepthFrameReader() {
+	if (!dfReader) { //bfReader is NULL
+		IDepthFrameSource* dfSource = NULL;
+		HRESULT hr = default_sensor->get_DepthFrameSource(&dfSource);
+		if (SUCCEEDED(hr))
+			hr = dfSource->OpenReader(&dfReader);
+		SafeRelease(dfSource); // We don't need the body frame source anymore.
+		return hr;
+	}
+	return S_OK; //Already opened
+}
+
 /// <summary> Returns the last body frame. The bfReaer MUST be called before this, or it will return NULL 
 /// WARNING: if the bodyframe returned is not released (SafeRelease) it won't return more bodyframes!!</summary>
 ///
@@ -92,13 +106,22 @@ IBodyFrame* Kinect2Utils::getLastBodyFrameFromDefault() {
 	return bodyFrame;
 }
 
-/// <summary> Returns the last body frame. The bfReaer MUST be called before this, or it will return NULL </summary>
+/// <summary> Returns the last color frame. The cfReaer MUST be called before this, or it will return NULL </summary>
 IColorFrame* Kinect2Utils::getLastColorFrameFromDefault() {
 	if (!cfReader) return NULL;
 	IColorFrame* colorFrame = NULL;
 	HRESULT hr = cfReader->AcquireLatestFrame(&colorFrame);
 	if (!SUCCEEDED(hr)) return NULL;
 	return colorFrame;
+}
+
+/// <summary> Returns the last depth frame. The dfReaer MUST be called before this, or it will return NULL </summary>
+IDepthFrame* Kinect2Utils::getLastDepthFrameFromDefault() {
+	if (!dfReader) return NULL;
+	IDepthFrame* depthFrame = NULL;
+	HRESULT hr = dfReader->AcquireLatestFrame(&depthFrame);
+	if (!SUCCEEDED(hr)) return NULL;
+	return depthFrame;
 }
 
 HRESULT Kinect2Utils::getCoordinateMapper(ICoordinateMapper* &cmapper) {

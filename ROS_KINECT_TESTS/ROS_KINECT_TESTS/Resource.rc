@@ -43,7 +43,7 @@ CLASS "BodyRGBViewerAppDlgWndClass"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
 	CONTROL         "", IDC_VIDEOVIEW, "Static", SS_BLACKFRAME, 0, 0, 640, 360
-	LTEXT           "", IDC_STATUS, 0, 361, 540, 11, SS_SUNKEN
+	LTEXT           "", IDC_STATUS, 0, 361, 640, 11, SS_SUNKEN
 END
 
 
