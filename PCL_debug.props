@@ -3,13 +3,15 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>C:\Program Files\PCL\Eigen\include;C:\Program Files\PCL\boost_1_56_0;C:\Program Files\PCL\VTK\include;C:\Program Files\PCL\flann\include;C:\Program Files\PCL\PCL\include\pcl-1.8;$(IncludePath)</IncludePath>
+    <LocalDebuggerEnvironment>PATH=C:\Program Files\PCL\VTK\bin;$(Path) $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
+    <IncludePath>C:\Program Files\PCL\Eigen\include;C:\Program Files\PCL\boost_1_56_0;C:\Program Files\PCL\VTK\include\vtk-6.1;C:\Program Files\PCL\flann\include;C:\Program Files\PCL\PCL\include\pcl-1.8;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files\PCL\boost_1_56_0\lib64-msvc-12.0;C:\Program Files\PCL\VTK\lib;C:\Program Files\PCL\flann\lib;C:\Program Files\PCL\PCL\lib;$(LibraryPath)</LibraryPath>
     <_PropertySheetDisplayName>PCL_debug</_PropertySheetDisplayName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>pcl_common_debug.lib;pcl_io_debug.lib;pcl_visualization_debug.lib;pcl_sample_consensus_debug.lib;pcl_segmentation_debug.lib;pcl_filters_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pcl_common_debug.lib;pcl_io_debug.lib;pcl_visualization_debug.lib;pcl_sample_consensus_debug.lib;pcl_segmentation_debug.lib;pcl_filters_debug.lib;vtkCommonCore-6.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>"C:\Program Files\PCL\VTK\lib\*.lib" %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
