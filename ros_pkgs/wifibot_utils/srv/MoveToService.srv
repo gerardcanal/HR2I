@@ -1,4 +1,5 @@
 # Command pose as service:
 geometry_msgs/Pose2D pose
+bool orient # True if the robot has to orient himself at the end, false otherwise
 ---
 bool result
