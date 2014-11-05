@@ -22,8 +22,8 @@ PIDw = ( 0.01, #Kp
 WB_ODOM_TOPIC = '/wifibot/odom'
 WB_SPEED_TOPIC = '/wifibot/cmd_speed'
 ERROR_THETA_TH = 0.1
-ERROR_DIST_TH = 0.005
-V = 0.05 # Linear velocity
+ERROR_DIST_TH = 0.01
+V = 0.005 # Linear velocity
 verbose = False
 SLEEP_TIME = 0.25 # seconds
 
@@ -39,6 +39,12 @@ class WifiBotMoveToService:
         rospy.spin()
 
     def odom_cb(self, data):
+        # Get time step
+        t = rospy.get_time()
+        dt = t - self._old_time
+        self._old_time = t
+        
+        #Start control
         quaternion = data.pose.pose.orientation
         odom = (data.pose.pose.position, euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))[2])
         if (not self._firstOdom):
@@ -56,7 +62,8 @@ class WifiBotMoveToService:
 
         # Check if finished
         dist = sqrt((odom[0].x-self._goal.x)**2+(odom[0].y-self._goal.y)**2)
-        print "dist:", dist, "e_k", e_k
+        print "dist:", dist, "e_k:", e_k, " theta_g:", theta_g, "theta:", odom[1]
+        raw_input('Enter input:')
         if dist <= ERROR_DIST_TH and abs(e_k) <= ERROR_THETA_TH: # We're have arrived at the place and have the correct orientation for the goal
             if self._orient: # We have to orient to the request orientation
                 theta_g = atan2(sin(self._goal.theta), cos(self._goal.theta)) # To force it to be between -pi,pi
@@ -69,8 +76,8 @@ class WifiBotMoveToService:
 
         e_dot = e_k - self._old_e
         E = self._E + e_k
-        w = PIDw[0]*e_k + PIDw[1]*E + PIDw[2]*e_dot
-
+        w = PIDw[0]*e_k + dt*PIDw[1]*E + PIDw[2]*e_dot/dt
+        w = PIDw[0]*e_k
         # Save State
         self._old_e = e_k
         self._E = E
@@ -78,6 +85,8 @@ class WifiBotMoveToService:
         # Move the robot
         #w = 0;
         (vl, vr) = self.uni_to_diff(V, w)
+        #print w, vl, vr, dt
+        print
         self._pub.publish(vl, vr)
 
 
@@ -95,8 +104,9 @@ class WifiBotMoveToService:
         self._E = 0.0
         self._firstOdom = None # To indicate this is a new call and save the first odom as point 0
         self._running = True
+        self._old_time = rospy.get_time()
 
-        self._subs = rospy.Subscriber(WB_ODOM_TOPIC, Odometry, self.odom_cb)
+        self._subs = rospy.Subscriber(WB_ODOM_TOPIC, Odometry, self.odom_cb, queue_size=1)
         while (not self._reached): # Wait until we have reached the position
             rospy.sleep(SLEEP_TIME)
         self._subs.unregister()
