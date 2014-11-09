@@ -117,36 +117,30 @@ extern void showValuesGestTh();
 #include "K2PCL.h"
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
-void
-viewerOneOff(pcl::visualization::PCLVisualizer& viewer)
-{
-	viewer.setBackgroundColor(1.0, 0.5, 1.0);
-}
+
 void showLivePCtest() {
 	Kinect2Utils k2u;
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
 	k2u.openDepthFrameReader();
 	pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("Simple Cloud Viewer");
-	pclviewer.runOnVisualizationThreadOnce(viewerOneOff);
 	ICoordinateMapper* cmapper = NULL;
 	k2u.getCoordinateMapper(cmapper);
 	while (true) {
 		IDepthFrame* df = k2u.getLastDepthFrameFromDefault();
 		if (df != NULL) {
 			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
-			pcl::PointCloud<pcl::PointXYZRGBA>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGBA>());
+			/*pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
 			pcRGBptr->resize(pcPtr->size());
-			pcl::copyPointCloud(*pcPtr, *pcRGBptr);
-			/*for (int i = 0; i < pcPtr->size(); ++i) {
+			//pcl::copyPointCloud(*pcPtr, *pcRGBptr);
+			for (int i = 0; i < pcPtr->size(); ++i) {
 				pcl::PointXYZRGB auxp(0,0,0);
 				auxp.x = pcPtr->at(i).x;
 				auxp.y = pcPtr->at(i).y;
 				auxp.z = pcPtr->at(i).z;
 				pcRGBptr->at(i) = auxp;
-			}*/
-			pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;
-			pclviewer.showCloud(pcRGBptr);
-			Sleep(50);
+			}
+			pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;*/
+			pclviewer.showCloud(pcPtr);
 		}
 		SafeRelease(df);
 	}

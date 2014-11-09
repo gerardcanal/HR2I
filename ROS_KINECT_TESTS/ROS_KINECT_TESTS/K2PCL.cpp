@@ -22,21 +22,24 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* d
 	IFrameDescription* frameDesc = NULL;
 	hr = depthFrame->get_FrameDescription(&frameDesc);
 	if (!SUCCEEDED(hr)) return pc;
-	int nDepthWidth, nDepthHeight;
+	int nDepthWidth, nDepthHeight, nPoints;
 	frameDesc->get_Width(&nDepthWidth); frameDesc->get_Height(&nDepthHeight);
-	CameraSpacePoint* _cameraCoordinates = new CameraSpacePoint[nDepthWidth * nDepthHeight];
-	hr = cMapper->MapDepthFrameToCameraSpace(nDepthWidth * nDepthHeight, depthBuffer, nDepthWidth * nDepthHeight, _cameraCoordinates);
+	nPoints = nDepthWidth * nDepthHeight;
+	CameraSpacePoint* _cameraCoordinates = new CameraSpacePoint[nPoints];
+	hr = cMapper->MapDepthFrameToCameraSpace(nPoints, depthBuffer, nPoints, _cameraCoordinates);
 	if (!SUCCEEDED(hr)) return pc;
-	for (int i = 0; i < (nDepthWidth * nDepthHeight); ++i) {
+	int filtered = 0;
+	for (int i = 0; i < nPoints; ++i) {
 		// add cameraCoordinates[i] in the pointcloud
 		if ((_cameraCoordinates[i].X < Utils::INF) && (_cameraCoordinates[i].Y < Utils::INF) && (_cameraCoordinates[i].Z < Utils::INF) &&
 			(_cameraCoordinates[i].X > -Utils::INF) && (_cameraCoordinates[i].Y > -Utils::INF) && (_cameraCoordinates[i].Z > -Utils::INF)) {
 			pcl::PointXYZ _point(_cameraCoordinates[i].X, _cameraCoordinates[i].Y, _cameraCoordinates[i].Z);
 			pc->push_back(_point);
 		}
+		else ++filtered;
 	}
-	pc->width = nDepthWidth;
-	pc->height = nDepthHeight;
+	/*pc->width = nDepthWidth;
+	pc->height = (nPoints-filtered)/nDepthWidth;*/
 	delete[] _cameraCoordinates;
 	return pc;
 }
