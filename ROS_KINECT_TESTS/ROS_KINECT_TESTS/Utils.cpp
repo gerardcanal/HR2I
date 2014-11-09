@@ -3,6 +3,9 @@
 #include <assert.h>
 #include <algorithm>
 #include <iterator>
+#include <limits>
+
+const double Utils::INF = std::numeric_limits<float>::infinity();
 
 Utils::Utils()
 {

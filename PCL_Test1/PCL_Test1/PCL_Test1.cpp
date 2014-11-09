@@ -73,12 +73,14 @@ viewerPsycho(pcl::visualization::PCLVisualizer& viewer)
 
 int main()
 {
-	pcl::PointCloud<pcl::PointXYZRGBA>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGBA>);
-	pcl::io::loadPCDFile("./pcd/model.pcd", *cloud);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::io::loadPCDFile("C:/Users/Gerard/Dropbox/MAI/3dSemester/TFM/src/HR2I/PCL_Test1/PCL_Test1/pcd/model.pcd", *cloud);
 
 	pcl::visualization::CloudViewer viewer("Cloud Viewer");
 
 	//blocks until the cloud is actually rendered
+	viewer.showCloud(cloud);
+	Sleep(5000);
 	viewer.showCloud(cloud);
 
 	//use the following functions to get access to the underlying more advanced/powerful

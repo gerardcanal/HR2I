@@ -92,6 +92,7 @@
     <ClInclude Include="..\ros_lib\WindowsSocket.h" />
     <ClInclude Include="BodyRGBViewer.h" />
     <ClInclude Include="GestureRecognition.h" />
+    <ClInclude Include="K2PCL.h" />
     <ClInclude Include="Kinect2Utils.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Skeleton.h" />
@@ -107,6 +108,7 @@
     <ClCompile Include="BodyRGBViewer.cpp" />
     <ClCompile Include="GestureRecognition.cpp" />
     <ClCompile Include="GR_training.cpp" />
+    <ClCompile Include="K2PCL.cpp" />
     <ClCompile Include="Kinect2Utils.cpp" />
     <ClCompile Include="ROS_TEST.cpp" />
     <ClCompile Include="Skeleton.cpp" />

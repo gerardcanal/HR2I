@@ -113,9 +113,58 @@ extern void testEqualDTWMethods();
 extern void trainDTWParameters();
 extern void showValuesGestTh();
 
+
+#include "K2PCL.h"
+#include <pcl/io/io.h>
+#include <pcl/io/pcd_io.h>
+void
+viewerOneOff(pcl::visualization::PCLVisualizer& viewer)
+{
+	viewer.setBackgroundColor(1.0, 0.5, 1.0);
+}
+void showLivePCtest() {
+	Kinect2Utils k2u;
+	HRESULT hr = k2u.initDefaultKinectSensor(true);
+	k2u.openDepthFrameReader();
+	pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("Simple Cloud Viewer");
+	pclviewer.runOnVisualizationThreadOnce(viewerOneOff);
+	ICoordinateMapper* cmapper = NULL;
+	k2u.getCoordinateMapper(cmapper);
+	while (true) {
+		IDepthFrame* df = k2u.getLastDepthFrameFromDefault();
+		if (df != NULL) {
+			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
+			pcl::PointCloud<pcl::PointXYZRGBA>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGBA>());
+			pcRGBptr->resize(pcPtr->size());
+			pcl::copyPointCloud(*pcPtr, *pcRGBptr);
+			/*for (int i = 0; i < pcPtr->size(); ++i) {
+				pcl::PointXYZRGB auxp(0,0,0);
+				auxp.x = pcPtr->at(i).x;
+				auxp.y = pcPtr->at(i).y;
+				auxp.z = pcPtr->at(i).z;
+				pcRGBptr->at(i) = auxp;
+			}*/
+			pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;
+			pclviewer.showCloud(pcRGBptr);
+			Sleep(50);
+		}
+		SafeRelease(df);
+	}
+}
+
 // MAIN
 int _tmain(int argc, _TCHAR * argv[])
 {
+	/*pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::io::loadPCDFile("C:/Users/Gerard/Dropbox/MAI/3dSemester/TFM/src/HR2I/PCL_Test1/PCL_Test1/pcd/model.pcd", *cloud);
+	pcl::visualization::CloudViewer viewer("Cloud Viewer");
+	//blocks until the cloud is actually rendered
+	viewer.showCloud(cloud);
+	viewer.showCloud(cloud);
+	//while (!viewer.wasStopped()) {} return 512;*/
+
+	showLivePCtest();
+	return 3;
 	/*std::vector<float> l0 = {0,4,0};
 	std::vector<float> l = {1,2,1};
 	std::vector<float> p0 = {1,2,0};
@@ -130,7 +179,7 @@ int _tmain(int argc, _TCHAR * argv[])
 	if (!SUCCEEDED(hr)) return -1;
 
 	hr = k2u.openBodyFrameReader();
-	if (!SUCCEEDED(hr)) return -1;
+	if (!SUCCEEDED(hr)) return -1; 
 
 	BodyRGBViewer view(&k2u);
 	thread iface = view.RunThreaded(RGB_Depth, true, false);
