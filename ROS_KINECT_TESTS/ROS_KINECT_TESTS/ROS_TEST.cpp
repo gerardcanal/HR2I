@@ -129,18 +129,32 @@ void showLivePCtest() {
 		IDepthFrame* df = k2u.getLastDepthFrameFromDefault();
 		if (df != NULL) {
 			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
-			/*pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+
+			// Paint the biggest plane red
+			pcPtr = K2PCL::downSample(pcPtr, 0.05f);
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
 			pcRGBptr->resize(pcPtr->size());
-			//pcl::copyPointCloud(*pcPtr, *pcRGBptr);
-			for (int i = 0; i < pcPtr->size(); ++i) {
-				pcl::PointXYZRGB auxp(0,0,0);
+
+			pcl::PointIndices::Ptr indices = K2PCL::segmentPlane(pcPtr);
+			pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::extractIndices(indices, pcPtr); // pcPtr has the remaining points
+			int i;
+			for (i = 0; i < pcPtr->size(); ++i) {
+				pcl::PointXYZRGB auxp(255, 255, 255);
 				auxp.x = pcPtr->at(i).x;
 				auxp.y = pcPtr->at(i).y;
 				auxp.z = pcPtr->at(i).z;
 				pcRGBptr->at(i) = auxp;
 			}
-			pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;*/
-			pclviewer.showCloud(pcPtr);
+			for (int j = 0; j < plane->size(); ++j, ++i) {
+				pcl::PointXYZRGB auxp(255, 0, 0);
+				auxp.x = plane->at(j).x;
+				auxp.y = plane->at(j).y;
+				auxp.z = plane->at(j).z;
+				pcRGBptr->at(i) = auxp;
+			}
+			pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;
+			// End paint
+			pclviewer.showCloud(pcRGBptr);
 		}
 		SafeRelease(df);
 	}

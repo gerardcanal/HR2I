@@ -44,12 +44,60 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* d
 	return pc;
 }
 
-/*void K2PCL::showPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr m_ptrCloud, pcl::visualization::CloudViewer& viewer) {
-	viewer.showCloud(m_ptrCloud, "cloud"); 
-	int x;
-	std::cin >> x;
-}*/
+pcl::PointIndices::Ptr K2PCL::segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
+	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
+	// Create the segmentation object
+	pcl::SACSegmentation<pcl::PointXYZ> seg;
+	// Optional
+	seg.setOptimizeCoefficients(true);
+	// Mandatory
+	seg.setModelType(pcl::SACMODEL_PLANE);
+	seg.setMethodType(pcl::SAC_RANSAC);
+	//seg.setMaxIterations(1000);
+	seg.setDistanceThreshold(0.01);
 
-/*pcl::visualization::CloudViewer K2PCL::getPCLViewer() {
-	return pcl::visualization::CloudViewer("Simple Cloud Viewer");
-}*/
+	seg.setInputCloud(cloud);
+	seg.segment(*inliers, *coefficients);
+
+	if (inliers->indices.size() == 0)
+	{
+		PCL_ERROR("Could not estimate a planar model for the given dataset.");
+		return inliers;
+	}
+
+	std::cerr << "Model coefficients: " << coefficients->values[0] << " "
+		<< coefficients->values[1] << " "
+		<< coefficients->values[2] << " "
+		<< coefficients->values[3] << std::endl;
+	return inliers;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::extractIndices(pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr extracted(new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::PointCloud<pcl::PointXYZ>::Ptr remaining(new pcl::PointCloud<pcl::PointXYZ>());
+	// Create the filtering object
+	pcl::ExtractIndices<pcl::PointXYZ> extract;
+
+	// Extract the inliers
+	extract.setInputCloud(cloud);
+	extract.setIndices(indices);
+	extract.setNegative(false);
+	extract.filter(*extracted);
+
+	// Remove them from the input cloud
+	extract.setNegative(true);
+	extract.filter(*remaining);
+	cloud.swap(remaining);
+	return extracted;
+}
+
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::downSample(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float leafSize) {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>());
+	pcl::VoxelGrid<pcl::PointXYZ> sor;
+	sor.setInputCloud(cloud);
+	sor.setLeafSize(leafSize, leafSize, leafSize);
+	sor.filter(*cloud_filtered);
+	return cloud_filtered;
+}
