@@ -6,6 +6,7 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include "roswifibot/speed_msg.h" //define the message type Speed for passing it to the wifibot 
+#include <std_srvs/Empty.h> 
 
 // for subscriber handling
 #include <ros/callback_queue.h>
@@ -36,6 +37,8 @@ class Wifibot
   double getSpeedLinear(double speedLeft, double speedRight);
   double getSpeedAngular(double speedLeft, double speedRight);
   void update();
+  bool resetAngleCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp);
+  bool resetOdomCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp);
 
   ros::NodeHandle _nh;
   
@@ -47,6 +50,8 @@ class Wifibot
   ros::Publisher _pubStatus;
   ros::Publisher _pubOdometry;
   ros::Subscriber _subSpeeds;
+  ros::ServiceServer _resetAngle;
+  ros::ServiceServer _resetOdom;
     
   ros::Time _timeCurrent;
   ros::Time _timeLast;

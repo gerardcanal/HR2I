@@ -64,8 +64,8 @@ _odometryRightLast = st.odometryRight;
 
   // Create topics
 
-  _pubOdometry = _nh.advertise<nav_msgs::Odometry>("odom", 2);
-  _pubStatus = _nh.advertise<roswifibot::WStatus>("status", 2);
+  _pubOdometry = _nh.advertise<nav_msgs::Odometry>("odom", 1);
+  _pubStatus = _nh.advertise<roswifibot::WStatus>("status", 1);
  // _subSpeeds = _nh.subscribe("cmd_vel", 1, &Wifibot::velocityCallback, this);
   _subSpeeds = _nh.subscribe("cmd_speed", 1, &Wifibot::speedCallback, this);
   // the speed subcriber
@@ -74,6 +74,10 @@ _odometryRightLast = st.odometryRight;
   ros::Rate sleepThreadSpeed(10);
  
  
+  //Reset services
+  _resetAngle = _nh.advertiseService("reset_angle", &Wifibot::resetAngleCallback, this);
+  _resetOdom = _nh.advertiseService("reset_odom", &Wifibot::resetOdomCallback, this);
+
   ros::Rate r(10);
   
   _timeCurrent = ros::Time::now();
@@ -99,6 +103,18 @@ Wifibot::~Wifibot()
   delete _pDriver;
 }
 
+// Reset odometry
+bool Wifibot::resetAngleCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp) {
+  _position.th = 0.0;
+  return true;
+}
+bool Wifibot::resetOdomCallback(std_srvs::Empty::Request& req, std_srvs::Empty::Response& resp) {
+  _position.th = 0.0;
+  _position.x = 0.0;
+  _position.y = 0.0;
+  return true;
+}
+
 double Wifibot::getSpeedLinear(double left, double right)
 {
   return (right + left) / 2.0;
@@ -117,7 +133,9 @@ void Wifibot::computeOdometry(double left, double right)
   double distance = getSpeedLinear(dleft, dright);
   
   _position.th += getSpeedAngular(dleft, dright);
-  _position.th -= (float)((int)(_position.th / TWOPI)) * TWOPI;
+  //_position.th -= (float)((int)(_position.th / TWOPI)) * TWOPI;
+  _position.th = atan2(sin(_position.th), cos(_position.th));
+
   
   _position.x += distance * cos(_position.th);
   _position.y += distance * sin(_position.th);
