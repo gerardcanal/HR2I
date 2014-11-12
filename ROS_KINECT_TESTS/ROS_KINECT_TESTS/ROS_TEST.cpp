@@ -137,7 +137,7 @@ void showLivePCtest() {
 			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 
 			// Paint the biggest plane red
-			pcPtr = K2PCL::downSample(pcPtr, 0.05f);
+			//pcPtr = K2PCL::downSample(pcPtr, 0.01f);
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
 			pcRGBptr->resize(pcPtr->size());
 
