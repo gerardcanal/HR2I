@@ -55,7 +55,7 @@ pcl::PointIndices::Ptr K2PCL::segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr c
 	seg.setModelType(pcl::SACMODEL_PLANE);
 	seg.setMethodType(pcl::SAC_RANSAC);
 	//seg.setMaxIterations(1000);
-	seg.setDistanceThreshold(0.001);
+	seg.setDistanceThreshold(0.01);
 
 	seg.setInputCloud(cloud);
 	seg.segment(*inliers, *coefficients);

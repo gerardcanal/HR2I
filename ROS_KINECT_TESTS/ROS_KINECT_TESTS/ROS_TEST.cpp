@@ -158,7 +158,7 @@ void showLivePCtest() {
 				auxp.z = plane->at(j).z;
 				pcRGBptr->at(i) = auxp;
 			}
-			pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;
+			//pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;
 			// End paint
 			pclviewer.showCloud(pcRGBptr, "pointCloud");
 		}
