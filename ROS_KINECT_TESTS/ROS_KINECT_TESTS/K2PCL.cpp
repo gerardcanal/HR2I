@@ -1,17 +1,5 @@
 #include "K2PCL.h"
 
-
-/*K2PCL::K2PCL()
-{
-}
-
-
-K2PCL::~K2PCL()
-{
-}
-*/
-
-
 pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* depthFrame, ICoordinateMapper* cMapper) {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pc(new pcl::PointCloud<pcl::PointXYZ>());
 	UINT bsize = 0;
@@ -54,7 +42,7 @@ pcl::PointIndices::Ptr K2PCL::segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr c
 	// Mandatory
 	seg.setModelType(pcl::SACMODEL_PLANE);
 	seg.setMethodType(pcl::SAC_RANSAC);
-	//seg.setMaxIterations(1000);
+	seg.setMaxIterations(1000);
 	seg.setDistanceThreshold(0.01);
 
 	seg.setInputCloud(cloud);

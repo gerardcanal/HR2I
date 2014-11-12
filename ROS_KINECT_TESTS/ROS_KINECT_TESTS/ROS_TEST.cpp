@@ -124,10 +124,6 @@ void showLivePCtest() {
 	k2u.openDepthFrameReader();
 	
 	pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL Viewer");
-	/*pclviewer.addCoordinateSystem(1.0);
-	pclviewer.initCameraParameters();
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pcRGBptr;
-	pclviewer.addPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>()), "pointCloud");*/
 
 	ICoordinateMapper* cmapper = NULL;
 	k2u.getCoordinateMapper(cmapper);
