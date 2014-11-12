@@ -122,7 +122,13 @@ void showLivePCtest() {
 	Kinect2Utils k2u;
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
 	k2u.openDepthFrameReader();
-	pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("Simple Cloud Viewer");
+	
+	pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL Viewer");
+	/*pclviewer.addCoordinateSystem(1.0);
+	pclviewer.initCameraParameters();
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcRGBptr;
+	pclviewer.addPointCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>()), "pointCloud");*/
+
 	ICoordinateMapper* cmapper = NULL;
 	k2u.getCoordinateMapper(cmapper);
 	while (true) {
@@ -154,7 +160,7 @@ void showLivePCtest() {
 			}
 			pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;
 			// End paint
-			pclviewer.showCloud(pcRGBptr);
+			pclviewer.showCloud(pcRGBptr, "pointCloud");
 		}
 		SafeRelease(df);
 	}
