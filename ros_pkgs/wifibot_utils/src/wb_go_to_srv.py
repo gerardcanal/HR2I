@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 ################
 R = 0.07 # Radius (7cm)
 L = 0.30 # Distance between wheels (30cm)
-PIDw = ( 0.1,    #Kp 0.1
+PIDw = ( 0.05,    #Kp 0.1
          0.001,  #Ki 0.02
          0.000   #Kd 0.00
     )
@@ -30,6 +30,7 @@ V = 0.01 # Linear velocity
 verbose = True
 plot = False
 SLEEP_TIME = 0.5 # seconds
+ANGLE_FACTOR = 1#1.42
 
 class WifiBotMoveToService:
     def __init__(self):
@@ -65,6 +66,10 @@ class WifiBotMoveToService:
 
         # Get w by PID
         theta_g = atan2(self._goal.y-odom[0].y, self._goal.x-odom[0].x) # Desired theta
+
+        theta_g *= ANGLE_FACTOR
+        theta_g = atan2(sin(theta_g), cos(theta_g))
+
         e_k = theta_g - odom[1] # Error
         e_k = atan2(sin(e_k), cos(e_k))
 
@@ -77,6 +82,10 @@ class WifiBotMoveToService:
         if (dist <= ERROR_DIST_TH): # We're have arrived at the place and have the correct orientation for the goal
             if self._orient: # We have to orient to the request orientation
                 theta_g = atan2(sin(self._goal.theta), cos(self._goal.theta)) # To force it to be between -pi,pi
+
+                theta_g *= ANGLE_FACTOR
+                theta_g = atan2(sin(theta_g), cos(theta_g))
+
                 e_k = theta_g - odom[1] # Error
                 e_k = atan2(sin(e_k), cos(e_k))
                 self._V = 0 # We don't want to move forward anymore
