@@ -117,6 +117,7 @@ extern void showValuesGestTh();
 #include "K2PCL.h"
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/visualization/cloud_viewer.h>
 
 void showLivePCtest() {
 	Kinect2Utils k2u;

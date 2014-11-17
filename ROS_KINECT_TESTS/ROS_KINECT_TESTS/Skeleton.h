@@ -34,6 +34,7 @@ public:
 	JointOrientation* getJointOrientations();
 	Joint* getJoints();
 	CameraSpacePoint getJointPosition(JointType j);
+	Joint getJoint(JointType j);
 
 	static void gestureToCSV(std::vector<Skeleton> gesture, std::string path);
 	static std::vector<Skeleton> gestureFromCSV(std::string path);

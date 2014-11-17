@@ -77,6 +77,10 @@ CameraSpacePoint Skeleton::getJointPosition(JointType j) {
 	return joints[j].Position;
 }
 
+Joint Skeleton::getJoint(JointType j) {
+	return joints[j];
+}
+
 bool Skeleton::operator==(const Skeleton& b) {
 	bool equal = (leftHs == b.leftHs) && (leftTc == b.leftTc) && (rightHs == b.rightHs) && (rightTc == b.rightTc);
 	equal &= (isTracked == b.isTracked) && (trackingId == b.trackingId);
