@@ -25,6 +25,8 @@ private:
 	static pcl::PointXYZ _pointingPoint;
 	static std::mutex mtx;
 	static bool created;
+	static bool scene_updated;
+	static bool body_updated;
 
 	// Viewer loop callbacks
 	static void initScene(pcl::visualization::PCLVisualizer& viewer);

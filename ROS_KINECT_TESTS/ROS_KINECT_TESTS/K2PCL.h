@@ -16,7 +16,7 @@ class K2PCL
 {
 public:
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr depthFrameToPointCloud(IDepthFrame* depthFrame, ICoordinateMapper* cmapper);
-	static pcl::PointIndices::Ptr segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pc);
+	static pcl::PointIndices::Ptr segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, int max_iter = 150);
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr extractIndices(pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::downSample(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float leafSize);
 

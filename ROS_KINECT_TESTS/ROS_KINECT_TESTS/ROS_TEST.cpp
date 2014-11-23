@@ -117,30 +117,37 @@ extern void showValuesGestTh();
 #include "K2PCL.h"
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/visualization/cloud_viewer.h>
+#include "HR2ISceneViewer.h"
 
 void showLivePCtest() {
 	Kinect2Utils k2u;
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
-	k2u.openDepthFrameReader();
+	k2u.openMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Depth | 
+								   FrameSourceTypes::FrameSourceTypes_Body);
 	
-	pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL Viewer");
+	//pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL Viewer");
+	HR2ISceneViewer viewer("Human MultiRobot Interaction Viewer");
+	viewer.setPointingPoint(pcl::PointXYZ(2, -2, 5));
 
 	ICoordinateMapper* cmapper = NULL;
 	k2u.getCoordinateMapper(cmapper);
 	while (true) {
-		IDepthFrame* df = k2u.getLastDepthFrameFromDefault();
+		IMultiSourceFrame* msf = k2u.getLastMultiSourceFrameFromDefault();
+		if (msf == NULL) continue;
+
+		IDepthFrame* df = k2u.getDepthFrame(msf);
+		IBodyFrame* bodyFrame = k2u.getBodyFrame(msf);
 		if (df != NULL) {
 			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 
 			// Paint the biggest plane red
 			//pcPtr = K2PCL::downSample(pcPtr, 0.01f);
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
-			pcRGBptr->resize(pcPtr->size());
+			/*pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+			pcRGBptr->resize(pcPtr->size());*/
 
 			pcl::PointIndices::Ptr indices = K2PCL::segmentPlane(pcPtr);
 			pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::extractIndices(indices, pcPtr); // pcPtr has the remaining points
-			int i;
+			/*int i;
 			for (i = 0; i < pcPtr->size(); ++i) {
 				pcl::PointXYZRGB auxp(255, 255, 255);
 				auxp.x = pcPtr->at(i).x;
@@ -157,9 +164,18 @@ void showLivePCtest() {
 			}
 			//pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;
 			// End paint
-			pclviewer.showCloud(pcRGBptr, "pointCloud");
+			pclviewer.showCloud(pcRGBptr, "pointCloud");*/
+			viewer.setScene(pcPtr, plane);
 		}
+
+		if (bodyFrame != NULL) {
+			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, 0, true);
+			viewer.setPerson(sk);
+		}
+
+		SafeRelease(bodyFrame);
 		SafeRelease(df);
+		SafeRelease(msf);
 	}
 }
 

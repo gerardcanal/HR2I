@@ -17,10 +17,16 @@ public:
 	HRESULT openBodyFrameReader();
 	HRESULT openColorFrameReader();
 	HRESULT openDepthFrameReader();
+	HRESULT openMultiSourceFrameReader(DWORD types);
 	IBodyFrame* getLastBodyFrameFromDefault();
 	IColorFrame* getLastColorFrameFromDefault();
 	IDepthFrame* getLastDepthFrameFromDefault();
+	IMultiSourceFrame* getLastMultiSourceFrameFromDefault();
 	HRESULT getCoordinateMapper(ICoordinateMapper*&);
+
+	IBodyFrame* getBodyFrame(IMultiSourceFrame* msf);
+	IColorFrame* getColorFrame(IMultiSourceFrame* msf);
+	IDepthFrame* getDepthFrame(IMultiSourceFrame* msf);
 	
 	static Skeleton IBodyToSkeleton(IBody* body);
 	static std::vector<Skeleton> getSkeletonsFromBodyFrame(IBodyFrame* bodyFrame);
@@ -32,5 +38,6 @@ private:
 	IBodyFrameReader* bfReader;
 	IColorFrameReader* cfReader;
 	IDepthFrameReader* dfReader;
+	IMultiSourceFrameReader* msfReader;
 };
 

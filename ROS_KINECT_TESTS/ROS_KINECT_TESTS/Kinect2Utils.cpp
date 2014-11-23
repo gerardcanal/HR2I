@@ -8,6 +8,7 @@ Kinect2Utils::Kinect2Utils()
 	bfReader = NULL;
 	cfReader = NULL;
 	dfReader = NULL;
+	msfReader = NULL;
 }
 
 
@@ -95,6 +96,15 @@ HRESULT Kinect2Utils::openDepthFrameReader() {
 	return S_OK; //Already opened
 }
 
+/// Types = FrameSourceTypes::FrameSourceTypes_Depth | FrameSourceTypes::FrameSourceTypes_Color | FrameSourceTypes::FrameSourceTypes_Body
+HRESULT Kinect2Utils::openMultiSourceFrameReader(DWORD types) {
+	if (!msfReader) { //bfReader is NULL
+		HRESULT hr = default_sensor->OpenMultiSourceFrameReader(types, &msfReader);
+		return hr;
+	}
+	return S_OK; //Already opened
+}
+
 /// <summary> Returns the last body frame. The bfReaer MUST be called before this, or it will return NULL 
 /// WARNING: if the bodyframe returned is not released (SafeRelease) it won't return more bodyframes!!</summary>
 ///
@@ -122,6 +132,15 @@ IDepthFrame* Kinect2Utils::getLastDepthFrameFromDefault() {
 	HRESULT hr = dfReader->AcquireLatestFrame(&depthFrame);
 	if (!SUCCEEDED(hr)) return NULL;
 	return depthFrame;
+}
+
+/// <summary> Returns the last depth frame. The dfReaer MUST be called before this, or it will return NULL </summary>
+IMultiSourceFrame* Kinect2Utils::getLastMultiSourceFrameFromDefault() {
+	if (!msfReader) return NULL;
+	IMultiSourceFrame* msFrame = NULL;
+	HRESULT hr = msfReader->AcquireLatestFrame(&msFrame);
+	if (!SUCCEEDED(hr)) return NULL;
+	return msFrame;
 }
 
 HRESULT Kinect2Utils::getCoordinateMapper(ICoordinateMapper* &cmapper) {
@@ -192,4 +211,32 @@ Skeleton Kinect2Utils::IBodyToSkeleton(IBody* body) {
 	body->GetJoints(_countof(joints), joints);
 
 	return Skeleton(leftHs, rightHs, leftTc, rightTc, isTracked, trackingId, jointOrientations, joints);
+}
+
+
+IBodyFrame* Kinect2Utils::getBodyFrame(IMultiSourceFrame* msf) {
+	IBodyFrameReference* bfRef = NULL;
+	msf->get_BodyFrameReference(&bfRef);
+	IBodyFrame* bf = NULL;
+	HRESULT hr = bfRef->AcquireFrame(&bf);
+	if (!SUCCEEDED(hr)) return NULL;
+	return bf;
+}
+
+IColorFrame* Kinect2Utils::getColorFrame(IMultiSourceFrame* msf) {
+	IColorFrameReference* cfRef = NULL;
+	msf->get_ColorFrameReference(&cfRef);
+	IColorFrame* cf = NULL;
+	HRESULT hr = cfRef->AcquireFrame(&cf);
+	if (!SUCCEEDED(hr)) return NULL;
+	return cf;
+}
+
+IDepthFrame* Kinect2Utils::getDepthFrame(IMultiSourceFrame* msf) {
+	IDepthFrameReference* dfRef = NULL;
+	msf->get_DepthFrameReference(&dfRef);
+	IDepthFrame* df = NULL;
+	HRESULT hr = dfRef->AcquireFrame(&df);
+	if (!SUCCEEDED(hr)) return NULL;
+	return df;
 }
