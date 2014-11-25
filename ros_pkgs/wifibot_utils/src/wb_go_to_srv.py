@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import rospy
+import math
 from wifibot_utils.srv import MoveToService, MoveToServiceResponse
 from roswifibot.msg import speed_msg
 from geometry_msgs.msg import Point
@@ -15,7 +16,7 @@ import matplotlib.pyplot as plt
 R = 0.07 # Radius (7cm)
 L = 0.30 # Distance between wheels (30cm)
 PIDw = ( 0.05,    #Kp 0.1
-         0.001,  #Ki 0.02
+         0.002,  #Ki 0.02
          0.000   #Kd 0.00
     )
 ###############
@@ -24,13 +25,15 @@ PIDw = ( 0.05,    #Kp 0.1
 WB_ODOM_TOPIC = '/wifibot/odom'
 WB_SPEED_TOPIC = '/wifibot/cmd_speed'
 RESET_INFO_SRV = '/wifibot/reset_odom'
-ERROR_THETA_TH = 0.05
+ERROR_THETA_TH = 0.015 #0.025
 ERROR_DIST_TH = 0.035
 V = 0.01 # Linear velocity
 verbose = True
 plot = False
 SLEEP_TIME = 0.5 # seconds
-ANGLE_FACTOR = 1#1.42
+FACTOR_ORIENT = 1.4
+FACTOR_Y = 1.4
+OFFSET_FACTOR_Y_ORIENT = 0.05
 
 class WifiBotMoveToService:
     def __init__(self):
@@ -67,9 +70,6 @@ class WifiBotMoveToService:
         # Get w by PID
         theta_g = atan2(self._goal.y-odom[0].y, self._goal.x-odom[0].x) # Desired theta
 
-        theta_g *= ANGLE_FACTOR
-        theta_g = atan2(sin(theta_g), cos(theta_g))
-
         e_k = theta_g - odom[1] # Error
         e_k = atan2(sin(e_k), cos(e_k))
 
@@ -79,11 +79,11 @@ class WifiBotMoveToService:
 
         #raw_input('Press a key...')
         #if (dist <= ERROR_DIST_TH and abs(e_k) <= ERROR_THETA_TH): # We're have arrived at the place and have the correct orientation for the goal
-        if (dist <= ERROR_DIST_TH): # We're have arrived at the place and have the correct orientation for the goal
+        if (dist <= ERROR_DIST_TH) or self._lastOrient: # We're have arrived at the place and have the correct orientation for the goal
             if self._orient: # We have to orient to the request orientation
+                self._lastOrient = True
                 theta_g = atan2(sin(self._goal.theta), cos(self._goal.theta)) # To force it to be between -pi,pi
-
-                theta_g *= ANGLE_FACTOR
+                theta_g *= FACTOR_ORIENT
                 theta_g = atan2(sin(theta_g), cos(theta_g))
 
                 e_k = theta_g - odom[1] # Error
@@ -133,11 +133,13 @@ class WifiBotMoveToService:
         # Init variables
         self._reached = False
         self._goal = req.pose
+        self._goal.y *= FACTOR_Y + (OFFSET_FACTOR_Y_ORIENT if req.orient else 0.0)
         self._orient = req.orient
         self._old_e = 0.0
         self._E = 0.0
         self._running = True
         self._old_time = rospy.get_time()
+        self._lastOrient = False
         #self._firstCall = True # To indicate this is a new call and save the first odom as point 0
         self._V = V
         if plot:
@@ -160,7 +162,8 @@ class WifiBotMoveToService:
         #     plt.close(1)
         return MoveToServiceResponse(True)
 
-    def uni_to_diff(self, v, w):
+    @staticmethod
+    def uni_to_diff(v, w):
         ''' Converts unicycle velocity to the differential model one '''
         vr = (2*v+w*L)/(2*R)
         vl = (2*v-w*L)/(2*R)
