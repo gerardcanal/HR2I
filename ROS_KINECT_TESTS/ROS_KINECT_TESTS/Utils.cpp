@@ -70,6 +70,12 @@ float Utils::magnitude(float vec[3]) {
 	return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
 }
 
+float Utils::magnitude(std::vector<float> vec) {
+	float mag = 0;
+	for (int i = 0; i < vec.size(); ++i) mag += (vec[i] * vec[i]);
+	return sqrt(mag);
+}
+
 void Utils::printPercentage(int cur, int total) {
 	float perc = 100*((float)cur / total);
 	float prev = 100*((float)(cur - 1) / total);
@@ -125,4 +131,10 @@ std::vector<float> Utils::linePlaneIntersection(std::vector<float> l0, std::vect
 	std::vector<float> point(l0.size());
 	for (int i = 0; i < point.size(); ++i) point[i] = l0[i] + k*l[i];
 	return point;
+}
+
+
+bool Utils::sameDirection(std::vector<float> a, std::vector<float> b, float threshold) {
+	float cosangle = Utils::dotProduct(a, b)/(Utils::magnitude(a)*Utils::magnitude(b));
+	return acos(cosangle) <= threshold;
 }

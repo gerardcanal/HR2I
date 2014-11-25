@@ -32,7 +32,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* d
 	return pc;
 }
 
-pcl::PointIndices::Ptr K2PCL::segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int max_iter) {
+std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> K2PCL::segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int max_iter) {
 	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 	// Create the segmentation object
@@ -51,14 +51,14 @@ pcl::PointIndices::Ptr K2PCL::segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr c
 	if (inliers->indices.size() == 0)
 	{
 		PCL_ERROR("Could not estimate a planar model for the given dataset.");
-		return inliers;
+		return std::make_pair(inliers, coefficients);
 	}
 
 	std::cerr << "Model coefficients: " << coefficients->values[0] << " "
 		<< coefficients->values[1] << " "
 		<< coefficients->values[2] << " "
 		<< coefficients->values[3] << std::endl;
-	return inliers;
+	return std::make_pair(inliers, coefficients);
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::extractIndices(pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
@@ -88,4 +88,22 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::downSample(pcl::PointCloud<pcl::Point
 	sor.setLeafSize(leafSize, leafSize, leafSize);
 	sor.filter(*cloud_filtered);
 	return cloud_filtered;
+}
+
+
+pcl::PointIndices::Ptr K2PCL::segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, std::vector<float> direction, int max_iter) {
+	const float TH = 0.1;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr retPc(new pcl::PointCloud<pcl::PointXYZ>());
+	bool found = false;
+	std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> planeinfo;
+	do {
+		planeinfo = K2PCL::segmentPlane(pc);
+		*retPc += *extractIndices(planeinfo.first, pc); // Add extracted clouds to retPc
+		if (planeinfo.second->values.size() == 0) break;
+		std::vector<float> n_plane(planeinfo.second->values.begin(), planeinfo.second->values.end() - 1);
+		if (Utils::sameDirection(n_plane, direction, TH)) found = true;
+	} while (!found);
+	*retPc += *pc; // Concatenate rest
+	pc.swap(retPc); // Change retPc for pc to make it output parameter
+	return planeinfo.first;
 }

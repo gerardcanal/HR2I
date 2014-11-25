@@ -145,7 +145,10 @@ void showLivePCtest() {
 			/*pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
 			pcRGBptr->resize(pcPtr->size());*/
 
-			pcl::PointIndices::Ptr indices = K2PCL::segmentPlane(pcPtr);
+			/*std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> planeinfo = K2PCL::segmentPlane(pcPtr);
+			pcl::PointIndices::Ptr indices = planeinfo.first;*/
+			pcl::PointIndices::Ptr indices = K2PCL::segmentPlaneByDirection(pcPtr, std::vector<float>({ /*ground*/0.87f, 0.15f, -0.5f /*floor0.004f, -1, 0.07f*/ }));
+			
 			pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::extractIndices(indices, pcPtr); // pcPtr has the remaining points
 			/*int i;
 			for (i = 0; i < pcPtr->size(); ++i) {
@@ -189,7 +192,7 @@ int _tmain(int argc, _TCHAR * argv[])
 	viewer.showCloud(cloud);
 	viewer.showCloud(cloud);
 	//while (!viewer.wasStopped()) {} return 512;*/
-
+	std::cerr << "samedirection: " << Utils::sameDirection(vector<float>({ 0, 1, 0 }), vector<float>({ 0, 5, 0 }), 0.1) << endl;
 	showLivePCtest();
 	return 3;
 	/*std::vector<float> l0 = {0,4,0};

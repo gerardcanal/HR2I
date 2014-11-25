@@ -9,16 +9,20 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
 #include <mutex>
+#include <vector>
+#include <utility>
 
 #include "Kinect2Utils.h"
+
+#define MAX_ITER_DEF 150
 
 class K2PCL
 {
 public:
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr depthFrameToPointCloud(IDepthFrame* depthFrame, ICoordinateMapper* cmapper);
-	static pcl::PointIndices::Ptr segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, int max_iter = 150);
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr extractIndices(pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::downSample(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float leafSize);
-
+	static std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, int max_iter = MAX_ITER_DEF);
+	static pcl::PointIndices::Ptr segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, std::vector<float> direction, int max_iter = MAX_ITER_DEF);
 };
 
