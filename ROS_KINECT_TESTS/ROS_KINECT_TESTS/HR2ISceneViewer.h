@@ -10,14 +10,32 @@
 class HR2ISceneViewer
 {
 public:
-	HR2ISceneViewer(std::string name);
+	HR2ISceneViewer(std::string name, bool pickpoints);
 	~HR2ISceneViewer();
 
 	void setScene(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, pcl::PointCloud<pcl::PointXYZ>::Ptr floor);
 	void setPerson(const Skeleton& skel);
 	void setPointingPoint(const pcl::PointXYZ& point);
+	void unregisterPointPickingCb();
+	void registerPointPickingCb(struct pp_callback_args* cb_args);
+	int getNumPickedPoints();
+	pcl::PointCloud<pcl::PointXYZ>::Ptr getPickedPointsCloud();
+
+	struct pp_callback_args{
+		// structure used to pass arguments to the callback function
+		pcl::PointCloud<pcl::PointXYZ>::Ptr clicked_points_3d;
+		pcl::visualization::PCLVisualizer::Ptr viewerPtr;
+	};
 private:
 	pcl::visualization::CloudViewer _viewer;
+
+	// Point picking
+	boost::signals2::connection pointpicker;
+	static pcl::visualization::PCLVisualizer::Ptr pclvisualizerPtr; // For pointpicking easyness...
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints;
+	static std::mutex ppmtx;
+	static void pp_callback(const pcl::visualization::PointPickingEvent& event, void* args);
+
 	//Show elements
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr _scene;
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr _floor;
@@ -36,5 +54,6 @@ private:
 	static void drawSkeleton(pcl::visualization::PCLVisualizer& viewer, Skeleton& skel);
 	static void drawBone(pcl::visualization::PCLVisualizer& viewer, Joint A, Joint B, const std::string& id);
 	static void removeSkeleton(pcl::visualization::PCLVisualizer& viewer);
+	
 };
 

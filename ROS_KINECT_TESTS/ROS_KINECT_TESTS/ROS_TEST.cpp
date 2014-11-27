@@ -124,13 +124,35 @@ void showLivePCtest() {
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
 	k2u.openMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Depth | 
 								   FrameSourceTypes::FrameSourceTypes_Body);
-	
-	//pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL Viewer");
-	HR2ISceneViewer viewer("Human MultiRobot Interaction Viewer");
-	viewer.setPointingPoint(pcl::PointXYZ(2, -2, 5));
 
 	ICoordinateMapper* cmapper = NULL;
 	k2u.getCoordinateMapper(cmapper);
+	
+	//pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL Viewer");
+	HR2ISceneViewer viewer("Human MultiRobot Interaction Viewer", true);
+
+	{
+		IDepthFrame* df = NULL;
+		while (df == NULL) {
+			IMultiSourceFrame* msf = k2u.getLastMultiSourceFrameFromDefault();
+			if (msf == NULL) continue;
+
+			SafeRelease(df);
+			df = k2u.getDepthFrame(msf);
+		}
+		pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
+		viewer.setScene(pcPtr, pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
+		
+		struct HR2ISceneViewer::pp_callback_args* cb_args;
+		viewer.registerPointPickingCb(cb_args);
+		std::cout << "Shift+click on three floor points, then press 'Q'..." << std::endl;
+		while (viewer.getNumPickedPoints() < 5); // Wait until we have enough points
+		pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints = viewer.getPickedPointsCloud();
+		viewer.unregisterPointPickingCb();
+	}
+
+	viewer.setPointingPoint(pcl::PointXYZ(2, -2, 5));
+	
 	while (true) {
 		IMultiSourceFrame* msf = k2u.getLastMultiSourceFrameFromDefault();
 		if (msf == NULL) continue;
