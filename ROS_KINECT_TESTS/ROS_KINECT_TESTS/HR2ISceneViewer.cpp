@@ -15,6 +15,8 @@ bool HR2ISceneViewer::body_updated = true;
  bool HR2ISceneViewer::_pickpoints;*/
 pcl::visualization::PCLVisualizer::Ptr HR2ISceneViewer::pclvisualizerPtr;
 std::mutex HR2ISceneViewer::ppmtx;
+bool HR2ISceneViewer::finishedPicking = false;
+pcl::PointCloud<pcl::PointXYZ>::Ptr HR2ISceneViewer::pickedPoints = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
 // Methods
 HR2ISceneViewer::HR2ISceneViewer(std::string name, bool pickpoints) : _viewer(name)
@@ -72,6 +74,13 @@ void HR2ISceneViewer::initScene(pcl::visualization::PCLVisualizer& viewer) {
 
 
 void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
+	ppmtx.lock();
+	if (finishedPicking) {
+		viewer.removePointCloud("clicked_points");
+		pickedPoints->clear();
+	}
+	ppmtx.unlock();
+
 	if (scene_updated) {
 		mtx.lock();
 		// Scene
@@ -224,15 +233,12 @@ int HR2ISceneViewer::getNumPickedPoints() {
 
 void HR2ISceneViewer::registerPointPickingCb() {
 	pickedPoints = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
-	//cb_args->clicked_points_3d = pickedPoints;
-	//cb_args->viewerPtr = pcl::visualization::PCLVisualizer::Ptr(pclvisualizerPtr);
 	pointpicker = _viewer.registerPointPickingCallback(&HR2ISceneViewer::pp_callback, (void*)&pickedPoints);
 }
 
 void HR2ISceneViewer::unregisterPointPickingCb() {
 	ppmtx.lock();
-	pclvisualizerPtr->removePointCloud("clicked_points");
-	pickedPoints->clear(); // We won't need it more for the moment.. leave it blank
+	finishedPicking = true;
 	pointpicker.disconnect();
 	ppmtx.unlock();
 }

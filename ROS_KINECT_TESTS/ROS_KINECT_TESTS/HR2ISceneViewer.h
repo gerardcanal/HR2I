@@ -20,19 +20,14 @@ public:
 	void registerPointPickingCb();
 	int getNumPickedPoints();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getPickedPointsCloud();
-
-	/*struct pp_callback_args{
-		// structure used to pass arguments to the callback function
-		pcl::PointCloud<pcl::PointXYZ>::Ptr clicked_points_3d;
-		pcl::visualization::PCLVisualizer::Ptr viewerPtr;
-	};*/
 private:
 	pcl::visualization::CloudViewer _viewer;
 
 	// Point picking
 	boost::signals2::connection pointpicker;
 	static pcl::visualization::PCLVisualizer::Ptr pclvisualizerPtr; // For pointpicking easyness...
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints;
+	static pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints;
+	static bool finishedPicking;
 	static std::mutex ppmtx;
 	static void pp_callback(const pcl::visualization::PointPickingEvent& event, void* args);
 

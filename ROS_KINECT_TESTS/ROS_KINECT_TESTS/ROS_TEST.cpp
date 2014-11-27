@@ -131,7 +131,7 @@ void showLivePCtest() {
 	
 	//pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL Viewer");
 	HR2ISceneViewer viewer("Human MultiRobot Interaction Viewer", true);
-
+	Eigen::VectorXf ground_coeffs;
 	{
 		IDepthFrame* df = NULL;
 		while (df == NULL) {
@@ -140,15 +140,18 @@ void showLivePCtest() {
 
 			SafeRelease(df);
 			df = k2u.getDepthFrame(msf);
+			SafeRelease(msf);
 		}
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
+		SafeRelease(df);
+		
 		viewer.setScene(pcPtr, pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
 		
 		viewer.registerPointPickingCb();
 		std::cout << "Shift+click on three floor points, then press 'Q'..." << std::endl;
-		while (viewer.getNumPickedPoints() < 5); // Wait until we have enough points
+		while (viewer.getNumPickedPoints() < 3); // Wait until we have enough points
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints = viewer.getPickedPointsCloud();
-		Eigen::VectorXf ground_coeffs;
+		
 		ground_coeffs.resize(4);
 		std::vector<int> clicked_points_indices;
 		for (unsigned int i = 0; i < pickedPoints->points.size(); i++)
@@ -178,8 +181,10 @@ void showLivePCtest() {
 
 			/*std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> planeinfo = K2PCL::segmentPlane(pcPtr);
 			pcl::PointIndices::Ptr indices = planeinfo.first;*/
-			pcl::PointIndices::Ptr indices = K2PCL::segmentPlaneByDirection(pcPtr, std::vector<float>({ /*ground*/0.87f, 0.15f, -0.5f /*floor0.004f, -1, 0.07f*/ }));
-			
+			std::vector<float> vec_g_coeffs = {ground_coeffs[0], ground_coeffs[1], ground_coeffs[2] };
+			//pcl::PointIndices::Ptr indices = K2PCL::segmentPlaneByDirection(pcPtr, std::vector<float>({ /*ground*/0.87f, 0.15f, -0.5f /*floor0.004f, -1, 0.07f*/ }));
+			pcl::PointIndices::Ptr indices = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
+
 			pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::extractIndices(indices, pcPtr); // pcPtr has the remaining points
 			/*int i;
 			for (i = 0; i < pcPtr->size(); ++i) {
