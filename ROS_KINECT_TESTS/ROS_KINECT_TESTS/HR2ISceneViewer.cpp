@@ -196,19 +196,20 @@ void HR2ISceneViewer::removeSkeleton(pcl::visualization::PCLVisualizer& viewer) 
 void HR2ISceneViewer::pp_callback(const pcl::visualization::PointPickingEvent& event, void* args)
 {
 	ppmtx.lock();
-	struct HR2ISceneViewer::pp_callback_args* data = (struct HR2ISceneViewer::pp_callback_args *)args;
+	//struct HR2ISceneViewer::pp_callback_args* data = (struct HR2ISceneViewer::pp_callback_args *)args;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr clicked_points_3d = *reinterpret_cast<pcl::PointCloud<pcl::PointXYZ>::Ptr*>(args);
 	if (event.getPointIndex() == -1) {
 		ppmtx.unlock();
 		return;
 	}
 	pcl::PointXYZ current_point;
 	event.getPoint(current_point.x, current_point.y, current_point.z);
-	data->clicked_points_3d->push_back(current_point);
+	clicked_points_3d->push_back(current_point);
 	// Draw clicked points in red:
-	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red(data->clicked_points_3d, 255, 0, 0);
-	data->viewerPtr->removePointCloud("clicked_points");
-	data->viewerPtr->addPointCloud(data->clicked_points_3d, red, "clicked_points");
-	data->viewerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
+	pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> red(clicked_points_3d, 255, 0, 0);
+	pclvisualizerPtr->removePointCloud("clicked_points");
+	pclvisualizerPtr->addPointCloud(clicked_points_3d, red, "clicked_points");
+	pclvisualizerPtr->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 10, "clicked_points");
 	//std::cout << current_point.x << " " << current_point.y << " " << current_point.z << std::endl;
 	ppmtx.unlock();
 }
@@ -221,11 +222,11 @@ int HR2ISceneViewer::getNumPickedPoints() {
 	return s;
 }
 
-void HR2ISceneViewer::registerPointPickingCb(struct pp_callback_args* cb_args) {
+void HR2ISceneViewer::registerPointPickingCb() {
 	pickedPoints = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
-	cb_args->clicked_points_3d = pickedPoints;
-	cb_args->viewerPtr = pcl::visualization::PCLVisualizer::Ptr(pclvisualizerPtr);
-	pointpicker = _viewer.registerPointPickingCallback(&HR2ISceneViewer::pp_callback, (void*)&cb_args);
+	//cb_args->clicked_points_3d = pickedPoints;
+	//cb_args->viewerPtr = pcl::visualization::PCLVisualizer::Ptr(pclvisualizerPtr);
+	pointpicker = _viewer.registerPointPickingCallback(&HR2ISceneViewer::pp_callback, (void*)&pickedPoints);
 }
 
 void HR2ISceneViewer::unregisterPointPickingCb() {

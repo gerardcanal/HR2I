@@ -17,15 +17,15 @@ public:
 	void setPerson(const Skeleton& skel);
 	void setPointingPoint(const pcl::PointXYZ& point);
 	void unregisterPointPickingCb();
-	void registerPointPickingCb(struct pp_callback_args* cb_args);
+	void registerPointPickingCb();
 	int getNumPickedPoints();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getPickedPointsCloud();
 
-	struct pp_callback_args{
+	/*struct pp_callback_args{
 		// structure used to pass arguments to the callback function
 		pcl::PointCloud<pcl::PointXYZ>::Ptr clicked_points_3d;
 		pcl::visualization::PCLVisualizer::Ptr viewerPtr;
-	};
+	};*/
 private:
 	pcl::visualization::CloudViewer _viewer;
 

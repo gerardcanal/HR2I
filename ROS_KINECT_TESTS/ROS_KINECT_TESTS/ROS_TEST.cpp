@@ -117,6 +117,7 @@ extern void showValuesGestTh();
 #include "K2PCL.h"
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/sample_consensus/sac_model_plane.h>
 #include "HR2ISceneViewer.h"
 
 void showLivePCtest() {
@@ -143,11 +144,19 @@ void showLivePCtest() {
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 		viewer.setScene(pcPtr, pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
 		
-		struct HR2ISceneViewer::pp_callback_args* cb_args;
-		viewer.registerPointPickingCb(cb_args);
+		viewer.registerPointPickingCb();
 		std::cout << "Shift+click on three floor points, then press 'Q'..." << std::endl;
 		while (viewer.getNumPickedPoints() < 5); // Wait until we have enough points
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints = viewer.getPickedPointsCloud();
+		Eigen::VectorXf ground_coeffs;
+		ground_coeffs.resize(4);
+		std::vector<int> clicked_points_indices;
+		for (unsigned int i = 0; i < pickedPoints->points.size(); i++)
+			clicked_points_indices.push_back(i);
+		pcl::SampleConsensusModelPlane<pcl::PointXYZ> model_plane(pickedPoints);
+		model_plane.computeModelCoefficients(clicked_points_indices, ground_coeffs);
+		std::cout << "Ground plane: " << ground_coeffs(0) << " " << ground_coeffs(1) << " " << ground_coeffs(2) << " " << ground_coeffs(3) << std::endl;
+
 		viewer.unregisterPointPickingCb();
 	}
 
