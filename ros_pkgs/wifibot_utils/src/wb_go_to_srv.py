@@ -26,13 +26,13 @@ WB_ODOM_TOPIC = '/wifibot/odom'
 WB_SPEED_TOPIC = '/wifibot/cmd_speed'
 RESET_INFO_SRV = '/wifibot/reset_odom'
 ERROR_THETA_TH = 0.015 #0.025
-ERROR_DIST_TH = 0.035
+ERROR_DIST_TH = 0.045
 V = 0.01 # Linear velocity
 verbose = True
 plot = False
 SLEEP_TIME = 0.5 # seconds
 FACTOR_ORIENT = 1.4
-FACTOR_Y = 1.4
+FACTOR_Y = 1.35
 OFFSET_FACTOR_Y_ORIENT = 0.05
 
 class WifiBotMoveToService:
