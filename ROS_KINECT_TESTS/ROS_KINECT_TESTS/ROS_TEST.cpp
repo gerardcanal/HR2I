@@ -134,7 +134,8 @@ void showLivePCtest() {
 	Eigen::VectorXf ground_coeffs;
 	{
 		IDepthFrame* df = NULL;
-		while (df == NULL) {
+		int i = 0;
+		while (df == NULL || i++ < 3) { // Enforce to pick 3 frames so we don't have an empty frame
 			IMultiSourceFrame* msf = k2u.getLastMultiSourceFrameFromDefault();
 			if (msf == NULL) continue;
 
@@ -148,7 +149,7 @@ void showLivePCtest() {
 		viewer.setScene(pcPtr, pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
 		
 		viewer.registerPointPickingCb();
-		std::cout << "Shift+click on three floor points, then press 'Q'..." << std::endl;
+		std::cout << "Shift+click on three floor points (clockwise), then press 'Q'..." << std::endl;
 		while (viewer.getNumPickedPoints() < 3); // Wait until we have enough points
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints = viewer.getPickedPointsCloud();
 		

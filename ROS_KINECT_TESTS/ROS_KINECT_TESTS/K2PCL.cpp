@@ -91,19 +91,22 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::downSample(pcl::PointCloud<pcl::Point
 }
 
 
-pcl::PointIndices::Ptr K2PCL::segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, std::vector<float> direction, int max_iter) {
-	const float TH = 0.1;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr retPc(new pcl::PointCloud<pcl::PointXYZ>());
+pcl::PointIndices::Ptr K2PCL::segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, std::vector<float> direction, const float equal_plane_th, const int max_planes, const int max_iter) {
+	//pcl::PointCloud<pcl::PointXYZ>::Ptr retPc(new pcl::PointCloud<pcl::PointXYZ>());
 	bool found = false;
 	std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> planeinfo;
+	int i_planes = 0;
+	pcl::PointIndices::Ptr retPlaneIndices(new pcl::PointIndices);
 	do {
 		planeinfo = K2PCL::segmentPlane(pc);
-		*retPc += *extractIndices(planeinfo.first, pc); // Add extracted clouds to retPc
+		//*retPc += *extractIndices(planeinfo.first, pc); // Add extracted clouds to retPc
 		if (planeinfo.second->values.size() == 0) break;
 		std::vector<float> n_plane(planeinfo.second->values.begin(), planeinfo.second->values.end() - 1);
-		if (Utils::sameDirection(n_plane, direction, TH)) found = true;
-	} while (!found);
-	*retPc += *pc; // Concatenate rest
-	pc.swap(retPc); // Change retPc for pc to make it output parameter
+		if (Utils::sameDirection(n_plane, direction, equal_plane_th)) 
+			retPlaneIndices->indices.insert(retPlaneIndices->indices.end(), planeinfo.first->indices.begin(), planeinfo.first->indices.end()); ////found = true;
+	} while (!found && (++i_planes < max_planes));
+	///////if (!found) return pcl::PointIndices::Ptr(new pcl::PointIndices);
+	//*retPc += *pc; // Concatenate rest
+	//pc.swap(retPc); // Change retPc for pc to make it output parameter
 	return planeinfo.first;
 }
