@@ -14,7 +14,8 @@ class HR2I_SM(StateMachine):
 
         with self:
             StateMachine.add('WAIT_FOR_GR', WaitForGestureRecognitionState(),
-                             transitions={'succeeded':''}, remapping={'out_ground_point': 'ground_point'}) # FIXME maybe timeout and say somethinga gain
+                             transitions={'hello_recognized':'SAY_HELLO', ''},
+                             remapping={'out_ground_point': 'ground_point'}) # FIXME maybe timeout and say somethinga gain
             StateMachine.add('MOVE_TO_POINTING_PLACE', GoToPositionState())
 
 if __name__ == "__main__":
