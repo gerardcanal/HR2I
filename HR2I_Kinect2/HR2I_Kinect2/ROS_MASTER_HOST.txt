@@ -1,0 +1,3 @@
+# Format is "host:port", like "onix:11411". Default port is 11411 for the rosserial_server_socket node.
+# To run it in the linux host: "rosrun rosserial_server socket_node"
+onix:11411
