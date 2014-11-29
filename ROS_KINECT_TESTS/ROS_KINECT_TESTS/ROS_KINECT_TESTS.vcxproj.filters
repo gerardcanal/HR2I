@@ -31,31 +31,28 @@
     <ClInclude Include="..\ros_lib\WindowsSocket.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="BodyRGBViewer.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-    <ClInclude Include="Kinect2Utils.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="Skeleton.h">
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\BodyRGBViewer.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="Utils.h">
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\GestureRecognition.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="GestureRecognition.h">
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\HR2ISceneViewer.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="SlidingMatrix.h">
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\K2PCL.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="K2PCL.h">
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Skeleton.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="HR2ISceneViewer.h">
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\SlidingMatrix.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Utils.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
   </ItemGroup>
@@ -66,40 +63,37 @@
     <ClCompile Include="..\ros_lib\duration.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="..\ros_lib\time.cpp">
-      <Filter>Archivos de código fuente</Filter>
-    </ClCompile>
     <ClCompile Include="..\ros_lib\WindowsSocket.cpp">
-      <Filter>Archivos de código fuente</Filter>
-    </ClCompile>
-    <ClCompile Include="BodyRGBViewer.cpp">
-      <Filter>Archivos de código fuente</Filter>
-    </ClCompile>
-    <ClCompile Include="Kinect2Utils.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
     <ClCompile Include="ROS_TEST.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="Skeleton.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\BodyRGBViewer.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="Utils.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\GestureRecognition.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="GestureRecognition.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\HR2ISceneViewer.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="SlidingMatrix.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\K2PCL.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="GR_training.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Kinect2Utils.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="K2PCL.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Skeleton.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="HR2ISceneViewer.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\SlidingMatrix.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Utils.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ros_lib\time.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
   </ItemGroup>

@@ -59,6 +59,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <OpenMPSupport>true</OpenMPSupport>
+      <AdditionalIncludeDirectories>../ros_lib;..\..\HR2I_Kinect2\HR2I_Kinect2</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -78,6 +79,7 @@
       <SDLCheck>true</SDLCheck>
       <OpenMPSupport>true</OpenMPSupport>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalIncludeDirectories>../ros_lib;..\..\HR2I_Kinect2\HR2I_Kinect2</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -91,38 +93,36 @@
     <Text Include="ROS_MASTER_HOST.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\BodyRGBViewer.h" />
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\GestureRecognition.h" />
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\HR2ISceneViewer.h" />
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\K2PCL.h" />
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Skeleton.h" />
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\SlidingMatrix.h" />
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Utils.h" />
     <ClInclude Include="..\ros_lib\ros.h" />
     <ClInclude Include="..\ros_lib\WindowsSocket.h" />
-    <ClInclude Include="BodyRGBViewer.h" />
-    <ClInclude Include="GestureRecognition.h" />
-    <ClInclude Include="HR2ISceneViewer.h" />
-    <ClInclude Include="K2PCL.h" />
-    <ClInclude Include="Kinect2Utils.h" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="Skeleton.h" />
-    <ClInclude Include="SlidingMatrix.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="Utils.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\BodyRGBViewer.cpp" />
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\GestureRecognition.cpp" />
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\HR2ISceneViewer.cpp" />
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\K2PCL.cpp" />
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Kinect2Utils.cpp" />
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Skeleton.cpp" />
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\SlidingMatrix.cpp" />
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Utils.cpp" />
     <ClCompile Include="..\ros_lib\duration.cpp" />
     <ClCompile Include="..\ros_lib\time.cpp" />
     <ClCompile Include="..\ros_lib\WindowsSocket.cpp" />
-    <ClCompile Include="BodyRGBViewer.cpp" />
-    <ClCompile Include="GestureRecognition.cpp" />
-    <ClCompile Include="GR_training.cpp" />
-    <ClCompile Include="HR2ISceneViewer.cpp" />
-    <ClCompile Include="K2PCL.cpp" />
-    <ClCompile Include="Kinect2Utils.cpp" />
     <ClCompile Include="ROS_TEST.cpp" />
-    <ClCompile Include="Skeleton.cpp" />
-    <ClCompile Include="SlidingMatrix.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="app.ico" />
