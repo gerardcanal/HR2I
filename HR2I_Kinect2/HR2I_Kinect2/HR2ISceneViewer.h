@@ -6,11 +6,12 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <mutex>
+#include <array>
 #include "Skeleton.h"
 class HR2ISceneViewer
 {
 public:
-	HR2ISceneViewer(std::string name, bool pickpoints);
+	HR2ISceneViewer(std::string name, bool pickpoints, std::array<int, 2> size = { { 500, 500 } }, std::array<int, 2> position = { { 300, 300 } });
 	~HR2ISceneViewer();
 
 	void setScene(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, pcl::PointCloud<pcl::PointXYZ>::Ptr floor);
@@ -22,6 +23,8 @@ public:
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getPickedPointsCloud();
 private:
 	pcl::visualization::CloudViewer _viewer;
+	static std::array<int, 2> size;
+	static std::array<int, 2> position;
 
 	// Point picking
 	boost::signals2::connection pointpicker;

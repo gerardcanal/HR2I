@@ -1208,3 +1208,24 @@ void BodyRGBViewer::previousGestureFrame() {
 	playerControl = -1;
 	mtx.unlock();
 }
+
+
+bool BodyRGBViewer::getWindowSize(int& horizontal, int& vertical)
+{
+	if (m_hWnd == NULL) return false;
+	RECT window;
+	GetWindowRect(m_hWnd, &window);
+	horizontal = window.right;
+	vertical = window.bottom;
+	return true;
+}
+
+bool BodyRGBViewer::getViewPortSize(int& horizontal, int& vertical)
+{
+	if (m_hWnd == NULL) return false;
+	RECT vport;
+	GetWindowRect(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), &vport);
+	horizontal = vport.right;
+	vertical = vport.bottom;
+	return true;
+}

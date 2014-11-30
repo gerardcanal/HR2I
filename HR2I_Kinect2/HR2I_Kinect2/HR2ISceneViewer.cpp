@@ -17,9 +17,11 @@ pcl::visualization::PCLVisualizer::Ptr HR2ISceneViewer::pclvisualizerPtr;
 std::mutex HR2ISceneViewer::ppmtx;
 bool HR2ISceneViewer::finishedPicking = false;
 pcl::PointCloud<pcl::PointXYZ>::Ptr HR2ISceneViewer::pickedPoints = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+std::array<int, 2> HR2ISceneViewer::size;
+std::array<int, 2> HR2ISceneViewer::position;
 
 // Methods
-HR2ISceneViewer::HR2ISceneViewer(std::string name, bool pickpoints) : _viewer(name)
+HR2ISceneViewer::HR2ISceneViewer(std::string name, bool pickpoints, std::array<int, 2> size, std::array<int, 2> position) : _viewer(name)
 {
 	if (created) {
 		std::cerr << "A Scene viewer interface was already created!" << std::endl;
@@ -30,6 +32,8 @@ HR2ISceneViewer::HR2ISceneViewer(std::string name, bool pickpoints) : _viewer(na
 		_viewer.runOnVisualizationThreadOnce(&HR2ISceneViewer::initScene);
 		_viewer.runOnVisualizationThread(&HR2ISceneViewer::updateScene);
 		_pointingPoint = pcl::PointXYZ();
+		this->size = size;
+		this->position = position;
 	}
 }
 
@@ -70,6 +74,8 @@ void HR2ISceneViewer::initScene(pcl::visualization::PCLVisualizer& viewer) {
 	viewer.setCameraPosition(0, 0.2, -1, 0, 0.2, 0, 0, 1, 0);
 	viewer.addSphere(pcl::PointXYZ(0, 0, -4), SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
 	pclvisualizerPtr = pcl::visualization::PCLVisualizer::Ptr(&viewer);
+	viewer.setPosition(position[0], position[1]);
+	viewer.setSize(size[0], size[1]);
 }
 
 

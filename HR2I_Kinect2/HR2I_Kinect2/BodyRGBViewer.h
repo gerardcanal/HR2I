@@ -37,6 +37,8 @@ public:
 	void nextGestureFrame();
 	void previousGestureFrame();
 	void changeMode(int showRGB_Depth, bool showSkel);
+	bool getWindowSize(int& horizontal, int& vertical);
+	bool getViewPortSize(int& horizontal, int& vertical);
 
 	enum sRGB {
 		show_NONE,

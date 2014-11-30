@@ -1,11 +1,13 @@
 #include "HR2I_Kinect.h"
 
-HR2I_Kinect2::HR2I_Kinect2() {
+HR2I_Kinect2::HR2I_Kinect2(BodyRGBViewer* view, HR2ISceneViewer* pcl_viewer) {
 	get_data = true;
+	body_view = view;
+	this->pcl_viewer = pcl_viewer;
 }
 HR2I_Kinect2::~HR2I_Kinect2() {}
 
-void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, BodyRGBViewer* view, GRParameters params) {
+void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, GRParameters params) {
 	bool rightBody = true;
 	gr_mtx.lock();
 	bool _work = get_data;
@@ -15,8 +17,9 @@ void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, BodyRGB
 	while (_work) {
 		IBodyFrame* bodyFrame = k2u->getLastBodyFrameFromDefault();
 		if (bodyFrame) {
-			view->setBodyFrameToDraw(bodyFrame);
 			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, id, first);
+			if (body_view != NULL) body_view->setBodyFrameToDraw(bodyFrame);
+			if (pcl_viewer != NULL) pcl_viewer->setPerson(sk);
 			/// temporal cheat -> Don't use person ID
 			if (sk.getTrackingID() > 0) {
 				gr->addFrame(sk.getDynamicGestureRecognitionFeatures(rightBody), sk.getStaticGestureRecognitionFeatures(rightBody, true));
@@ -41,7 +44,7 @@ void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, BodyRGB
 	}
 }
 
-hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const string& GRParams_path, const vector<vector<vector<float>>>& models, Kinect2Utils& k2u, BodyRGBViewer& view) {
+hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const string& GRParams_path, const vector<vector<vector<float>>>& models, Kinect2Utils& k2u) {
 	const float DESCEND_DIREC_TH = -0.05;
 	GestureRecognition gr;
 	GRParameters params = GestureRecognition::readParameters(GRParams_path);
@@ -49,7 +52,7 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 
 	// Start data getter thread and start gesture recognition from this data
 	get_data = true;
-	thread datagetter(&HR2I_Kinect2::dataGetter, this, &k2u, &gr, &view, params);
+	thread datagetter(&HR2I_Kinect2::dataGetter, this, &k2u, &gr, params);
 	Gesture gest = gr.RecognizeGesture(models, params);
 
 	// Stop data getter thread as we have recognized a gesture
