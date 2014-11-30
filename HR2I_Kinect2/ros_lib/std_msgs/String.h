@@ -12,12 +12,12 @@ namespace std_msgs
   class String : public ros::Msg
   {
     public:
-      char * data;
+      const char* data;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_data = strlen( (const char*) this->data);
+      uint32_t length_data = strlen(this->data);
       memcpy(outbuffer + offset, &length_data, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->data, length_data);

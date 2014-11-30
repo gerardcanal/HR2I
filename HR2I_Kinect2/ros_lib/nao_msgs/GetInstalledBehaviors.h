@@ -46,7 +46,7 @@ static const char GETINSTALLEDBEHAVIORS[] = "nao_msgs/GetInstalledBehaviors";
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < behaviors_length; i++){
-      uint32_t length_behaviorsi = strlen( (const char*) this->behaviors[i]);
+      uint32_t length_behaviorsi = strlen(this->behaviors[i]);
       memcpy(outbuffer + offset, &length_behaviorsi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->behaviors[i], length_behaviorsi);

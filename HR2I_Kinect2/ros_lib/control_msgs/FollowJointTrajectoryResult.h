@@ -13,6 +13,7 @@ namespace control_msgs
   {
     public:
       int32_t error_code;
+      const char* error_string;
       enum { SUCCESSFUL =  0 };
       enum { INVALID_GOAL =  -1 };
       enum { INVALID_JOINTS =  -2 };
@@ -33,6 +34,11 @@ namespace control_msgs
       *(outbuffer + offset + 2) = (u_error_code.base >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (u_error_code.base >> (8 * 3)) & 0xFF;
       offset += sizeof(this->error_code);
+      uint32_t length_error_string = strlen(this->error_string);
+      memcpy(outbuffer + offset, &length_error_string, sizeof(uint32_t));
+      offset += 4;
+      memcpy(outbuffer + offset, this->error_string, length_error_string);
+      offset += length_error_string;
       return offset;
     }
 
@@ -50,11 +56,20 @@ namespace control_msgs
       u_error_code.base |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
       this->error_code = u_error_code.real;
       offset += sizeof(this->error_code);
+      uint32_t length_error_string;
+      memcpy(&length_error_string, (inbuffer + offset), sizeof(uint32_t));
+      offset += 4;
+      for(unsigned int k= offset; k< offset+length_error_string; ++k){
+          inbuffer[k-1]=inbuffer[k];
+      }
+      inbuffer[offset+length_error_string-1]=0;
+      this->error_string = (char *)(inbuffer + offset-1);
+      offset += length_error_string;
      return offset;
     }
 
     const char * getType(){ return "control_msgs/FollowJointTrajectoryResult"; };
-    const char * getMD5(){ return "6243274b5d629dc838814109754410d5"; };
+    const char * getMD5(){ return "493383b18409bfb604b4e26c676401d2"; };
 
   };
 

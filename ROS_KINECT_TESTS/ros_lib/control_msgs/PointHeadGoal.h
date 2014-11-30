@@ -17,7 +17,7 @@ namespace control_msgs
     public:
       geometry_msgs::PointStamped target;
       geometry_msgs::Vector3 pointing_axis;
-      char * pointing_frame;
+      const char* pointing_frame;
       ros::Duration min_duration;
       double max_velocity;
 
@@ -26,7 +26,7 @@ namespace control_msgs
       int offset = 0;
       offset += this->target.serialize(outbuffer + offset);
       offset += this->pointing_axis.serialize(outbuffer + offset);
-      uint32_t length_pointing_frame = strlen( (const char*) this->pointing_frame);
+      uint32_t length_pointing_frame = strlen(this->pointing_frame);
       memcpy(outbuffer + offset, &length_pointing_frame, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->pointing_frame, length_pointing_frame);

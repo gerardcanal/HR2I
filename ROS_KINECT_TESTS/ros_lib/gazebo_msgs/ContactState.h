@@ -14,9 +14,9 @@ namespace gazebo_msgs
   class ContactState : public ros::Msg
   {
     public:
-      char * info;
-      char * collision1_name;
-      char * collision2_name;
+      const char* info;
+      const char* collision1_name;
+      const char* collision2_name;
       uint8_t wrenches_length;
       geometry_msgs::Wrench st_wrenches;
       geometry_msgs::Wrench * wrenches;
@@ -34,17 +34,17 @@ namespace gazebo_msgs
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_info = strlen( (const char*) this->info);
+      uint32_t length_info = strlen(this->info);
       memcpy(outbuffer + offset, &length_info, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->info, length_info);
       offset += length_info;
-      uint32_t length_collision1_name = strlen( (const char*) this->collision1_name);
+      uint32_t length_collision1_name = strlen(this->collision1_name);
       memcpy(outbuffer + offset, &length_collision1_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->collision1_name, length_collision1_name);
       offset += length_collision1_name;
-      uint32_t length_collision2_name = strlen( (const char*) this->collision2_name);
+      uint32_t length_collision2_name = strlen(this->collision2_name);
       memcpy(outbuffer + offset, &length_collision2_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->collision2_name, length_collision2_name);

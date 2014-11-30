@@ -13,7 +13,7 @@ namespace tf2_msgs
   {
     public:
       uint8_t error;
-      char * error_string;
+      const char* error_string;
       enum { NO_ERROR =  0 };
       enum { LOOKUP_ERROR =  1 };
       enum { CONNECTIVITY_ERROR =  2 };
@@ -27,7 +27,7 @@ namespace tf2_msgs
       int offset = 0;
       *(outbuffer + offset + 0) = (this->error >> (8 * 0)) & 0xFF;
       offset += sizeof(this->error);
-      uint32_t length_error_string = strlen( (const char*) this->error_string);
+      uint32_t length_error_string = strlen(this->error_string);
       memcpy(outbuffer + offset, &length_error_string, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->error_string, length_error_string);

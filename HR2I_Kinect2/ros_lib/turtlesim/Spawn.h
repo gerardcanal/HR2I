@@ -16,7 +16,7 @@ static const char SPAWN[] = "turtlesim/Spawn";
       float x;
       float y;
       float theta;
-      char * name;
+      const char* name;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -51,7 +51,7 @@ static const char SPAWN[] = "turtlesim/Spawn";
       *(outbuffer + offset + 2) = (u_theta.base >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (u_theta.base >> (8 * 3)) & 0xFF;
       offset += sizeof(this->theta);
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);
@@ -115,12 +115,12 @@ static const char SPAWN[] = "turtlesim/Spawn";
   class SpawnResponse : public ros::Msg
   {
     public:
-      char * name;
+      const char* name;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);

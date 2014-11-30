@@ -34,12 +34,12 @@ static const char FRAMEGRAPH[] = "tf/FrameGraph";
   class FrameGraphResponse : public ros::Msg
   {
     public:
-      char * dot_graph;
+      const char* dot_graph;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_dot_graph = strlen( (const char*) this->dot_graph);
+      uint32_t length_dot_graph = strlen(this->dot_graph);
       memcpy(outbuffer + offset, &length_dot_graph, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->dot_graph, length_dot_graph);

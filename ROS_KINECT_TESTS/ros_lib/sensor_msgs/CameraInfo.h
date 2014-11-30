@@ -17,7 +17,7 @@ namespace sensor_msgs
       std_msgs::Header header;
       uint32_t height;
       uint32_t width;
-      char * distortion_model;
+      const char* distortion_model;
       uint8_t D_length;
       double st_D;
       double * D;
@@ -42,7 +42,7 @@ namespace sensor_msgs
       *(outbuffer + offset + 2) = (this->width >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (this->width >> (8 * 3)) & 0xFF;
       offset += sizeof(this->width);
-      uint32_t length_distortion_model = strlen( (const char*) this->distortion_model);
+      uint32_t length_distortion_model = strlen(this->distortion_model);
       memcpy(outbuffer + offset, &length_distortion_model, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->distortion_model, length_distortion_model);
@@ -67,7 +67,6 @@ namespace sensor_msgs
       *(outbuffer + offset + 7) = (u_Di.base >> (8 * 7)) & 0xFF;
       offset += sizeof(this->D[i]);
       }
-      unsigned char * K_val = (unsigned char *) this->K;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -84,7 +83,6 @@ namespace sensor_msgs
       *(outbuffer + offset + 7) = (u_Ki.base >> (8 * 7)) & 0xFF;
       offset += sizeof(this->K[i]);
       }
-      unsigned char * R_val = (unsigned char *) this->R;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -101,7 +99,6 @@ namespace sensor_msgs
       *(outbuffer + offset + 7) = (u_Ri.base >> (8 * 7)) & 0xFF;
       offset += sizeof(this->R[i]);
       }
-      unsigned char * P_val = (unsigned char *) this->P;
       for( uint8_t i = 0; i < 12; i++){
       union {
         double real;
@@ -178,7 +175,6 @@ namespace sensor_msgs
       offset += sizeof(this->st_D);
         memcpy( &(this->D[i]), &(this->st_D), sizeof(double));
       }
-      uint8_t * K_val = (uint8_t*) this->K;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -196,7 +192,6 @@ namespace sensor_msgs
       this->K[i] = u_Ki.real;
       offset += sizeof(this->K[i]);
       }
-      uint8_t * R_val = (uint8_t*) this->R;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -214,7 +209,6 @@ namespace sensor_msgs
       this->R[i] = u_Ri.real;
       offset += sizeof(this->R[i]);
       }
-      uint8_t * P_val = (uint8_t*) this->P;
       for( uint8_t i = 0; i < 12; i++){
       union {
         double real;

@@ -19,7 +19,7 @@ namespace visualization_msgs
   {
     public:
       std_msgs::Header header;
-      char * ns;
+      const char* ns;
       int32_t id;
       int32_t type;
       int32_t action;
@@ -34,8 +34,8 @@ namespace visualization_msgs
       uint8_t colors_length;
       std_msgs::ColorRGBA st_colors;
       std_msgs::ColorRGBA * colors;
-      char * text;
-      char * mesh_resource;
+      const char* text;
+      const char* mesh_resource;
       bool mesh_use_embedded_materials;
       enum { ARROW = 0 };
       enum { CUBE = 1 };
@@ -57,7 +57,7 @@ namespace visualization_msgs
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
-      uint32_t length_ns = strlen( (const char*) this->ns);
+      uint32_t length_ns = strlen(this->ns);
       memcpy(outbuffer + offset, &length_ns, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->ns, length_ns);
@@ -126,12 +126,12 @@ namespace visualization_msgs
       for( uint8_t i = 0; i < colors_length; i++){
       offset += this->colors[i].serialize(outbuffer + offset);
       }
-      uint32_t length_text = strlen( (const char*) this->text);
+      uint32_t length_text = strlen(this->text);
       memcpy(outbuffer + offset, &length_text, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->text, length_text);
       offset += length_text;
-      uint32_t length_mesh_resource = strlen( (const char*) this->mesh_resource);
+      uint32_t length_mesh_resource = strlen(this->mesh_resource);
       memcpy(outbuffer + offset, &length_mesh_resource, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->mesh_resource, length_mesh_resource);

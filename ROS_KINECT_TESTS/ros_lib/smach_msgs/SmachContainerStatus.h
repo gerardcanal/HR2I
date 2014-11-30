@@ -14,21 +14,21 @@ namespace smach_msgs
   {
     public:
       std_msgs::Header header;
-      char * path;
+      const char* path;
       uint8_t initial_states_length;
       char* st_initial_states;
       char* * initial_states;
       uint8_t active_states_length;
       char* st_active_states;
       char* * active_states;
-      char * local_data;
-      char * info;
+      const char* local_data;
+      const char* info;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
-      uint32_t length_path = strlen( (const char*) this->path);
+      uint32_t length_path = strlen(this->path);
       memcpy(outbuffer + offset, &length_path, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->path, length_path);
@@ -38,7 +38,7 @@ namespace smach_msgs
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < initial_states_length; i++){
-      uint32_t length_initial_statesi = strlen( (const char*) this->initial_states[i]);
+      uint32_t length_initial_statesi = strlen(this->initial_states[i]);
       memcpy(outbuffer + offset, &length_initial_statesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->initial_states[i], length_initial_statesi);
@@ -49,18 +49,18 @@ namespace smach_msgs
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < active_states_length; i++){
-      uint32_t length_active_statesi = strlen( (const char*) this->active_states[i]);
+      uint32_t length_active_statesi = strlen(this->active_states[i]);
       memcpy(outbuffer + offset, &length_active_statesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->active_states[i], length_active_statesi);
       offset += length_active_statesi;
       }
-      uint32_t length_local_data = strlen( (const char*) this->local_data);
+      uint32_t length_local_data = strlen(this->local_data);
       memcpy(outbuffer + offset, &length_local_data, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->local_data, length_local_data);
       offset += length_local_data;
-      uint32_t length_info = strlen( (const char*) this->info);
+      uint32_t length_info = strlen(this->info);
       memcpy(outbuffer + offset, &length_info, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->info, length_info);

@@ -17,6 +17,7 @@ public:
 						TrackingConfidence leftTC, TrackingConfidence rightTC,
 						BOOLEAN isTracked, UINT64 id,
 						JointOrientation jOrient[], Joint joints[]);
+	//Skeleton(const Skeleton &s);
 	Skeleton();
 	~Skeleton();
 
@@ -29,7 +30,7 @@ public:
 	//Getters
 	std::array<HandState, 2> getHandState();
 	std::array<TrackingConfidence, 2> getHandTrackingConfidence();
-	BOOLEAN getIsTracked();
+	bool getIsTracked();
 	UINT64 getTrackingID();
 	JointOrientation* getJointOrientations();
 	Joint* getJoints();
@@ -54,7 +55,7 @@ private:
 	// Info about the body
 	TrackingConfidence	leftTc, rightTc;
 	HandState			leftHs, rightHs;
-	BOOLEAN				isTracked;
+	bool				isTracked;
 	UINT64				trackingId;
 	JointOrientation	jointOrientations[JointType_Count];
 	Joint				joints[JointType_Count];

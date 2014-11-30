@@ -12,18 +12,18 @@ namespace diagnostic_msgs
   class KeyValue : public ros::Msg
   {
     public:
-      char * key;
-      char * value;
+      const char* key;
+      const char* value;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_key = strlen( (const char*) this->key);
+      uint32_t length_key = strlen(this->key);
       memcpy(outbuffer + offset, &length_key, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->key, length_key);
       offset += length_key;
-      uint32_t length_value = strlen( (const char*) this->value);
+      uint32_t length_value = strlen(this->value);
       memcpy(outbuffer + offset, &length_value, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->value, length_value);

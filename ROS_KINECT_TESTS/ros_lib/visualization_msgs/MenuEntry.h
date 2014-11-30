@@ -14,8 +14,8 @@ namespace visualization_msgs
     public:
       uint32_t id;
       uint32_t parent_id;
-      char * title;
-      char * command;
+      const char* title;
+      const char* command;
       uint8_t command_type;
       enum { FEEDBACK = 0 };
       enum { ROSRUN = 1 };
@@ -34,12 +34,12 @@ namespace visualization_msgs
       *(outbuffer + offset + 2) = (this->parent_id >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (this->parent_id >> (8 * 3)) & 0xFF;
       offset += sizeof(this->parent_id);
-      uint32_t length_title = strlen( (const char*) this->title);
+      uint32_t length_title = strlen(this->title);
       memcpy(outbuffer + offset, &length_title, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->title, length_title);
       offset += length_title;
-      uint32_t length_command = strlen( (const char*) this->command);
+      uint32_t length_command = strlen(this->command);
       memcpy(outbuffer + offset, &length_command, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->command, length_command);

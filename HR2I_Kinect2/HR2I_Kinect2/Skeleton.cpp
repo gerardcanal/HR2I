@@ -17,8 +17,21 @@ Skeleton::Skeleton() {
 	trackingId = 0;
 }
 
+/*Skeleton::Skeleton(const Skeleton& s) {
+	setHandState(s.leftHs, s.rightHs);
+	setHandTrackingConfidence(s.leftTc, s.rightTc);
+	setTracking(s.isTracked, s.trackingId);
+	for (int i = 0; i < _countof(jointOrientations); ++i) {
+		jointOrientations[i] = s.jointOrientations[i];
+		joints[i] = s.joints[i];
+	}
+}*/
+
 Skeleton::~Skeleton()
 {
+	/*delete[] joints;
+	delete[] jointOrientations;
+	int x; std::cout << "THIS IS THE SKELETON DESTROYER!!!" << std::endl;*/
 }
 
 
@@ -57,7 +70,7 @@ std::array<TrackingConfidence, 2> Skeleton::getHandTrackingConfidence(){
 	return ret;
 }
 
-BOOLEAN Skeleton::getIsTracked() {
+bool Skeleton::getIsTracked() {
 	return isTracked;
 }
 
@@ -101,7 +114,7 @@ bool Skeleton::operator==(const Skeleton& b) {
 
 std::ostream& operator<<(std::ostream& os, const Skeleton& sk) {
 	os << sk.leftHs << ", " << sk.leftTc << ", " << sk.rightHs << ", " << sk.rightTc << ", ";
-	os << (bool)sk.isTracked << ", " << sk.trackingId << ", ";
+	os << sk.isTracked << ", " << sk.trackingId << ", ";
 	
 	os << std::setprecision(std::numeric_limits<float>::max_digits10); // Set max precision
 	//Joints

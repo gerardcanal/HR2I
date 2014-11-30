@@ -16,7 +16,7 @@ namespace nav_msgs
   {
     public:
       std_msgs::Header header;
-      char * child_frame_id;
+      const char* child_frame_id;
       geometry_msgs::PoseWithCovariance pose;
       geometry_msgs::TwistWithCovariance twist;
 
@@ -24,7 +24,7 @@ namespace nav_msgs
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
-      uint32_t length_child_frame_id = strlen( (const char*) this->child_frame_id);
+      uint32_t length_child_frame_id = strlen(this->child_frame_id);
       memcpy(outbuffer + offset, &length_child_frame_id, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->child_frame_id, length_child_frame_id);

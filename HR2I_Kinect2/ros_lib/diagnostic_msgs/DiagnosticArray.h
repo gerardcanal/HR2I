@@ -50,7 +50,7 @@ namespace diagnostic_msgs
     }
 
     const char * getType(){ return "diagnostic_msgs/DiagnosticArray"; };
-    const char * getMD5(){ return "3cfbeff055e708a24c3d946a5c8139cd"; };
+    const char * getMD5(){ return "60810da900de1dd6ddd437c3503511da"; };
 
   };
 

@@ -38,7 +38,7 @@ namespace control_msgs
     }
 
     const char * getType(){ return "control_msgs/FollowJointTrajectoryAction"; };
-    const char * getMD5(){ return "a187484b9b42d27963c3e43098e345c9"; };
+    const char * getMD5(){ return "bc4f9b743838566551c0390c65f1a248"; };
 
   };
 

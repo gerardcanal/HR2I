@@ -16,7 +16,7 @@ namespace sensor_msgs
       std_msgs::Header header;
       uint32_t height;
       uint32_t width;
-      char * encoding;
+      const char* encoding;
       uint8_t is_bigendian;
       uint32_t step;
       uint8_t data_length;
@@ -37,7 +37,7 @@ namespace sensor_msgs
       *(outbuffer + offset + 2) = (this->width >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (this->width >> (8 * 3)) & 0xFF;
       offset += sizeof(this->width);
-      uint32_t length_encoding = strlen( (const char*) this->encoding);
+      uint32_t length_encoding = strlen(this->encoding);
       memcpy(outbuffer + offset, &length_encoding, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->encoding, length_encoding);

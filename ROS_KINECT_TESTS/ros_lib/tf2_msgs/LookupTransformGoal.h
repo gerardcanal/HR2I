@@ -14,23 +14,23 @@ namespace tf2_msgs
   class LookupTransformGoal : public ros::Msg
   {
     public:
-      char * target_frame;
-      char * source_frame;
+      const char* target_frame;
+      const char* source_frame;
       ros::Time source_time;
       ros::Duration timeout;
       ros::Time target_time;
-      char * fixed_frame;
+      const char* fixed_frame;
       bool advanced;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_target_frame = strlen( (const char*) this->target_frame);
+      uint32_t length_target_frame = strlen(this->target_frame);
       memcpy(outbuffer + offset, &length_target_frame, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->target_frame, length_target_frame);
       offset += length_target_frame;
-      uint32_t length_source_frame = strlen( (const char*) this->source_frame);
+      uint32_t length_source_frame = strlen(this->source_frame);
       memcpy(outbuffer + offset, &length_source_frame, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->source_frame, length_source_frame);
@@ -65,7 +65,7 @@ namespace tf2_msgs
       *(outbuffer + offset + 2) = (this->target_time.nsec >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (this->target_time.nsec >> (8 * 3)) & 0xFF;
       offset += sizeof(this->target_time.nsec);
-      uint32_t length_fixed_frame = strlen( (const char*) this->fixed_frame);
+      uint32_t length_fixed_frame = strlen(this->fixed_frame);
       memcpy(outbuffer + offset, &length_fixed_frame, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->fixed_frame, length_fixed_frame);

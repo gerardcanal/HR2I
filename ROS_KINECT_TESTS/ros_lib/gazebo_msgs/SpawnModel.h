@@ -14,32 +14,32 @@ static const char SPAWNMODEL[] = "gazebo_msgs/SpawnModel";
   class SpawnModelRequest : public ros::Msg
   {
     public:
-      char * model_name;
-      char * model_xml;
-      char * robot_namespace;
+      const char* model_name;
+      const char* model_xml;
+      const char* robot_namespace;
       geometry_msgs::Pose initial_pose;
-      char * reference_frame;
+      const char* reference_frame;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_model_name = strlen( (const char*) this->model_name);
+      uint32_t length_model_name = strlen(this->model_name);
       memcpy(outbuffer + offset, &length_model_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->model_name, length_model_name);
       offset += length_model_name;
-      uint32_t length_model_xml = strlen( (const char*) this->model_xml);
+      uint32_t length_model_xml = strlen(this->model_xml);
       memcpy(outbuffer + offset, &length_model_xml, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->model_xml, length_model_xml);
       offset += length_model_xml;
-      uint32_t length_robot_namespace = strlen( (const char*) this->robot_namespace);
+      uint32_t length_robot_namespace = strlen(this->robot_namespace);
       memcpy(outbuffer + offset, &length_robot_namespace, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->robot_namespace, length_robot_namespace);
       offset += length_robot_namespace;
       offset += this->initial_pose.serialize(outbuffer + offset);
-      uint32_t length_reference_frame = strlen( (const char*) this->reference_frame);
+      uint32_t length_reference_frame = strlen(this->reference_frame);
       memcpy(outbuffer + offset, &length_reference_frame, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->reference_frame, length_reference_frame);
@@ -99,7 +99,7 @@ static const char SPAWNMODEL[] = "gazebo_msgs/SpawnModel";
   {
     public:
       bool success;
-      char * status_message;
+      const char* status_message;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -111,7 +111,7 @@ static const char SPAWNMODEL[] = "gazebo_msgs/SpawnModel";
       u_success.real = this->success;
       *(outbuffer + offset + 0) = (u_success.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->success);
-      uint32_t length_status_message = strlen( (const char*) this->status_message);
+      uint32_t length_status_message = strlen(this->status_message);
       memcpy(outbuffer + offset, &length_status_message, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->status_message, length_status_message);

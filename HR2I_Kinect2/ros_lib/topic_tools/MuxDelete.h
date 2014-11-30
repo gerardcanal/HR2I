@@ -13,12 +13,12 @@ static const char MUXDELETE[] = "topic_tools/MuxDelete";
   class MuxDeleteRequest : public ros::Msg
   {
     public:
-      char * topic;
+      const char* topic;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_topic = strlen( (const char*) this->topic);
+      uint32_t length_topic = strlen(this->topic);
       memcpy(outbuffer + offset, &length_topic, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->topic, length_topic);

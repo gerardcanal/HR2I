@@ -166,10 +166,9 @@ std::vector<Skeleton> Kinect2Utils::getSkeletonsFromBodyFrame(IBodyFrame* bodyFr
 				if (tracked) {
 					Skeleton auxSkel = Kinect2Utils::IBodyToSkeleton(body);
 					skeletons.push_back(auxSkel);
-					/*std::array<HandState, 2> hands = auxSkel.getHandState();
-					std::cout << "\t Left hand state is " << hands[0] << " and Right hand state is " << hands[1] << std::endl;*/
 				}
 			}
+			SafeRelease(body);
 		}
 	}
 

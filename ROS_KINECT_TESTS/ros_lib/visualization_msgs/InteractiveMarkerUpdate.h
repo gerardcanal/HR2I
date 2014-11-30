@@ -14,7 +14,7 @@ namespace visualization_msgs
   class InteractiveMarkerUpdate : public ros::Msg
   {
     public:
-      char * server_id;
+      const char* server_id;
       uint64_t seq_num;
       uint8_t type;
       uint8_t markers_length;
@@ -32,7 +32,7 @@ namespace visualization_msgs
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_server_id = strlen( (const char*) this->server_id);
+      uint32_t length_server_id = strlen(this->server_id);
       memcpy(outbuffer + offset, &length_server_id, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->server_id, length_server_id);
@@ -68,7 +68,7 @@ namespace visualization_msgs
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < erases_length; i++){
-      uint32_t length_erasesi = strlen( (const char*) this->erases[i]);
+      uint32_t length_erasesi = strlen(this->erases[i]);
       memcpy(outbuffer + offset, &length_erasesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->erases[i], length_erasesi);

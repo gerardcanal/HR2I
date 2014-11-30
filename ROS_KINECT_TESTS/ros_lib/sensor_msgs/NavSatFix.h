@@ -73,7 +73,6 @@ namespace sensor_msgs
       *(outbuffer + offset + 6) = (u_altitude.base >> (8 * 6)) & 0xFF;
       *(outbuffer + offset + 7) = (u_altitude.base >> (8 * 7)) & 0xFF;
       offset += sizeof(this->altitude);
-      unsigned char * position_covariance_val = (unsigned char *) this->position_covariance;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -145,7 +144,6 @@ namespace sensor_msgs
       u_altitude.base |= ((uint64_t) (*(inbuffer + offset + 7))) << (8 * 7);
       this->altitude = u_altitude.real;
       offset += sizeof(this->altitude);
-      uint8_t * position_covariance_val = (uint8_t*) this->position_covariance;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;

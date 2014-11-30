@@ -13,12 +13,12 @@ static const char BODYREQUEST[] = "gazebo_msgs/BodyRequest";
   class BodyRequestRequest : public ros::Msg
   {
     public:
-      char * body_name;
+      const char* body_name;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_body_name = strlen( (const char*) this->body_name);
+      uint32_t length_body_name = strlen(this->body_name);
       memcpy(outbuffer + offset, &length_body_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->body_name, length_body_name);

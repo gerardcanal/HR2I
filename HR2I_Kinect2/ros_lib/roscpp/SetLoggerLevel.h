@@ -13,18 +13,18 @@ static const char SETLOGGERLEVEL[] = "roscpp/SetLoggerLevel";
   class SetLoggerLevelRequest : public ros::Msg
   {
     public:
-      char * logger;
-      char * level;
+      const char* logger;
+      const char* level;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_logger = strlen( (const char*) this->logger);
+      uint32_t length_logger = strlen(this->logger);
       memcpy(outbuffer + offset, &length_logger, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->logger, length_logger);
       offset += length_logger;
-      uint32_t length_level = strlen( (const char*) this->level);
+      uint32_t length_level = strlen(this->level);
       memcpy(outbuffer + offset, &length_level, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->level, length_level);

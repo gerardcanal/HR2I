@@ -16,9 +16,9 @@ namespace visualization_msgs
   {
     public:
       std_msgs::Header header;
-      char * client_id;
-      char * marker_name;
-      char * control_name;
+      const char* client_id;
+      const char* marker_name;
+      const char* control_name;
       uint8_t event_type;
       geometry_msgs::Pose pose;
       uint32_t menu_entry_id;
@@ -35,17 +35,17 @@ namespace visualization_msgs
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
-      uint32_t length_client_id = strlen( (const char*) this->client_id);
+      uint32_t length_client_id = strlen(this->client_id);
       memcpy(outbuffer + offset, &length_client_id, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->client_id, length_client_id);
       offset += length_client_id;
-      uint32_t length_marker_name = strlen( (const char*) this->marker_name);
+      uint32_t length_marker_name = strlen(this->marker_name);
       memcpy(outbuffer + offset, &length_marker_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->marker_name, length_marker_name);
       offset += length_marker_name;
-      uint32_t length_control_name = strlen( (const char*) this->control_name);
+      uint32_t length_control_name = strlen(this->control_name);
       memcpy(outbuffer + offset, &length_control_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->control_name, length_control_name);

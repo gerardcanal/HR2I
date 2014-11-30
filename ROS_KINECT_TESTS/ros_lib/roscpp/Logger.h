@@ -12,18 +12,18 @@ namespace roscpp
   class Logger : public ros::Msg
   {
     public:
-      char * name;
-      char * level;
+      const char* name;
+      const char* level;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);
       offset += length_name;
-      uint32_t length_level = strlen( (const char*) this->level);
+      uint32_t length_level = strlen(this->level);
       memcpy(outbuffer + offset, &length_level, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->level, length_level);

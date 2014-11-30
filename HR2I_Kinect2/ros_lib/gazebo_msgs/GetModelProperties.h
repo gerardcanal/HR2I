@@ -13,12 +13,12 @@ static const char GETMODELPROPERTIES[] = "gazebo_msgs/GetModelProperties";
   class GetModelPropertiesRequest : public ros::Msg
   {
     public:
-      char * model_name;
+      const char* model_name;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_model_name = strlen( (const char*) this->model_name);
+      uint32_t length_model_name = strlen(this->model_name);
       memcpy(outbuffer + offset, &length_model_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->model_name, length_model_name);
@@ -49,8 +49,8 @@ static const char GETMODELPROPERTIES[] = "gazebo_msgs/GetModelProperties";
   class GetModelPropertiesResponse : public ros::Msg
   {
     public:
-      char * parent_model_name;
-      char * canonical_body_name;
+      const char* parent_model_name;
+      const char* canonical_body_name;
       uint8_t body_names_length;
       char* st_body_names;
       char* * body_names;
@@ -65,17 +65,17 @@ static const char GETMODELPROPERTIES[] = "gazebo_msgs/GetModelProperties";
       char* * child_model_names;
       bool is_static;
       bool success;
-      char * status_message;
+      const char* status_message;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_parent_model_name = strlen( (const char*) this->parent_model_name);
+      uint32_t length_parent_model_name = strlen(this->parent_model_name);
       memcpy(outbuffer + offset, &length_parent_model_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->parent_model_name, length_parent_model_name);
       offset += length_parent_model_name;
-      uint32_t length_canonical_body_name = strlen( (const char*) this->canonical_body_name);
+      uint32_t length_canonical_body_name = strlen(this->canonical_body_name);
       memcpy(outbuffer + offset, &length_canonical_body_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->canonical_body_name, length_canonical_body_name);
@@ -85,7 +85,7 @@ static const char GETMODELPROPERTIES[] = "gazebo_msgs/GetModelProperties";
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < body_names_length; i++){
-      uint32_t length_body_namesi = strlen( (const char*) this->body_names[i]);
+      uint32_t length_body_namesi = strlen(this->body_names[i]);
       memcpy(outbuffer + offset, &length_body_namesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->body_names[i], length_body_namesi);
@@ -96,7 +96,7 @@ static const char GETMODELPROPERTIES[] = "gazebo_msgs/GetModelProperties";
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < geom_names_length; i++){
-      uint32_t length_geom_namesi = strlen( (const char*) this->geom_names[i]);
+      uint32_t length_geom_namesi = strlen(this->geom_names[i]);
       memcpy(outbuffer + offset, &length_geom_namesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->geom_names[i], length_geom_namesi);
@@ -107,7 +107,7 @@ static const char GETMODELPROPERTIES[] = "gazebo_msgs/GetModelProperties";
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < joint_names_length; i++){
-      uint32_t length_joint_namesi = strlen( (const char*) this->joint_names[i]);
+      uint32_t length_joint_namesi = strlen(this->joint_names[i]);
       memcpy(outbuffer + offset, &length_joint_namesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->joint_names[i], length_joint_namesi);
@@ -118,7 +118,7 @@ static const char GETMODELPROPERTIES[] = "gazebo_msgs/GetModelProperties";
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < child_model_names_length; i++){
-      uint32_t length_child_model_namesi = strlen( (const char*) this->child_model_names[i]);
+      uint32_t length_child_model_namesi = strlen(this->child_model_names[i]);
       memcpy(outbuffer + offset, &length_child_model_namesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->child_model_names[i], length_child_model_namesi);
@@ -138,7 +138,7 @@ static const char GETMODELPROPERTIES[] = "gazebo_msgs/GetModelProperties";
       u_success.real = this->success;
       *(outbuffer + offset + 0) = (u_success.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->success);
-      uint32_t length_status_message = strlen( (const char*) this->status_message);
+      uint32_t length_status_message = strlen(this->status_message);
       memcpy(outbuffer + offset, &length_status_message, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->status_message, length_status_message);

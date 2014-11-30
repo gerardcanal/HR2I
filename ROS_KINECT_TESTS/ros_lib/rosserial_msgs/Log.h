@@ -13,7 +13,7 @@ namespace rosserial_msgs
   {
     public:
       uint8_t level;
-      char * msg;
+      const char* msg;
       enum { ROSDEBUG = 0 };
       enum { INFO = 1 };
       enum { WARN = 2 };
@@ -25,7 +25,7 @@ namespace rosserial_msgs
       int offset = 0;
       *(outbuffer + offset + 0) = (this->level >> (8 * 0)) & 0xFF;
       offset += sizeof(this->level);
-      uint32_t length_msg = strlen( (const char*) this->msg);
+      uint32_t length_msg = strlen(this->msg);
       memcpy(outbuffer + offset, &length_msg, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->msg, length_msg);

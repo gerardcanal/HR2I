@@ -12,7 +12,7 @@ namespace sensor_msgs
   class PointField : public ros::Msg
   {
     public:
-      char * name;
+      const char* name;
       uint32_t offset;
       uint8_t datatype;
       uint32_t count;
@@ -28,7 +28,7 @@ namespace sensor_msgs
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);

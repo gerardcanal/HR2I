@@ -15,7 +15,7 @@ namespace std_msgs
     public:
       uint32_t seq;
       ros::Time stamp;
-      char * frame_id;
+      const char* frame_id;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -35,7 +35,7 @@ namespace std_msgs
       *(outbuffer + offset + 2) = (this->stamp.nsec >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (this->stamp.nsec >> (8 * 3)) & 0xFF;
       offset += sizeof(this->stamp.nsec);
-      uint32_t length_frame_id = strlen( (const char*) this->frame_id);
+      uint32_t length_frame_id = strlen(this->frame_id);
       memcpy(outbuffer + offset, &length_frame_id, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->frame_id, length_frame_id);

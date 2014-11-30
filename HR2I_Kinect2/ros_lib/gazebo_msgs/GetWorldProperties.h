@@ -40,7 +40,7 @@ static const char GETWORLDPROPERTIES[] = "gazebo_msgs/GetWorldProperties";
       char* * model_names;
       bool rendering_enabled;
       bool success;
-      char * status_message;
+      const char* status_message;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -64,7 +64,7 @@ static const char GETWORLDPROPERTIES[] = "gazebo_msgs/GetWorldProperties";
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < model_names_length; i++){
-      uint32_t length_model_namesi = strlen( (const char*) this->model_names[i]);
+      uint32_t length_model_namesi = strlen(this->model_names[i]);
       memcpy(outbuffer + offset, &length_model_namesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->model_names[i], length_model_namesi);
@@ -84,7 +84,7 @@ static const char GETWORLDPROPERTIES[] = "gazebo_msgs/GetWorldProperties";
       u_success.real = this->success;
       *(outbuffer + offset + 0) = (u_success.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->success);
-      uint32_t length_status_message = strlen( (const char*) this->status_message);
+      uint32_t length_status_message = strlen(this->status_message);
       memcpy(outbuffer + offset, &length_status_message, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->status_message, length_status_message);

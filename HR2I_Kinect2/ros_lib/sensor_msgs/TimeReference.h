@@ -16,7 +16,7 @@ namespace sensor_msgs
     public:
       std_msgs::Header header;
       ros::Time time_ref;
-      char * source;
+      const char* source;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -32,7 +32,7 @@ namespace sensor_msgs
       *(outbuffer + offset + 2) = (this->time_ref.nsec >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (this->time_ref.nsec >> (8 * 3)) & 0xFF;
       offset += sizeof(this->time_ref.nsec);
-      uint32_t length_source = strlen( (const char*) this->source);
+      uint32_t length_source = strlen(this->source);
       memcpy(outbuffer + offset, &length_source, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->source, length_source);

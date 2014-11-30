@@ -17,7 +17,6 @@ namespace shape_msgs
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      unsigned char * coef_val = (unsigned char *) this->coef;
       for( uint8_t i = 0; i < 4; i++){
       union {
         double real;
@@ -40,7 +39,6 @@ namespace shape_msgs
     virtual int deserialize(unsigned char *inbuffer)
     {
       int offset = 0;
-      uint8_t * coef_val = (uint8_t*) this->coef;
       for( uint8_t i = 0; i < 4; i++){
       union {
         double real;

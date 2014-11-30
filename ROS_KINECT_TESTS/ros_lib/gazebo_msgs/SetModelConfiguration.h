@@ -13,8 +13,8 @@ static const char SETMODELCONFIGURATION[] = "gazebo_msgs/SetModelConfiguration";
   class SetModelConfigurationRequest : public ros::Msg
   {
     public:
-      char * model_name;
-      char * urdf_param_name;
+      const char* model_name;
+      const char* urdf_param_name;
       uint8_t joint_names_length;
       char* st_joint_names;
       char* * joint_names;
@@ -25,12 +25,12 @@ static const char SETMODELCONFIGURATION[] = "gazebo_msgs/SetModelConfiguration";
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_model_name = strlen( (const char*) this->model_name);
+      uint32_t length_model_name = strlen(this->model_name);
       memcpy(outbuffer + offset, &length_model_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->model_name, length_model_name);
       offset += length_model_name;
-      uint32_t length_urdf_param_name = strlen( (const char*) this->urdf_param_name);
+      uint32_t length_urdf_param_name = strlen(this->urdf_param_name);
       memcpy(outbuffer + offset, &length_urdf_param_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->urdf_param_name, length_urdf_param_name);
@@ -40,7 +40,7 @@ static const char SETMODELCONFIGURATION[] = "gazebo_msgs/SetModelConfiguration";
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < joint_names_length; i++){
-      uint32_t length_joint_namesi = strlen( (const char*) this->joint_names[i]);
+      uint32_t length_joint_namesi = strlen(this->joint_names[i]);
       memcpy(outbuffer + offset, &length_joint_namesi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->joint_names[i], length_joint_namesi);
@@ -142,7 +142,7 @@ static const char SETMODELCONFIGURATION[] = "gazebo_msgs/SetModelConfiguration";
   {
     public:
       bool success;
-      char * status_message;
+      const char* status_message;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -154,7 +154,7 @@ static const char SETMODELCONFIGURATION[] = "gazebo_msgs/SetModelConfiguration";
       u_success.real = this->success;
       *(outbuffer + offset + 0) = (u_success.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->success);
-      uint32_t length_status_message = strlen( (const char*) this->status_message);
+      uint32_t length_status_message = strlen(this->status_message);
       memcpy(outbuffer + offset, &length_status_message, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->status_message, length_status_message);

@@ -16,14 +16,14 @@ namespace visualization_msgs
     public:
       std_msgs::Header header;
       geometry_msgs::Pose pose;
-      char * name;
+      const char* name;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
       offset += this->pose.serialize(outbuffer + offset);
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);

@@ -14,13 +14,13 @@ namespace rospy_tutorials
   {
     public:
       std_msgs::Header header;
-      char * data;
+      const char* data;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
-      uint32_t length_data = strlen( (const char*) this->data);
+      uint32_t length_data = strlen(this->data);
       memcpy(outbuffer + offset, &length_data, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->data, length_data);

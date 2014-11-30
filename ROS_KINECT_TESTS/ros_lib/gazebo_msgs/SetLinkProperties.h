@@ -14,7 +14,7 @@ static const char SETLINKPROPERTIES[] = "gazebo_msgs/SetLinkProperties";
   class SetLinkPropertiesRequest : public ros::Msg
   {
     public:
-      char * link_name;
+      const char* link_name;
       geometry_msgs::Pose com;
       bool gravity_mode;
       double mass;
@@ -28,7 +28,7 @@ static const char SETLINKPROPERTIES[] = "gazebo_msgs/SetLinkProperties";
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_link_name = strlen( (const char*) this->link_name);
+      uint32_t length_link_name = strlen(this->link_name);
       memcpy(outbuffer + offset, &length_link_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->link_name, length_link_name);
@@ -280,7 +280,7 @@ static const char SETLINKPROPERTIES[] = "gazebo_msgs/SetLinkProperties";
   {
     public:
       bool success;
-      char * status_message;
+      const char* status_message;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -292,7 +292,7 @@ static const char SETLINKPROPERTIES[] = "gazebo_msgs/SetLinkProperties";
       u_success.real = this->success;
       *(outbuffer + offset + 0) = (u_success.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->success);
-      uint32_t length_status_message = strlen( (const char*) this->status_message);
+      uint32_t length_status_message = strlen(this->status_message);
       memcpy(outbuffer + offset, &length_status_message, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->status_message, length_status_message);

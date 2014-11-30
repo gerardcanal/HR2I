@@ -28,7 +28,6 @@ namespace sensor_msgs
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
       offset += this->orientation.serialize(outbuffer + offset);
-      unsigned char * orientation_covariance_val = (unsigned char *) this->orientation_covariance;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -46,7 +45,6 @@ namespace sensor_msgs
       offset += sizeof(this->orientation_covariance[i]);
       }
       offset += this->angular_velocity.serialize(outbuffer + offset);
-      unsigned char * angular_velocity_covariance_val = (unsigned char *) this->angular_velocity_covariance;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -64,7 +62,6 @@ namespace sensor_msgs
       offset += sizeof(this->angular_velocity_covariance[i]);
       }
       offset += this->linear_acceleration.serialize(outbuffer + offset);
-      unsigned char * linear_acceleration_covariance_val = (unsigned char *) this->linear_acceleration_covariance;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -89,7 +86,6 @@ namespace sensor_msgs
       int offset = 0;
       offset += this->header.deserialize(inbuffer + offset);
       offset += this->orientation.deserialize(inbuffer + offset);
-      uint8_t * orientation_covariance_val = (uint8_t*) this->orientation_covariance;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -108,7 +104,6 @@ namespace sensor_msgs
       offset += sizeof(this->orientation_covariance[i]);
       }
       offset += this->angular_velocity.deserialize(inbuffer + offset);
-      uint8_t * angular_velocity_covariance_val = (uint8_t*) this->angular_velocity_covariance;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;
@@ -127,7 +122,6 @@ namespace sensor_msgs
       offset += sizeof(this->angular_velocity_covariance[i]);
       }
       offset += this->linear_acceleration.deserialize(inbuffer + offset);
-      uint8_t * linear_acceleration_covariance_val = (uint8_t*) this->linear_acceleration_covariance;
       for( uint8_t i = 0; i < 9; i++){
       union {
         double real;

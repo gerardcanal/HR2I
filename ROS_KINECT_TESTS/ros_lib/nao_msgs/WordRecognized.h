@@ -27,7 +27,7 @@ namespace nao_msgs
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < words_length; i++){
-      uint32_t length_wordsi = strlen( (const char*) this->words[i]);
+      uint32_t length_wordsi = strlen(this->words[i]);
       memcpy(outbuffer + offset, &length_wordsi, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->words[i], length_wordsi);

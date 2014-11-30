@@ -14,8 +14,8 @@ namespace bond
   {
     public:
       std_msgs::Header header;
-      char * id;
-      char * instance_id;
+      const char* id;
+      const char* instance_id;
       bool active;
       float heartbeat_timeout;
       float heartbeat_period;
@@ -24,12 +24,12 @@ namespace bond
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
-      uint32_t length_id = strlen( (const char*) this->id);
+      uint32_t length_id = strlen(this->id);
       memcpy(outbuffer + offset, &length_id, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->id, length_id);
       offset += length_id;
-      uint32_t length_instance_id = strlen( (const char*) this->instance_id);
+      uint32_t length_instance_id = strlen(this->instance_id);
       memcpy(outbuffer + offset, &length_instance_id, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->instance_id, length_instance_id);

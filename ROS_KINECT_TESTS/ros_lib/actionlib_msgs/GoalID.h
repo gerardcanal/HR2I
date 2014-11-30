@@ -14,7 +14,7 @@ namespace actionlib_msgs
   {
     public:
       ros::Time stamp;
-      char * id;
+      const char* id;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -29,7 +29,7 @@ namespace actionlib_msgs
       *(outbuffer + offset + 2) = (this->stamp.nsec >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (this->stamp.nsec >> (8 * 3)) & 0xFF;
       offset += sizeof(this->stamp.nsec);
-      uint32_t length_id = strlen( (const char*) this->id);
+      uint32_t length_id = strlen(this->id);
       memcpy(outbuffer + offset, &length_id, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->id, length_id);

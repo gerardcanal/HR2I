@@ -14,7 +14,7 @@ namespace sensor_msgs
   {
     public:
       std_msgs::Header header;
-      char * format;
+      const char* format;
       uint8_t data_length;
       uint8_t st_data;
       uint8_t * data;
@@ -23,7 +23,7 @@ namespace sensor_msgs
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
-      uint32_t length_format = strlen( (const char*) this->format);
+      uint32_t length_format = strlen(this->format);
       memcpy(outbuffer + offset, &length_format, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->format, length_format);

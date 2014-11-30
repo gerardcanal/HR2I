@@ -36,7 +36,7 @@ namespace sensor_msgs
       *(outbuffer + offset++) = 0;
       *(outbuffer + offset++) = 0;
       for( uint8_t i = 0; i < name_length; i++){
-      uint32_t length_namei = strlen( (const char*) this->name[i]);
+      uint32_t length_namei = strlen(this->name[i]);
       memcpy(outbuffer + offset, &length_namei, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name[i], length_namei);

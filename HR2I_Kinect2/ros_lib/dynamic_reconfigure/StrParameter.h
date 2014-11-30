@@ -12,18 +12,18 @@ namespace dynamic_reconfigure
   class StrParameter : public ros::Msg
   {
     public:
-      char * name;
-      char * value;
+      const char* name;
+      const char* value;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);
       offset += length_name;
-      uint32_t length_value = strlen( (const char*) this->value);
+      uint32_t length_value = strlen(this->value);
       memcpy(outbuffer + offset, &length_value, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->value, length_value);

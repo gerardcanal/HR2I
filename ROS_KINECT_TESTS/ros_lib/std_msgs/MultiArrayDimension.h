@@ -12,14 +12,14 @@ namespace std_msgs
   class MultiArrayDimension : public ros::Msg
   {
     public:
-      char * label;
+      const char* label;
       uint32_t size;
       uint32_t stride;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_label = strlen( (const char*) this->label);
+      uint32_t length_label = strlen(this->label);
       memcpy(outbuffer + offset, &length_label, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->label, length_label);

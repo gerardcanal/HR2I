@@ -14,14 +14,14 @@ namespace nao_msgs
   class FadeRGB : public ros::Msg
   {
     public:
-      char * led_name;
+      const char* led_name;
       std_msgs::ColorRGBA color;
       ros::Duration fade_duration;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_led_name = strlen( (const char*) this->led_name);
+      uint32_t length_led_name = strlen(this->led_name);
       memcpy(outbuffer + offset, &length_led_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->led_name, length_led_name);

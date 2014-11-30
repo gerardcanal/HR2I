@@ -13,8 +13,8 @@ namespace dynamic_reconfigure
   class Group : public ros::Msg
   {
     public:
-      char * name;
-      char * type;
+      const char* name;
+      const char* type;
       uint8_t parameters_length;
       dynamic_reconfigure::ParamDescription st_parameters;
       dynamic_reconfigure::ParamDescription * parameters;
@@ -24,12 +24,12 @@ namespace dynamic_reconfigure
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);
       offset += length_name;
-      uint32_t length_type = strlen( (const char*) this->type);
+      uint32_t length_type = strlen(this->type);
       memcpy(outbuffer + offset, &length_type, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->type, length_type);

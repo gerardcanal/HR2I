@@ -17,7 +17,7 @@ namespace visualization_msgs
   {
     public:
       std_msgs::Header header;
-      char * ns;
+      const char* ns;
       int32_t id;
       int32_t type;
       int32_t action;
@@ -45,7 +45,7 @@ namespace visualization_msgs
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
-      uint32_t length_ns = strlen( (const char*) this->ns);
+      uint32_t length_ns = strlen(this->ns);
       memcpy(outbuffer + offset, &length_ns, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->ns, length_ns);

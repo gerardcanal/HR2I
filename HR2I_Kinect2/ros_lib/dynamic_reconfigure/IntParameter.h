@@ -12,13 +12,13 @@ namespace dynamic_reconfigure
   class IntParameter : public ros::Msg
   {
     public:
-      char * name;
+      const char* name;
       int32_t value;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);

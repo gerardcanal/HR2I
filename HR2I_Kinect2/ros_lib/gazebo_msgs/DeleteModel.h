@@ -13,12 +13,12 @@ static const char DELETEMODEL[] = "gazebo_msgs/DeleteModel";
   class DeleteModelRequest : public ros::Msg
   {
     public:
-      char * model_name;
+      const char* model_name;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
-      uint32_t length_model_name = strlen( (const char*) this->model_name);
+      uint32_t length_model_name = strlen(this->model_name);
       memcpy(outbuffer + offset, &length_model_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->model_name, length_model_name);
@@ -50,7 +50,7 @@ static const char DELETEMODEL[] = "gazebo_msgs/DeleteModel";
   {
     public:
       bool success;
-      char * status_message;
+      const char* status_message;
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -62,7 +62,7 @@ static const char DELETEMODEL[] = "gazebo_msgs/DeleteModel";
       u_success.real = this->success;
       *(outbuffer + offset + 0) = (u_success.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->success);
-      uint32_t length_status_message = strlen( (const char*) this->status_message);
+      uint32_t length_status_message = strlen(this->status_message);
       memcpy(outbuffer + offset, &length_status_message, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->status_message, length_status_message);

@@ -14,15 +14,16 @@ namespace diagnostic_msgs
   {
     public:
       int8_t level;
-      char * name;
-      char * message;
-      char * hardware_id;
+      const char* name;
+      const char* message;
+      const char* hardware_id;
       uint8_t values_length;
       diagnostic_msgs::KeyValue st_values;
       diagnostic_msgs::KeyValue * values;
       enum { OK = 0 };
       enum { WARN = 1 };
       enum { ERROR = 2 };
+      enum { STALE = 3 };
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -34,17 +35,17 @@ namespace diagnostic_msgs
       u_level.real = this->level;
       *(outbuffer + offset + 0) = (u_level.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->level);
-      uint32_t length_name = strlen( (const char*) this->name);
+      uint32_t length_name = strlen(this->name);
       memcpy(outbuffer + offset, &length_name, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->name, length_name);
       offset += length_name;
-      uint32_t length_message = strlen( (const char*) this->message);
+      uint32_t length_message = strlen(this->message);
       memcpy(outbuffer + offset, &length_message, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->message, length_message);
       offset += length_message;
-      uint32_t length_hardware_id = strlen( (const char*) this->hardware_id);
+      uint32_t length_hardware_id = strlen(this->hardware_id);
       memcpy(outbuffer + offset, &length_hardware_id, sizeof(uint32_t));
       offset += 4;
       memcpy(outbuffer + offset, this->hardware_id, length_hardware_id);
@@ -110,7 +111,7 @@ namespace diagnostic_msgs
     }
 
     const char * getType(){ return "diagnostic_msgs/DiagnosticStatus"; };
-    const char * getMD5(){ return "67d15a62edb26e9d52b0f0efa3ef9da7"; };
+    const char * getMD5(){ return "d0ce08bc6e5ba34c7754f563a9cabaf1"; };
 
   };
 
