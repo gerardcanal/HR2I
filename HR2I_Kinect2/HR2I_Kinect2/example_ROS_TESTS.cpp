@@ -184,9 +184,8 @@ void showLivePCtest() {
 			pcl::PointIndices::Ptr indices = planeinfo.first;*/
 			std::vector<float> vec_g_coeffs = { ground_coeffs[0], ground_coeffs[1], ground_coeffs[2] };
 			//pcl::PointIndices::Ptr indices = K2PCL::segmentPlaneByDirection(pcPtr, std::vector<float>({ /*ground*/0.87f, 0.15f, -0.5f /*floor0.004f, -1, 0.07f*/ }));
-			pcl::PointIndices::Ptr indices = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
+			pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
 
-			pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::extractIndices(indices, pcPtr); // pcPtr has the remaining points
 			/*int i;
 			for (i = 0; i < pcPtr->size(); ++i) {
 			pcl::PointXYZRGB auxp(255, 255, 255);

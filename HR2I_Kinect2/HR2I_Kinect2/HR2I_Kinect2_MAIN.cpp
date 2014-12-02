@@ -50,9 +50,15 @@ void computePCLWindowSizeAndPos(std::array<int, 2>& sizeW, std::array<int, 2>& p
 	setConsolePosition(0, viewR[1]);
 }
 
+void showMessageRecomputeGC() {
+	MessageBox(NULL, L"Ground plane coefficients need to be updated.\nPlease set them in the PCL viewer window to continue.",
+		       L"User intervention needed", MB_OK | MB_ICONASTERISK);
+}
+
 // MAIN
 int _tmain(int argc, _TCHAR * argv[]) {
 	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt"; 
+	const string GROUND_PARAMS_PATH = "Parameters\\GroundPlaneCoeffs.txt";
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
 	const int RGB_Depth = 1; // 0 - None, 1 - RGB, 2 - Depth
 
@@ -62,9 +68,12 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
 	if (!SUCCEEDED(hr)) return -1;
 
+	// Multiframe not used because RGB fucks it...
+	//hr = k2u.openMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Depth | FrameSourceTypes::FrameSourceTypes_Body);
 	hr = k2u.openBodyFrameReader();
+	hr = k2u.openDepthFrameReader();
 	if (!SUCCEEDED(hr)) return -1;
-	cout << " DONE" << endl;
+	cout << "DONE" << endl;	
 
 	// Viewers initialization
 	cout << "Initializing visualizers... ";
@@ -76,8 +85,26 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	HR2ISceneViewer pcl_viewer("Human MultiRobot Interaction 3D Viewer", true, size, pos);
 	cout << "DONE" << endl;
 
-	// HR2I
+	// HR2I init
 	HR2I_Kinect2 hr2i(&body_view, &pcl_viewer);
+
+	// Check ground coefficients
+	cout << "Checking ground coefficients... ";
+	bool recomputeGroundCoeffs = false;
+	vector<float> ground_coeffs;
+	try { ground_coeffs = hr2i.readGroundPlaneCoefficients(GROUND_PARAMS_PATH); }
+	catch (exception& e) { recomputeGroundCoeffs = true; }
+	if (recomputeGroundCoeffs || !hr2i.checkGroundCoefficients(&k2u, ground_coeffs)) {
+		showMessageRecomputeGC();
+		cout << "Ground coefficients must be recomputed. Please select the points..." << endl;
+		ground_coeffs = hr2i.computeGroundCoefficientsFromUser(&k2u);
+		hr2i.writeGroundPlaneCoefficients(ground_coeffs, GROUND_PARAMS_PATH);
+		cout << "DONE: ground coefficients were stored in \"" << GROUND_PARAMS_PATH << "\"" << endl;
+	}
+	else cout << "DONE";
+	//hr2i.setGroundCoefficients(ground_coeffs); // Redundant...
+
+	// Main code
 	hr2i_thesis::GestureRecognitionResult gr_res = hr2i.recognizeGestures(GR_PARAMS_PATH, hr2i.readDynamicModels(GESTURE_MODELS_PATH), k2u);
 	cout << "Hello World!" << endl;
 	int x; cin >> x;

@@ -1,5 +1,6 @@
 #include "K2PCL.h"
 
+//#define MIRROR_PCL // To mirror de PCL
 pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* depthFrame, ICoordinateMapper* cMapper) {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pc(new pcl::PointCloud<pcl::PointXYZ>());
 	UINT bsize = 0;
@@ -21,7 +22,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* d
 		// add cameraCoordinates[i] in the pointcloud
 		if ((_cameraCoordinates[i].X < Utils::INF) && (_cameraCoordinates[i].Y < Utils::INF) && (_cameraCoordinates[i].Z < Utils::INF) &&
 			(_cameraCoordinates[i].X > -Utils::INF) && (_cameraCoordinates[i].Y > -Utils::INF) && (_cameraCoordinates[i].Z > -Utils::INF)) {
-			pcl::PointXYZ _point(_cameraCoordinates[i].X, _cameraCoordinates[i].Y, _cameraCoordinates[i].Z);
+			#ifdef MIRROR_PCL
+				pcl::PointXYZ _point(-_cameraCoordinates[i].X, _cameraCoordinates[i].Y, _cameraCoordinates[i].Z);
+			#else
+				pcl::PointXYZ _point(_cameraCoordinates[i].X, _cameraCoordinates[i].Y, _cameraCoordinates[i].Z);
+			#endif
 			pc->push_back(_point);
 		}
 		else ++filtered;
@@ -32,7 +37,8 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* d
 	return pc;
 }
 
-std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> K2PCL::segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int max_iter) {
+/// Returns the pointindices of the segmented plane
+std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> K2PCL::segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int max_iter, bool verbose) {
 	pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
 	pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
 	// Create the segmentation object
@@ -54,10 +60,10 @@ std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> K2PCL::segmentPla
 		return std::make_pair(inliers, coefficients);
 	}
 
-	std::cerr << "Model coefficients: " << coefficients->values[0] << " "
-		<< coefficients->values[1] << " "
-		<< coefficients->values[2] << " "
-		<< coefficients->values[3] << std::endl;
+	if (verbose) std::cerr << "Model coefficients: " << coefficients->values[0] << " "
+					<< coefficients->values[1] << " "
+					<< coefficients->values[2] << " "
+					<< coefficients->values[3] << std::endl;
 	return std::make_pair(inliers, coefficients);
 }
 
@@ -90,23 +96,26 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::downSample(pcl::PointCloud<pcl::Point
 	return cloud_filtered;
 }
 
-
-pcl::PointIndices::Ptr K2PCL::segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, std::vector<float> direction, const float equal_plane_th, const int max_planes, const int max_iter) {
-	//pcl::PointCloud<pcl::PointXYZ>::Ptr retPc(new pcl::PointCloud<pcl::PointXYZ>());
+/// Returns the point cloud with the plane points, and the pc is the original pointcloud without the plane
+pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, std::vector<float> direction, const float equal_plane_th, const int max_planes, const int max_iter) {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr retPc(new pcl::PointCloud<pcl::PointXYZ>());
 	bool found = false;
 	std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> planeinfo;
 	int i_planes = 0;
-	pcl::PointIndices::Ptr retPlaneIndices(new pcl::PointIndices);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr ret_plane(new pcl::PointCloud<pcl::PointXYZ>());
 	do {
 		planeinfo = K2PCL::segmentPlane(pc);
-		//*retPc += *extractIndices(planeinfo.first, pc); // Add extracted clouds to retPc
 		if (planeinfo.second->values.size() == 0) break;
-		std::vector<float> n_plane(planeinfo.second->values.begin(), planeinfo.second->values.end() - 1);
-		if (Utils::sameDirection(n_plane, direction, equal_plane_th)) 
-			retPlaneIndices->indices.insert(retPlaneIndices->indices.end(), planeinfo.first->indices.begin(), planeinfo.first->indices.end()); ////found = true;
+		std::vector<float> n_plane(planeinfo.second->values.begin(), planeinfo.second->values.end() - 1); // Normal vector of the plane
+		if (Utils::sameDirection(n_plane, direction, equal_plane_th)) {
+			*ret_plane += *extractIndices(planeinfo.first, pc); // Add extracted clouds of the plane to the plane cloud
+		}
+		else {
+			*retPc += *extractIndices(planeinfo.first, pc); // Add extracted clouds to retPc
+		}
 	} while (!found && (++i_planes < max_planes));
-	///////if (!found) return pcl::PointIndices::Ptr(new pcl::PointIndices);
-	//*retPc += *pc; // Concatenate rest
-	//pc.swap(retPc); // Change retPc for pc to make it output parameter
-	return planeinfo.first;
+
+	*retPc += *pc; // Concatenate rest of pointcloud to get the final cloud without the image
+	pc.swap(retPc); // Change retPc for pc to make it output parameter
+	return ret_plane;
 }

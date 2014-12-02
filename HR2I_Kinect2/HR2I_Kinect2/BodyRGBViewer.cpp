@@ -1019,6 +1019,7 @@ void BodyRGBViewer::ProcessDepth(INT64 nTime, const UINT16* pBuffer, int nWidth,
 /// <param name="pImage">image data in RGBX format</param>
 /// <param name="cbImage">size of image data in bytes</param>
 /// <returns>indicates success or failure</returns>
+#define MIRROR_RGB // If defined RGB is mirrored
 HRESULT BodyRGBViewer::RenderImage(BYTE* pImage, unsigned long cbImage)
 {
 	// incorrectly sized image data passed in
@@ -1057,6 +1058,15 @@ HRESULT BodyRGBViewer::RenderImage(BYTE* pImage, unsigned long cbImage)
 	m_pRenderTarget->DrawBitmap(m_pBitmap);
 
 	if (!showSkeleton) hr = m_pRenderTarget->EndDraw();
+
+	#ifdef MIRROR_RGB
+	D2D1_SIZE_F sze = m_pRenderTarget->GetSize();
+		D2D1_MATRIX_3X2_F m;
+		m._11 = -1; m._12 = 0;
+		m._21 = 0;  m._22 = 1;
+		m._31 = sze.width; m._32 = 0;
+		m_pRenderTarget->SetTransform(m);
+	#endif
 
 	// Device lost, need to recreate the render target
 	// We'll dispose it now and retry drawing

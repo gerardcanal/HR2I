@@ -17,16 +17,6 @@ Skeleton::Skeleton() {
 	trackingId = 0;
 }
 
-/*Skeleton::Skeleton(const Skeleton& s) {
-	setHandState(s.leftHs, s.rightHs);
-	setHandTrackingConfidence(s.leftTc, s.rightTc);
-	setTracking(s.isTracked, s.trackingId);
-	for (int i = 0; i < _countof(jointOrientations); ++i) {
-		jointOrientations[i] = s.jointOrientations[i];
-		joints[i] = s.joints[i];
-	}
-}*/
-
 Skeleton::~Skeleton()
 {
 	/*delete[] joints;

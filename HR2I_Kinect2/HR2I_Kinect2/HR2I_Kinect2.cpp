@@ -14,8 +14,17 @@ void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, GRParam
 	bool first = true;
 	UINT64 id = 0;
 	gr_mtx.unlock();
+
+	ICoordinateMapper* cmapper = NULL;
+	k2u->getCoordinateMapper(cmapper);
+
 	while (_work) {
+		//IMultiSourceFrame* msf = k2u->getLastMultiSourceFrameFromDefault();
+		//if (msf == NULL) continue;
+
+		IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
 		IBodyFrame* bodyFrame = k2u->getLastBodyFrameFromDefault();
+
 		if (bodyFrame) {
 			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, id, first);
 			if (body_view != NULL) body_view->setBodyFrameToDraw(bodyFrame);
@@ -36,7 +45,10 @@ void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, GRParam
 				inputFrames.push_back(sk);
 			}
 		}
+		if (df) setPCLScene(df, cmapper, ground_coeffs);
 		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
+		SafeRelease(df);
+		
 		if (inputFrames.size() >= params.pointAtTh[2]) inputFrames.pop_front();
 		gr_mtx.lock();
 		_work = get_data;
@@ -105,4 +117,91 @@ vector<vector<vector<float>>> HR2I_Kinect2::readDynamicModels(string gestPath) {
 	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModel_features.csv");
 	//models[POINT_AT] = GestureRecognition::addThirdFeature(models[POINT_AT]);
 	return models;
+}
+
+void HR2I_Kinect2::setPCLScene(IDepthFrame* df, ICoordinateMapper* cmapper, std::vector<float> vec_g_coeffs) {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
+	pcl_viewer->setScene(pcPtr, plane);
+}
+
+/// Check if ground coefficients are working (true) or need to be recalculated (false)
+bool HR2I_Kinect2::checkGroundCoefficients(Kinect2Utils* k2u, std::vector<float> vec_g_coeffs) {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = getOnePointCloudFromKinect(k2u);
+	pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
+	return plane->points.size() > 0;
+}
+
+std::vector<float> HR2I_Kinect2::computeGroundCoefficientsFromUser(Kinect2Utils* k2u) {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = getOnePointCloudFromKinect(k2u);
+
+	// Show scene
+	pcl_viewer->setScene(pcPtr, pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
+
+	// Get the three points from user
+	pcl_viewer->registerPointPickingCb();
+	std::cout << "Shift+click on three floor points (in a CLOCKWISE order)..." << std::endl;
+	while (pcl_viewer->getNumPickedPoints() < 3); // Wait until we have enough points
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints = pcl_viewer->getPickedPointsCloud();
+
+	// Compute the ground plane model coefficients
+	Eigen::VectorXf eigen_ground_coeffs;
+	eigen_ground_coeffs.resize(4);
+	std::vector<int> clicked_points_indices;
+	for (unsigned int i = 0; i < pickedPoints->points.size(); i++)
+		clicked_points_indices.push_back(i);
+	pcl::SampleConsensusModelPlane<pcl::PointXYZ> model_plane(pickedPoints);
+	model_plane.computeModelCoefficients(clicked_points_indices, eigen_ground_coeffs);
+	std::cout << "\t Selected Ground plane: " << eigen_ground_coeffs(0) << " " << eigen_ground_coeffs(1) << " " << eigen_ground_coeffs(2) << " " << eigen_ground_coeffs(3) << std::endl;
+
+	pcl_viewer->unregisterPointPickingCb();
+	std::vector<float> vec_g_coeffs = { eigen_ground_coeffs[0], eigen_ground_coeffs[1], eigen_ground_coeffs[2] };
+	this->ground_coeffs = vec_g_coeffs;
+	return vec_g_coeffs;
+}
+
+void HR2I_Kinect2::writeGroundPlaneCoefficients(std::vector<float> vec_g_coeffs, string path) {
+	std::ofstream ofs(path, std::ofstream::out);
+	if (!ofs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
+	ofs << "Ground_Plane_Coefficients: " << vec_g_coeffs[0] << " " << vec_g_coeffs[1] << " " << vec_g_coeffs[2] << endl;
+	ofs.close();
+}
+
+std::vector<float> HR2I_Kinect2::readGroundPlaneCoefficients(string path) {
+	std::ifstream ifs(path, std::ifstream::in);
+	if (!ifs.is_open()) {
+		std::string err = "ERROR: ground plane coefficients file " + path + " could not be opened or was not found.";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
+	std::vector<float> vec_g_coeffs(3);
+	string param;
+	ifs >> param >> vec_g_coeffs[0] >> vec_g_coeffs[1] >> vec_g_coeffs[2];
+	ifs.close(); 
+	ground_coeffs = vec_g_coeffs;
+	return vec_g_coeffs;
+}
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr HR2I_Kinect2::getOnePointCloudFromKinect(Kinect2Utils* k2u) {
+	ICoordinateMapper* cmapper = NULL;
+	k2u->getCoordinateMapper(cmapper);
+
+	// Get correct depth frame and create pointcloud
+	IDepthFrame* df = NULL;
+	int i = 0;
+	while (df == NULL || ++i < 3) { // Enforce to pick 3 frames so we don't have an empty frame
+		SafeRelease(df);
+		df = k2u->getLastDepthFrameFromDefault();
+	}
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
+	SafeRelease(df);
+	return pcPtr;
+}
+
+void HR2I_Kinect2::setGroundCoefficients(vector<float>& ground_coeffs) {
+	this->ground_coeffs = ground_coeffs;
 }
