@@ -95,9 +95,11 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	try { ground_coeffs = hr2i.readGroundPlaneCoefficients(GROUND_PARAMS_PATH); }
 	catch (exception& e) { recomputeGroundCoeffs = true; }
 	if (recomputeGroundCoeffs || !hr2i.checkGroundCoefficients(&k2u, ground_coeffs)) {
-		showMessageRecomputeGC();
-		cout << "Ground coefficients must be recomputed. Please select the points..." << endl;
-		ground_coeffs = hr2i.computeGroundCoefficientsFromUser(&k2u);
+		do{
+			showMessageRecomputeGC();
+			cout << "Ground coefficients must be recomputed. Please select the points..." << endl;
+			ground_coeffs = hr2i.computeGroundCoefficientsFromUser(&k2u);
+		} while (!hr2i.checkGroundCoefficients(&k2u, ground_coeffs));
 		hr2i.writeGroundPlaneCoefficients(ground_coeffs, GROUND_PARAMS_PATH);
 		cout << "DONE: ground coefficients were stored in \"" << GROUND_PARAMS_PATH << "\"" << endl;
 	}
