@@ -68,7 +68,7 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
 	if (!SUCCEEDED(hr)) return -1;
 
-	// Multiframe not used because RGB fucks it...
+	// Multiframe not used because RGB interferes with it...
 	//hr = k2u.openMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Depth | FrameSourceTypes::FrameSourceTypes_Body);
 	hr = k2u.openBodyFrameReader();
 	hr = k2u.openDepthFrameReader();
@@ -107,7 +107,8 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	//hr2i.setGroundCoefficients(ground_coeffs); // Redundant...
 
 	// Main code
-	hr2i_thesis::GestureRecognitionResult gr_res = hr2i.recognizeGestures(GR_PARAMS_PATH, hr2i.readDynamicModels(GESTURE_MODELS_PATH), k2u);
+	for (int i = 0; i < 10; ++i)
+		hr2i_thesis::GestureRecognitionResult gr_res = hr2i.recognizeGestures(GR_PARAMS_PATH, hr2i.readDynamicModels(GESTURE_MODELS_PATH), k2u);
 	cout << "Hello World!" << endl;
 	int x; cin >> x;
 	iface.join();
