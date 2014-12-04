@@ -8,6 +8,8 @@
 #include "Skeleton.h"
 #include <omp.h>
 
+#define WAIT_FRAME_SLEEP_MS 10
+
 static enum Gesture {
 	/// Add here the Dynamic Gestures
 	SALUTE,

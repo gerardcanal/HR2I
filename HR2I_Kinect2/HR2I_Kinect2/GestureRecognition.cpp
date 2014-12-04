@@ -58,7 +58,10 @@ float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh
 	float dist = 0; // Dist of the hand position during the recognition frames
 	std::vector<float> lastHandPose;
 	while (!found) { // For t = 0..INF
-		while (inputFrames[gestureId].empty()); // Wait until we have a new frame...
+		while (inputFrames[gestureId].empty()) { // Wait until we have a new frame...
+			Sleep(WAIT_FRAME_SLEEP_MS);
+			#pragma omp flush
+		}
 		std::vector<float> input = getNextFrame(gestureId);
 		if (input[0] == -1.0 && input[1] == -1) break; // Frame which means end of sequence... nothing was recognized
 
@@ -97,7 +100,10 @@ float GestureRecognition::RealTimeDTW(int gestureId, const std::vector<std::vect
 	// Computing M matrix
 	int t = 1; bool slide = false; bool found = false;
 	while (!found) { // For t = 0..INF
-		while (inputFrames[gestureId].empty()); // Wait until we have a new frame...
+		while (inputFrames[gestureId].empty()) { // Wait until we have a new frame...
+			Sleep(WAIT_FRAME_SLEEP_MS);
+			#pragma omp flush
+		}
 		std::vector<float> input = getNextFrame(gestureId);
 		if (input[0] == -1.0 && input[1] == -1) break; // Frame which means end of sequence... nothing was recognized
 
@@ -198,6 +204,7 @@ void GestureRecognition::addFrame(const std::vector<float>& Dynamic_feat, const 
 		inputFrames[i].push(Static_feat);
 	}
 	omp_unset_lock(&omp_lock);
+	#pragma omp flush
 }
 
 /*void GestureRecognition::addFrame(const std::vector<float>& frame) {
