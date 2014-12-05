@@ -41,15 +41,15 @@
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>geometry_msgs</build_depend>
-  <build_depend>nao_driver</build_depend>
-  <build_depend>nao_msgs</build_depend>
+  <build_depend>naoqi_driver</build_depend>
+  <build_depend>naoqi_msgs</build_depend>
   <build_depend>roswifibot</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>wifibot_utils</build_depend>
   <run_depend>geometry_msgs</run_depend>
-  <run_depend>nao_driver</run_depend>
-  <run_depend>nao_msgs</run_depend>
+  <run_depend>naoqi_driver</run_depend>
+  <run_depend>naoqi_msgs</run_depend>
   <run_depend>roswifibot</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>wifibot_utils</run_depend>

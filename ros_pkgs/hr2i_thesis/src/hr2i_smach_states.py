@@ -42,10 +42,9 @@ class ReleaseNAOFromWifiBotState(ExecuteBehavior):
 
 class NaoSayHello(StateMachine):
     def __init__(self, text):
-        StateMachine.__init__(self, outcomes=['succeeded', 'aborted'])
-
-        with self:
-            StateMachine.add('SAY_HELLO', SpeechState)
+        with self: # FIXME change speech to pool
+            StateMachine.add('SAY_HELLO', SpeechState(text='Hello there!', blocking=False), transitions={'succeeded':'NAO_HELLO_GESTURE'})
+            StateMachine.add('NAO_HELLO_GESTURE', ExecuteBehavior('say_hello'), transitions={'succeeded':'succeeded'})
 
 class WaitForObjectBlobsState(State):
     def __init__(self, blob_topic='/kinect2_blobs', timeout=3):

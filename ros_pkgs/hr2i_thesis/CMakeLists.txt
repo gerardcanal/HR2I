@@ -6,8 +6,8 @@ project(hr2i_thesis)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
-  nao_driver
-  nao_msgs
+  naoqi_driver
+  naoqi_msgs
   roswifibot
   std_msgs
   wifibot_utils
@@ -71,7 +71,7 @@ add_message_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  geometry_msgs   nao_msgs   std_msgs
+  geometry_msgs   naoqi_msgs   std_msgs
 )
 
 ###################################
@@ -86,7 +86,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hr2i_thesis
-#  CATKIN_DEPENDS geometry_msgs nao_driver nao_msgs roswifibot std_msgs wifibot_utils
+#  CATKIN_DEPENDS geometry_msgs naoqi_driver naoqi_msgs roswifibot std_msgs wifibot_utils
 #  DEPENDS system_lib
 )
 
