@@ -6,9 +6,11 @@
 bool HR2ISceneViewer::created = false;
 pcl::PointXYZ HR2ISceneViewer::_pointingPoint = pcl::PointXYZ();
 pcl::PointCloud<pcl::PointXYZ>::Ptr  HR2ISceneViewer::_scene;
-pcl::PointCloud<pcl::PointXYZ>::Ptr  HR2ISceneViewer::_floor;
+//pcl::PointCloud<pcl::PointXYZ>::Ptr  HR2ISceneViewer::_floor;
 Skeleton  HR2ISceneViewer::_person = Skeleton();
-std::mutex HR2ISceneViewer::mtx;
+std::mutex HR2ISceneViewer::scene_mtx;
+std::mutex HR2ISceneViewer::person_mtx;
+std::mutex HR2ISceneViewer::pointingpoint_mtx;
 bool HR2ISceneViewer::scene_updated = true;
 bool HR2ISceneViewer::body_updated = true;
 /*boost::signals2::connection HR2ISceneViewer::pointpicker;
@@ -19,6 +21,7 @@ bool HR2ISceneViewer::finishedPicking = false;
 pcl::PointCloud<pcl::PointXYZ>::Ptr HR2ISceneViewer::pickedPoints = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 std::array<int, 2> HR2ISceneViewer::size;
 std::array<int, 2> HR2ISceneViewer::position;
+std::vector<float> HR2ISceneViewer::ground_coeffs;
 
 // Methods
 HR2ISceneViewer::HR2ISceneViewer(std::string name, bool pickpoints, std::array<int, 2> size, std::array<int, 2> position) : _viewer(name)
@@ -42,33 +45,38 @@ HR2ISceneViewer::~HR2ISceneViewer()
 {
 }
 
-void HR2ISceneViewer::setScene(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, pcl::PointCloud<pcl::PointXYZ>::Ptr floor) {
-	mtx.lock();
-	this->_floor = floor;
+void HR2ISceneViewer::setScene(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, bool downsample) {
+	if (downsample) {
+		scene = K2PCL::downSample(scene, 0.01f);
+	}
+	scene_mtx.lock();
+	//this->_floor = floor;
 	this->_scene = scene;
-	mtx.unlock();
-	scene_updated = true;
+	scene_updated = true;	
+	scene_mtx.unlock();
+
 }
 
 void HR2ISceneViewer::setPerson(const Skeleton& skel) {
-	mtx.lock();
+	person_mtx.lock();
 	this->_person = skel;
-	mtx.unlock();
 	body_updated = true;
+	person_mtx.unlock();
+
 }
 void HR2ISceneViewer::setPointingPoint(const pcl::PointXYZ& point) {
-	mtx.lock();
+	pointingpoint_mtx.lock();
 	this->_pointingPoint = point;
-	mtx.unlock();
+	pointingpoint_mtx.unlock();
 }
 
 void HR2ISceneViewer::initScene(pcl::visualization::PCLVisualizer& viewer) {
 	viewer.addCoordinateSystem(1.0);
 	viewer.initCameraParameters();
 	_scene = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
-	_floor = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
+	//_floor = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
 	viewer.addPointCloud(_scene, "scene");
-	viewer.addPointCloud(_floor, "floor");
+	viewer.addPointCloud(pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>()), "floor");
 	drawSkeleton(viewer, Skeleton()); removeSkeleton(viewer);
 	viewer.removeAllCoordinateSystems();
 	viewer.setCameraPosition(0, 0.2, -1, 0, 0.2, 0, 0, 1, 0);
@@ -87,30 +95,36 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 	}
 	ppmtx.unlock();
 
-	if (scene_updated) {
-		mtx.lock();
-		// Scene
-		viewer.updatePointCloud(_scene, "scene");
-		viewer.updatePointCloud(_floor, "floor");
-		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 255, 0, 0, "floor");
-		mtx.unlock();
-		scene_updated = false;
-	}
-
 	if (body_updated) {
 		// Person
-		mtx.lock();
-		if (_person.getTrackingID() != 0) {
-			drawSkeleton(viewer, _person);
-			_person = Skeleton();
+		person_mtx.lock();
+		Skeleton cppers = _person;
+		body_updated = false;
+		_person = Skeleton();
+		person_mtx.unlock();
+		if (cppers.getTrackingID() != 0) {
+			drawSkeleton(viewer, cppers);
 		}
 		else removeSkeleton(viewer);
-		mtx.unlock();
-		body_updated = false;
+	}
+
+	if (scene_updated) {
+		scene_mtx.lock();
+		pcl::PointCloud<pcl::PointXYZ>::Ptr scenecp = _scene->makeShared();
+		scene_updated = false;
+		scene_mtx.unlock();
+		// Scene
+		if (ground_coeffs.size() > 0) {
+			pcl::PointCloud<pcl::PointXYZ>::Ptr floor = K2PCL::segmentPlaneByDirection(scenecp, ground_coeffs);
+			viewer.updatePointCloud(scenecp, "scene");
+			viewer.updatePointCloud(floor, "floor");
+		}
+		else { viewer.updatePointCloud(scenecp, "scene"); }
+		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 255, 0, 0, "floor");
 	}
 
 	// Point
-	mtx.lock();
+	pointingpoint_mtx.lock();
 	if (_pointingPoint.x != 0 || _pointingPoint.y != 0 || _pointingPoint.z != 0) {
 		viewer.updateSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
 		if (body_updated) viewer.removeShape("PointArrow");
@@ -121,7 +135,7 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 		}
 	}
 	//else viewer.removePointCloud("pointingPoint");
-	mtx.unlock();
+	pointingpoint_mtx.unlock();
 }
 
 void HR2ISceneViewer::drawSkeleton(pcl::visualization::PCLVisualizer& viewer, Skeleton& skel) {
@@ -252,4 +266,8 @@ void HR2ISceneViewer::unregisterPointPickingCb() {
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr HR2ISceneViewer::getPickedPointsCloud() {
 	return pickedPoints;
+}
+
+void HR2ISceneViewer::setGroundCoeffs(const std::vector<float>& ground_coeffs)  {
+	this->ground_coeffs = ground_coeffs;
 }

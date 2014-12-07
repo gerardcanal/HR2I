@@ -7,6 +7,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <mutex>
 #include <array>
+#include "K2PCL.h"
 #include "Skeleton.h"
 class HR2ISceneViewer
 {
@@ -14,17 +15,19 @@ public:
 	HR2ISceneViewer(std::string name, bool pickpoints, std::array<int, 2> size = { { 500, 500 } }, std::array<int, 2> position = { { 300, 300 } });
 	~HR2ISceneViewer();
 
-	void setScene(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, pcl::PointCloud<pcl::PointXYZ>::Ptr floor);
+	void setScene(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, bool downsample = true);
 	void setPerson(const Skeleton& skel);
 	void setPointingPoint(const pcl::PointXYZ& point);
 	void unregisterPointPickingCb();
 	void registerPointPickingCb();
 	int getNumPickedPoints();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getPickedPointsCloud();
+	void setGroundCoeffs(const std::vector<float>& ground_coeffs);
 private:
 	pcl::visualization::CloudViewer _viewer;
 	static std::array<int, 2> size;
 	static std::array<int, 2> position;
+	static std::vector<float> ground_coeffs;
 
 	// Point picking
 	boost::signals2::connection pointpicker;
@@ -36,10 +39,12 @@ private:
 
 	//Show elements
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr _scene;
-	static pcl::PointCloud<pcl::PointXYZ>::Ptr _floor;
+	//static pcl::PointCloud<pcl::PointXYZ>::Ptr _floor;
 	static Skeleton _person;
 	static pcl::PointXYZ _pointingPoint;
-	static std::mutex mtx;
+	static std::mutex scene_mtx;
+	static std::mutex person_mtx;
+	static std::mutex pointingpoint_mtx;
 	static bool created;
 	static bool scene_updated;
 	static bool body_updated;

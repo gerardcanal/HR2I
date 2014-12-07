@@ -15,7 +15,7 @@
 #include "Kinect2Utils.h"
 
 #define MAX_ITER_DEF 150
-#define MAX_PLANES_ITER 17 // Number of planes to be segmented... Those will be the biggest ones
+#define MAX_PLANES_ITER 5 // Number of planes to be segmented... Those will be the biggest ones
 #define EQUAL_PLANE_TH 0.1
 
 class K2PCL
@@ -25,7 +25,7 @@ public:
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr extractIndices(pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::downSample(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float leafSize);
 	static std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, int max_iter = MAX_ITER_DEF, bool verbose = false);
-	static pcl::PointCloud<pcl::PointXYZ>::Ptr segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, std::vector<float> direction,
+	static pcl::PointCloud<pcl::PointXYZ>::Ptr segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, const std::vector<float>& direction,
 		                                                               const float equal_plane_th = EQUAL_PLANE_TH, const int max_planes = MAX_PLANES_ITER, const int max_iter = MAX_ITER_DEF);
 }; 
 

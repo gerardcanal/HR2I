@@ -121,8 +121,8 @@ vector<vector<vector<float>>> HR2I_Kinect2::readDynamicModels(string gestPath) {
 
 void HR2I_Kinect2::setPCLScene(IDepthFrame* df, ICoordinateMapper* cmapper, std::vector<float> vec_g_coeffs) {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
-	pcl_viewer->setScene(pcPtr, plane);
+	//pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
+	pcl_viewer->setScene(pcPtr);
 }
 
 /// Check if ground coefficients are working (true) or need to be recalculated (false)
@@ -136,7 +136,7 @@ std::vector<float> HR2I_Kinect2::computeGroundCoefficientsFromUser(Kinect2Utils*
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = getOnePointCloudFromKinect(k2u);
 
 	// Show scene
-	pcl_viewer->setScene(pcPtr, pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
+	pcl_viewer->setScene(pcPtr, false);
 
 	// Get the three points from user
 	pcl_viewer->registerPointPickingCb();

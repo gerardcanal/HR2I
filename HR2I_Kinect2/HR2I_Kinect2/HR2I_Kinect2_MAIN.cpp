@@ -105,6 +105,7 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	}
 	else cout << "DONE";
 	//hr2i.setGroundCoefficients(ground_coeffs); // Redundant...
+	pcl_viewer.setGroundCoeffs(ground_coeffs);
 
 	// Main code
 	for (int i = 0; i < 10; ++i)
