@@ -3,3 +3,6 @@
 *.log
 *.tlog
 *.sdf
+*.pch
+*.pdb
+*.idb
