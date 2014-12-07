@@ -1,6 +1,6 @@
 #include "HR2ISceneViewer.h"
 #define DRAW_JOINTS 0
-#define SPHERE_RADIUS 0.05
+#define SPHERE_RADIUS 0.07
 
 // Initialization of static members
 bool HR2ISceneViewer::created = false;
@@ -80,7 +80,7 @@ void HR2ISceneViewer::initScene(pcl::visualization::PCLVisualizer& viewer) {
 	drawSkeleton(viewer, Skeleton()); removeSkeleton(viewer);
 	viewer.removeAllCoordinateSystems();
 	viewer.setCameraPosition(0, 0.2, -1, 0, 0.2, 0, 0, 1, 0);
-	viewer.addSphere(pcl::PointXYZ(0, 0, -4), SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
+	//viewer.addSphere(pcl::PointXYZ(0, 0, -4), SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
 	pclvisualizerPtr = pcl::visualization::PCLVisualizer::Ptr(&viewer);
 	viewer.setPosition(position[0], position[1]);
 	viewer.setSize(size[0], size[1]);
@@ -126,7 +126,9 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 	// Point
 	pointingpoint_mtx.lock();
 	if (_pointingPoint.x != 0 || _pointingPoint.y != 0 || _pointingPoint.z != 0) {
-		viewer.updateSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
+		viewer.removeShape("pointingPoint");
+		viewer.addSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
+		//viewer.updateSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
 		if (body_updated) viewer.removeShape("PointArrow");
 		if (_person.getTrackingID() != 0 && body_updated) {
 			Joint finger = _person.getJoint(JointType_HandTipRight);
@@ -134,7 +136,10 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 			viewer.addArrow(_pointingPoint, pA, 1.0, 1.0, 0.0, false, "PointArrow");
 		}
 	}
-	//else viewer.removePointCloud("pointingPoint");
+	else {
+		viewer.removeShape("pointingPoint");
+		viewer.removeShape("PointArrow");
+	}
 	pointingpoint_mtx.unlock();
 }
 
@@ -252,6 +257,7 @@ int HR2ISceneViewer::getNumPickedPoints() {
 }
 
 void HR2ISceneViewer::registerPointPickingCb() {
+	finishedPicking = false;
 	pickedPoints = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>());
 	pointpicker = _viewer.registerPointPickingCallback(&HR2ISceneViewer::pp_callback, (void*)&pickedPoints);
 }

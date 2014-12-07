@@ -58,7 +58,7 @@
     <ClInclude Include="..\ros_lib\WindowsSocket.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="HR2I_Kinect.h">
+    <ClInclude Include="HR2I_Kinect2.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
   </ItemGroup>

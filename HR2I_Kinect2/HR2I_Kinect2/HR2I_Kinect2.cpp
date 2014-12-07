@@ -1,4 +1,4 @@
-#include "HR2I_Kinect.h"
+#include "HR2I_Kinect2.h"
 
 HR2I_Kinect2::HR2I_Kinect2(BodyRGBViewer* view, HR2ISceneViewer* pcl_viewer) {
 	get_data = true;
@@ -58,6 +58,7 @@ void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, GRParam
 
 hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const string& GRParams_path, const vector<vector<vector<float>>>& models, Kinect2Utils& k2u) {
 	const float DESCEND_DIREC_TH = -0.05;
+	inputFrames.clear();
 	GestureRecognition gr;
 	GRParameters params = GestureRecognition::readParameters(GRParams_path);
 	hr2i_thesis::GestureRecognitionResult result;
@@ -92,9 +93,9 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 		vector<float> lineVector = Utils::subtract(Hand, Elbow); // Vector Elbow->Hand EH = H-E
 		//cout << "\tDirection vector is: (" << lineVector[0] << ", " << lineVector[1] << ", " << lineVector[2] << ")" << endl;
 		if (lineVector[1] < DESCEND_DIREC_TH) { // Direction of pointing is descendent. 0.05 To remove some errors...
-			vector<float> n = { 0, 1, 0 }; // Normal vector -> Vertical
-			vector<float> planePoint = { 0, -0.5, 0 }; // Point which corresponds to the floor plane
-			vector<float> groundPoint = Utils::linePlaneIntersection(Hand, lineVector, planePoint, n); // Hand is a point of the line
+			//vector<float> n = { 0, 1, 0 }; // Normal vector -> Vertical
+			//vector<float> planePoint = { 0, -0.5, 0 }; // Point which corresponds to the floor plane
+			vector<float> groundPoint = Utils::linePlaneIntersection(Hand, lineVector, groundplane_point, ground_coeffs); // Hand is a point of the line
 			cout << "\tPointed point is: (" << groundPoint[0] << ", " << groundPoint[1] << ", " << groundPoint[2] << ")" << endl;
 			result.gestureId = result.idPointAt;
 			result.ground_point.x = groundPoint[0];
@@ -126,10 +127,11 @@ void HR2I_Kinect2::setPCLScene(IDepthFrame* df, ICoordinateMapper* cmapper, std:
 }
 
 /// Check if ground coefficients are working (true) or need to be recalculated (false)
-bool HR2I_Kinect2::checkGroundCoefficients(Kinect2Utils* k2u, std::vector<float> vec_g_coeffs) {
+/// plane_out is an output parameter with the segmented plane
+bool HR2I_Kinect2::checkGroundCoefficients(Kinect2Utils* k2u, std::vector<float> vec_g_coeffs, pcl::PointCloud<pcl::PointXYZ>::Ptr& plane_out) {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = getOnePointCloudFromKinect(k2u);
-	pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
-	return plane->points.size() > 0;
+	K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs).swap(plane_out);
+	return plane_out->points.size() > 0;
 }
 
 std::vector<float> HR2I_Kinect2::computeGroundCoefficientsFromUser(Kinect2Utils* k2u) {
@@ -202,6 +204,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr HR2I_Kinect2::getOnePointCloudFromKinect(Kin
 	return pcPtr;
 }
 
-void HR2I_Kinect2::setGroundCoefficients(vector<float>& ground_coeffs) {
+void HR2I_Kinect2::setGroundInfo(const vector<float>& ground_coeffs, const vector<float>& groundPoint) {
 	this->ground_coeffs = ground_coeffs;
+	groundplane_point = groundPoint;
+}
+
+deque<Skeleton>* HR2I_Kinect2::getInputFrames() {
+	return &inputFrames;
 }

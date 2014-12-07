@@ -30,16 +30,19 @@ public:
 	
 	// Ground methods
 	std::vector<float> computeGroundCoefficientsFromUser(Kinect2Utils* k2u);
-	bool HR2I_Kinect2::checkGroundCoefficients(Kinect2Utils* k2u, std::vector<float> vec_g_coeffs);
+	bool HR2I_Kinect2::checkGroundCoefficients(Kinect2Utils* k2u, std::vector<float> vec_g_coeffs, pcl::PointCloud<pcl::PointXYZ>::Ptr& plane_out);
 	std::vector<float> HR2I_Kinect2::readGroundPlaneCoefficients(string path = "Parameters\\GroundPlaneCoeffs.txt");
 	void HR2I_Kinect2::writeGroundPlaneCoefficients(std::vector<float> vec_g_coeffs, string path = "Parameters\\GroundPlaneCoeffs.txt");
-	void setGroundCoefficients(vector<float>& ground_coeffs);
+	void setGroundInfo(const vector<float>& ground_coeffs, const vector<float>& groundPoint);
+	deque<Skeleton>* getInputFrames();
+
 private:
 	// Vars
 	mutex gr_mtx;
 	bool get_data;
 	deque<Skeleton> inputFrames;
 	vector<float> ground_coeffs;
+	vector<float> groundplane_point;
 
 	// Viewers
 	BodyRGBViewer* body_view;

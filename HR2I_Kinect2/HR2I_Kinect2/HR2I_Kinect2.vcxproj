@@ -96,7 +96,7 @@
     <ClInclude Include="BodyRGBViewer.h" />
     <ClInclude Include="GestureRecognition.h" />
     <ClInclude Include="HR2ISceneViewer.h" />
-    <ClInclude Include="HR2I_Kinect.h" />
+    <ClInclude Include="HR2I_Kinect2.h" />
     <ClInclude Include="K2PCL.h" />
     <ClInclude Include="Kinect2Utils.h" />
     <ClInclude Include="resource.h" />

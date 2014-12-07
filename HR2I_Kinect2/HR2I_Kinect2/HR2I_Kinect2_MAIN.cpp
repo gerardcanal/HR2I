@@ -8,7 +8,7 @@
 #include "ros.h"
 
 // Project includes
-#include "HR2I_Kinect.h"
+#include "HR2I_Kinect2.h"
 #include "HR2ISceneViewer.h"
 
 using namespace std;
@@ -55,10 +55,36 @@ void showMessageRecomputeGC() {
 		       L"User intervention needed", MB_OK | MB_ICONASTERISK);
 }
 
+void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& pcl_viewer) {
+	const string GROUND_PARAMS_PATH = "Parameters\\GroundPlaneCoeffs.txt";
+
+	cout << "Checking ground coefficients... ";
+	bool recomputeGroundCoeffs = false;
+	vector<float> ground_coeffs;
+	try { ground_coeffs = hr2i.readGroundPlaneCoefficients(GROUND_PARAMS_PATH); }
+	catch (exception& e) { recomputeGroundCoeffs = true; }
+	pcl::PointCloud<pcl::PointXYZ>::Ptr groundplane = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+	if (recomputeGroundCoeffs || !hr2i.checkGroundCoefficients(&k2u, ground_coeffs, groundplane)) {
+		do{
+			showMessageRecomputeGC();
+			cout << "Ground coefficients must be recomputed. Please select the points..." << endl;
+			ground_coeffs = hr2i.computeGroundCoefficientsFromUser(&k2u);
+		} while (!hr2i.checkGroundCoefficients(&k2u, ground_coeffs, groundplane));
+		hr2i.writeGroundPlaneCoefficients(ground_coeffs, GROUND_PARAMS_PATH);
+		cout << "DONE: ground coefficients were stored in \"" << GROUND_PARAMS_PATH << "\"" << endl;
+	}
+	else cout << "DONE";
+	//hr2i.setGroundCoefficients(ground_coeffs); // Redundant...
+	// Get plane point
+	pcl::PointXYZ p = groundplane->at(groundplane->size() / 2); // Get random point
+	vector<float> gpoint = { p.x, p.y, p.z };
+	hr2i.setGroundInfo(ground_coeffs, gpoint);
+	pcl_viewer.setGroundCoeffs(ground_coeffs);
+}
+
 // MAIN
 int _tmain(int argc, _TCHAR * argv[]) {
 	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt"; 
-	const string GROUND_PARAMS_PATH = "Parameters\\GroundPlaneCoeffs.txt";
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
 	const int RGB_Depth = 1; // 0 - None, 1 - RGB, 2 - Depth
 
@@ -89,27 +115,18 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	HR2I_Kinect2 hr2i(&body_view, &pcl_viewer);
 
 	// Check ground coefficients
-	cout << "Checking ground coefficients... ";
-	bool recomputeGroundCoeffs = false;
-	vector<float> ground_coeffs;
-	try { ground_coeffs = hr2i.readGroundPlaneCoefficients(GROUND_PARAMS_PATH); }
-	catch (exception& e) { recomputeGroundCoeffs = true; }
-	if (recomputeGroundCoeffs || !hr2i.checkGroundCoefficients(&k2u, ground_coeffs)) {
-		do{
-			showMessageRecomputeGC();
-			cout << "Ground coefficients must be recomputed. Please select the points..." << endl;
-			ground_coeffs = hr2i.computeGroundCoefficientsFromUser(&k2u);
-		} while (!hr2i.checkGroundCoefficients(&k2u, ground_coeffs));
-		hr2i.writeGroundPlaneCoefficients(ground_coeffs, GROUND_PARAMS_PATH);
-		cout << "DONE: ground coefficients were stored in \"" << GROUND_PARAMS_PATH << "\"" << endl;
-	}
-	else cout << "DONE";
-	//hr2i.setGroundCoefficients(ground_coeffs); // Redundant...
-	pcl_viewer.setGroundCoeffs(ground_coeffs);
+	checkGroundParams(hr2i, k2u, pcl_viewer);
 
 	// Main code
-	for (int i = 0; i < 10; ++i)
+	for (int i = 0; i < 10; ++i) {
 		hr2i_thesis::GestureRecognitionResult gr_res = hr2i.recognizeGestures(GR_PARAMS_PATH, hr2i.readDynamicModels(GESTURE_MODELS_PATH), k2u);
+		if (gr_res.gestureId == gr_res.idPointAt) {
+			pcl::PointXYZ p(gr_res.ground_point.x, gr_res.ground_point.y, gr_res.ground_point.z);
+			pcl_viewer.setPointingPoint(p);
+			Sleep(15000);
+			pcl_viewer.setPointingPoint(pcl::PointXYZ(0,0,0));
+		}
+	}
 	cout << "Hello World!" << endl;
 	int x; cin >> x;
 	iface.join();
