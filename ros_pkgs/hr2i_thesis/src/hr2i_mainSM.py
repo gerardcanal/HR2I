@@ -6,6 +6,7 @@ from smach import StateMachine
 from nao_smach_utils.check_nodes import CheckNodesState
 from nao_smach_utils.home_onoff import HomeOff_SM, HomeOn_SM
 from hr2i_smach_states import WaitForGestureRecognitionState, NaoSayHello
+from wifibot_smach.wifibot_goto_state import GoToPositionState
 
 
 class HR2I_SM(StateMachine):
@@ -15,12 +16,12 @@ class HR2I_SM(StateMachine):
         with self:
             StateMachine.add('WAIT_FOR_GESTURE', WaitForGestureRecognitionState(),
                              transitions={'hello_recognized': 'SAY_HELLO', 'pointat_recognized': 'POINT_AT_SM'},
-                             remapping={'out_ground_point': 'ground_point'})  # FIXME maybe timeout and say somethinga gain
+                             remapping={'out_ground_point': 'ground_point'})
 
-            StateMachine.add('SAY_HELLO', NaoSayHello('Hello there!'), transitions={'succeeded': 'WAIT_FOR_GESTURE'})
+            StateMachine.add('SAY_HELLO', NaoSayHello(), transitions={'succeeded': 'WAIT_FOR_GESTURE'})
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # FIXME move to MAIN script
     rospy.init_node('HR2I_main_pipeline_node')
 
     TOPIC_LIST_NAMES = ['/recognized_gesture', '/kinect2_blobs']
