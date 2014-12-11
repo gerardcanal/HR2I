@@ -7,24 +7,25 @@ from nao_smach_utils.check_nodes import CheckNodesState
 from nao_smach_utils.home_onoff import HomeOff_SM, HomeOn_SM
 from hr2i_smach_states import WaitForGestureRecognitionState, NaoSayHello
 
+
 class HR2I_SM(StateMachine):
     def __init__(self):
         StateMachine.__init__(self, outcomes=['succeeded', 'preempted', 'aborted'])
 
         with self:
             StateMachine.add('WAIT_FOR_GESTURE', WaitForGestureRecognitionState(),
-                             transitions={'hello_recognized':'SAY_HELLO', 'pointat_recognized': 'POINT_AT_SM'},
-                             remapping={'out_ground_point': 'ground_point'}) # FIXME maybe timeout and say somethinga gain
-            
+                             transitions={'hello_recognized': 'SAY_HELLO', 'pointat_recognized': 'POINT_AT_SM'},
+                             remapping={'out_ground_point': 'ground_point'})  # FIXME maybe timeout and say somethinga gain
+
             StateMachine.add('SAY_HELLO', NaoSayHello('Hello there!'), transitions={'succeeded': 'WAIT_FOR_GESTURE'})
-            
+
 
 if __name__ == "__main__":
     rospy.init_node('HR2I_main_pipeline_node')
 
     TOPIC_LIST_NAMES = ['/recognized_gesture', '/kinect2_blobs']
     SERVICES_LIST_NAMES = ['/cmd_pose_srv', '/wb_move_to_srv']
-    ACTION_LIST_NAMES = ['/speech','/joint_angles_action']
+    ACTION_LIST_NAMES = ['/speech', '/joint_angles_action']
     PARAMS_LIST_NAMES = []
 
     # Create a SMACH state machine
@@ -32,12 +33,11 @@ if __name__ == "__main__":
 
     with sm:
         StateMachine.add('CHECK_NODES', CheckNodesState(TOPIC_LIST_NAMES, SERVICES_LIST_NAMES, ACTION_LIST_NAMES, PARAMS_LIST_NAMES),
-                         transitions={'succeeded':'HOME_ON','aborted':'aborted'})
-        
-        StateMachine.add('HOME_ON', HomeOn_SM(startPose='Crouch'), transitions={'succeeded': 'HR2I_SM'}) # FIXME maybe just stiffen some joints?
+                         transitions={'succeeded': 'HOME_ON', 'aborted': 'aborted'})
+
+        StateMachine.add('HOME_ON', HomeOn_SM(startPose='Crouch'), transitions={'succeeded': 'HR2I_SM'})  # FIXME maybe just stiffen some joints?
         StateMachine.add('HR2I_SM', HR2I_SM(), transitions={'succeeded': 'HOME_OFF'})
         StateMachine.add('HOME_OFF', HomeOff_SM(), transitions={'succeeded': 'succeeded'})
-
 
     sis = smach_ros.IntrospectionServer('hr2i_iserver', sm, '/HR2I_ROOT')
     sis.start()

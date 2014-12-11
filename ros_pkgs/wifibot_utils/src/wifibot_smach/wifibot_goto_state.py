@@ -3,6 +3,7 @@ from smach_ros import ServiceState
 from wifibot_utils.srv import MoveToService, MoveToServiceRequest
 from geometry_msgs.msg import Pose2D
 
+
 class GoToPositionState(ServiceState):
 
     def __init__(self, request=None):
@@ -20,7 +21,7 @@ class GoToPositionState(ServiceState):
             self._request = request
 
         # Class constructor
-        ServiceState.__init__(self, '/wb_move_to_srv', MoveToService, outcomes=['succeeded'], request_cb = self.go_to_request_cb, input_keys=input_keys)
+        ServiceState.__init__(self, '/wb_move_to_srv', MoveToService, outcomes=['succeeded'], request_cb=self.go_to_request_cb, input_keys=input_keys)
 
     def go_to_request_cb(self, ud, request):
         if (not self._request):

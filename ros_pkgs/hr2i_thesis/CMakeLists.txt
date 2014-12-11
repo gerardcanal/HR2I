@@ -52,6 +52,7 @@ add_message_files(
   FILES
   Kinect2Command.msg
   GestureRecognitionResult.msg
+  PointCloudClusterCentroids.msg
 )
 
 ## Generate services in the 'srv' folder
