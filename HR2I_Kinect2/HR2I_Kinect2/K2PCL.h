@@ -12,7 +12,6 @@
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/centroid.h>
-#define HAVE_QHULL // Don't really know why I have to define it by myself and it is not done anywhere else but who cares... it works
 #include <pcl/surface/convex_hull.h>
 
 #include <mutex>
