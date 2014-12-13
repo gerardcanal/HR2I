@@ -10,9 +10,12 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>pcl_common_debug.lib;pcl_io_debug.lib;pcl_visualization_debug.lib;pcl_sample_consensus_debug.lib;pcl_segmentation_debug.lib;pcl_filters_debug.lib;vtkCommonCore-6.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>pcl_common_debug.lib;pcl_io_debug.lib;pcl_visualization_debug.lib;pcl_sample_consensus_debug.lib;pcl_segmentation_debug.lib;pcl_filters_debug.lib;vtkCommonCore-6.1.lib;pcl_kdtree_debug.lib;pcl_search_debug.lib;pcl_surface_debug.lib;qhullstatic_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>"C:\Program Files\PCL\VTK\lib\*.lib" %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <ClCompile>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>

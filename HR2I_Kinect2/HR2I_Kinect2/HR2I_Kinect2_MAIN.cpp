@@ -1,4 +1,5 @@
 // STD includes
+#define _CRT_SECURE_NO_WARNINGS // Also in project configuration as putting the define here is not enough
 #include "stdafx.h"
 #include <string>
 #include <stdio.h>
@@ -83,7 +84,7 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 }
 
 // MAIN
-int _tmain(int argc, _TCHAR * argv[]) {
+/*int _tmain(int argc, _TCHAR * argv[]) {
 	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt"; 
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
 	const int RGB_Depth = 1; // 0 - None, 1 - RGB, 2 - Depth
@@ -130,4 +131,50 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	cout << "Hello World!" << endl;
 	int x; cin >> x;
 	iface.join();
+}*/
+
+
+//FAKEMAIN
+int _tmain(int argc, _TCHAR * argv[]) {
+	cout << "Initializing Kinect 2 interface... ";
+	Kinect2Utils k2u;
+	HRESULT hr = k2u.initDefaultKinectSensor(true);
+	if (!SUCCEEDED(hr)) return -1;
+
+	// Multiframe not used because RGB interferes with it...
+	//hr = k2u.openMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Depth | FrameSourceTypes::FrameSourceTypes_Body);
+	hr = k2u.openBodyFrameReader();
+	hr = k2u.openDepthFrameReader();
+	if (!SUCCEEDED(hr)) return -1;
+	cout << "DONE" << endl;
+
+	ICoordinateMapper* cmapper = NULL;
+	k2u.getCoordinateMapper(cmapper);
+
+	pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL OBJECT Viewer");
+	while (true) {
+		IDepthFrame* df = k2u.getLastDepthFrameFromDefault();
+		if (df != NULL) {
+			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = K2PCL::segmentObjectsFromScene(pcPtr);
+
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr jointclusters(new pcl::PointCloud<pcl::PointXYZRGB>);
+			for (int i = 0; i < clusters.size(); ++i) {
+				pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+				pcRGBptr->resize(clusters[i]->size());
+				uint8_t r = rand() % 255, g = rand() % 255, b = rand() % 255;
+				for (int j = 0; j < clusters[i]->size(); ++j) {
+					pcl::PointXYZRGB auxp(r, g, b);
+					auxp.x = clusters[i]->at(j).x;
+					auxp.y = clusters[i]->at(j).y;
+					auxp.z = clusters[i]->at(j).z;
+					pcRGBptr->at(j) = auxp;
+				}
+				*jointclusters += *pcRGBptr;
+			}
+			pclviewer.showCloud(jointclusters);
+		}
+		SafeRelease(df);
+		// TODO get centroid of clusters and check convexHULL and play with distance parameter of obj clustering
+	}
 }
