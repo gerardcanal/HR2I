@@ -121,12 +121,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::segmentPlaneByDirection(pcl::PointClo
 	return ret_plane;
 }
 
-
+/// Returns the clusters found in the scene. The input cloud does not have the segmented clusters at the end of the function call
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, int max_size, int min_size, double cluster_tolerance) {
 	const float PERC_POINTS = 0.3;
 	// Add downsample if needed...
 
-	//Segments planes
+	//Segment planes to take them out of the clustering method
 	pcl::PointCloud<pcl::PointXYZ>::Ptr extractedPlanes(new pcl::PointCloud<pcl::PointXYZ>); // FIXME result in slow performance...
 	int nr_points = (int)cloud->size();
 	while (cloud->size() > PERC_POINTS*nr_points) {
@@ -163,8 +163,23 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsFromScene(
 		clusters[i]->is_dense = true;
 		indicesToExtract->indices.insert(indicesToExtract->indices.end(), cluster_indices[i].indices.begin(), cluster_indices[i].indices.end());
 	}
-	K2PCL::extractIndices(indicesToExtract, cloud);
+	K2PCL::extractIndices(indicesToExtract, cloud); // Remove the clusters from the input pointcloud
 	*cloud += *extractedPlanes; // Add planes to restore scene
+	return clusters;
+}
+
+/// Distance is the euclidean distance between nearPoint and the centroid of the object clusters. Those which are in a distance < distance
+/// Returns and output parameters are the same as segmentObjectsFromScene
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsNearPointFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, const int distance,  pcl::PointXYZ nearPoint, int max_size, int min_size, double cluster_tolerance) {
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = segmentObjectsFromScene(cloud, max_size, min_size, cluster_tolerance);
+	for (int i = 0; i < clusters.size(); ++i) {
+		pcl::PointXYZ cluster_centroid = K2PCL::compute3DCentroid(clusters[i]);
+		// if distance between the centroid and nearPoint is greater than the threshold, we remove the cluster and add it again to the scene cloud
+		if (Utils::euclideanDistance(K2PCL::pclPointToVector(cluster_centroid), K2PCL::pclPointToVector(nearPoint)) > distance) { 
+			*cloud += *clusters[i]; // Add the cluster to the scene again
+			clusters.erase(clusters.begin() + i);
+		}
+	}
 	return clusters;
 }
 
@@ -177,6 +192,15 @@ pcl::PointXYZ K2PCL::compute3DCentroid(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud
 
 
 std::pair<double, double> K2PCL::computeAreaVolume(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::ConvexHull<pcl::PointXYZ> ch;
-	return std::make_pair(0.0, 0.0);
+	ch.setInputCloud(cloud);
+	ch.setComputeAreaVolume(true);
+	ch.reconstruct(*cloud_hull);
+	return std::make_pair(ch.getTotalArea(), ch.getTotalVolume());
+}
+
+std::vector<float> K2PCL::pclPointToVector(pcl::PointXYZ& p) {
+	std::vector<float> ret = { p.x, p.y, p.z };
+	return ret;
 }

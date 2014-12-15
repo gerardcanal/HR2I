@@ -8,11 +8,15 @@ pcl::PointXYZ HR2ISceneViewer::_pointingPoint = pcl::PointXYZ();
 pcl::PointCloud<pcl::PointXYZ>::Ptr  HR2ISceneViewer::_scene;
 //pcl::PointCloud<pcl::PointXYZ>::Ptr  HR2ISceneViewer::_floor;
 Skeleton  HR2ISceneViewer::_person = Skeleton();
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> HR2ISceneViewer::clusters;
 std::mutex HR2ISceneViewer::scene_mtx;
 std::mutex HR2ISceneViewer::person_mtx;
 std::mutex HR2ISceneViewer::pointingpoint_mtx;
+std::mutex HR2ISceneViewer::clusters_mtx;
 bool HR2ISceneViewer::scene_updated = true;
 bool HR2ISceneViewer::body_updated = true;
+bool HR2ISceneViewer::clusters_updated = false;
+int HR2ISceneViewer::added_clusters = 0;
 /*boost::signals2::connection HR2ISceneViewer::pointpicker;
  bool HR2ISceneViewer::_pickpoints;*/
 pcl::visualization::PCLVisualizer::Ptr HR2ISceneViewer::pclvisualizerPtr;
@@ -70,6 +74,13 @@ void HR2ISceneViewer::setPointingPoint(const pcl::PointXYZ& point) {
 	pointingpoint_mtx.unlock();
 }
 
+void HR2ISceneViewer::setSegmentedClusters(const std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters) {
+	clusters_mtx.lock();
+	this->clusters = clusters;
+	clusters_updated = true;
+	clusters_mtx.unlock();
+}
+
 void HR2ISceneViewer::initScene(pcl::visualization::PCLVisualizer& viewer) {
 	viewer.addCoordinateSystem(1.0);
 	viewer.initCameraParameters();
@@ -120,14 +131,14 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 			viewer.updatePointCloud(floor, "floor");
 		}
 		else { viewer.updatePointCloud(scenecp, "scene"); }
-		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 255, 0, 0, "floor");
+		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "floor");
 	}
 
 	// Point
 	pointingpoint_mtx.lock();
 	if (_pointingPoint.x != 0 || _pointingPoint.y != 0 || _pointingPoint.z != 0) {
 		viewer.removeShape("pointingPoint");
-		viewer.addSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
+		viewer.addSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 1, "pointingPoint");
 		//viewer.updateSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
 		if (body_updated) viewer.removeShape("PointArrow");
 		if (_person.getTrackingID() != 0 && body_updated) {
@@ -141,6 +152,33 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 		viewer.removeShape("PointArrow");
 	}
 	pointingpoint_mtx.unlock();
+
+	if (clusters_updated) {
+		clusters_mtx.lock();
+		for (int i = 0; i < added_clusters; ++i) viewer.removePointCloud("cluster" + std::to_string(i));
+		added_clusters = 0;
+		clusters_updated = false;
+		for (int i = 0; i < clusters.size(); ++i) {
+			std::string cloudid = "cluster" + std::to_string(i);
+			viewer.addPointCloud(clusters[i], cloudid);
+			double r = std::max((double)rand() / RAND_MAX, 0.75); // So we don't get confused with the floor
+			double g = (double)rand() / RAND_MAX;
+			double b = (double)rand() / RAND_MAX;
+			if ((r < 0.35 && g < 0.35 && b < 0.35) || (r > 0.75 && g > 0.75 && b > 0.75)) {
+				r = std::max((double)rand() / RAND_MAX, 0.75); // So we don't get confused with the floor
+				g = (double)rand() / RAND_MAX;
+				b = (double)rand() / RAND_MAX;
+			}
+			viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cloudid);
+		}
+		added_clusters = clusters.size();
+		clusters_mtx.unlock();
+	}
+	else {
+		for (int i = 0; i < added_clusters; ++i) viewer.removePointCloud("cluster" + std::to_string(i));
+		added_clusters = 0;
+	}
+
 }
 
 void HR2ISceneViewer::drawSkeleton(pcl::visualization::PCLVisualizer& viewer, Skeleton& skel) {

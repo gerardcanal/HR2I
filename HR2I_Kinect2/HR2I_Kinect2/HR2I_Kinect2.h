@@ -17,6 +17,8 @@
 // ROS
 #include "hr2i_thesis/GestureRecognitionResult.h"
 
+#define OBJECT_RADIUS 1.0 // Distance between the point and the objects which are to be segmented
+
 using namespace std;
 
 class HR2I_Kinect2 {
@@ -35,6 +37,7 @@ public:
 	void HR2I_Kinect2::writeGroundPlaneCoefficients(std::vector<float> vec_g_coeffs, string path = "Parameters\\GroundPlaneCoeffs.txt");
 	void setGroundInfo(const vector<float>& ground_coeffs, const vector<float>& groundPoint);
 	deque<Skeleton>* getInputFrames();
+	void getAndDrawScene(Kinect2Utils* k2u, pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, int obj_radius = OBJECT_RADIUS);
 
 private:
 	// Vars
@@ -51,6 +54,6 @@ private:
 
 	// Methods
 	void dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, GRParameters params);
-	void setPCLScene(IDepthFrame* df, ICoordinateMapper* cmapper, std::vector<float> vec_g_coeffs);
+	//void setPCLScene(IDepthFrame* df, ICoordinateMapper* cmapper, std::vector<float> vec_g_coeffs);
 	pcl::PointCloud<pcl::PointXYZ>::Ptr HR2I_Kinect2::getOnePointCloudFromKinect(Kinect2Utils* k2u);
 };

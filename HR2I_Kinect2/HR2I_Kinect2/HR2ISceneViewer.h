@@ -18,10 +18,13 @@ public:
 	void setScene(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, bool downsample = true);
 	void setPerson(const Skeleton& skel);
 	void setPointingPoint(const pcl::PointXYZ& point);
+	void setSegmentedClusters(const std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters);
+	
 	void unregisterPointPickingCb();
 	void registerPointPickingCb();
 	int getNumPickedPoints();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr getPickedPointsCloud();
+	
 	void setGroundCoeffs(const std::vector<float>& ground_coeffs);
 private:
 	pcl::visualization::CloudViewer _viewer;
@@ -42,12 +45,18 @@ private:
 	//static pcl::PointCloud<pcl::PointXYZ>::Ptr _floor;
 	static Skeleton _person;
 	static pcl::PointXYZ _pointingPoint;
+	static std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters;
+
 	static std::mutex scene_mtx;
 	static std::mutex person_mtx;
 	static std::mutex pointingpoint_mtx;
+	static std::mutex clusters_mtx;
+
 	static bool created;
 	static bool scene_updated;
 	static bool body_updated;
+	static bool clusters_updated;
+	static int added_clusters;
 
 	// Viewer loop callbacks
 	static void initScene(pcl::visualization::PCLVisualizer& viewer);

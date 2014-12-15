@@ -84,7 +84,7 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 }
 
 // MAIN
-/*int _tmain(int argc, _TCHAR * argv[]) {
+int _tmain(int argc, _TCHAR * argv[]) {
 	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt"; 
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
 	const int RGB_Depth = 1; // 0 - None, 1 - RGB, 2 - Depth
@@ -122,8 +122,9 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 	for (int i = 0; i < 10; ++i) {
 		hr2i_thesis::GestureRecognitionResult gr_res = hr2i.recognizeGestures(GR_PARAMS_PATH, hr2i.readDynamicModels(GESTURE_MODELS_PATH), k2u);
 		if (gr_res.gestureId == gr_res.idPointAt) {
-			pcl::PointXYZ p(gr_res.ground_point.x, gr_res.ground_point.y, gr_res.ground_point.z);
-			pcl_viewer.setPointingPoint(p);
+			pcl::PointXYZ ppoint(gr_res.ground_point.x, gr_res.ground_point.y, gr_res.ground_point.z);
+			//pcl_viewer.setPointingPoint(ppoint);
+			hr2i.getAndDrawScene(&k2u, ppoint, true, true, OBJECT_RADIUS);
 			Sleep(15000);
 			pcl_viewer.setPointingPoint(pcl::PointXYZ(0,0,0));
 		}
@@ -131,18 +132,17 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 	cout << "Hello World!" << endl;
 	int x; cin >> x;
 	iface.join();
-}*/
+}
 
 
-//FAKEMAIN
+//FAKEMAIN 
+/*
 int _tmain(int argc, _TCHAR * argv[]) {
 	cout << "Initializing Kinect 2 interface... ";
 	Kinect2Utils k2u;
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
 	if (!SUCCEEDED(hr)) return -1;
 
-	// Multiframe not used because RGB interferes with it...
-	//hr = k2u.openMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Depth | FrameSourceTypes::FrameSourceTypes_Body);
 	hr = k2u.openBodyFrameReader();
 	hr = k2u.openDepthFrameReader();
 	if (!SUCCEEDED(hr)) return -1;
@@ -151,16 +151,31 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	ICoordinateMapper* cmapper = NULL;
 	k2u.getCoordinateMapper(cmapper);
 
-	pcl::visualization::CloudViewer pclviewer = pcl::visualization::CloudViewer("PCL OBJECT Viewer");
+	std::array<int, 2> size, pos;
+	HR2ISceneViewer pcl_viewer("Human MultiRobot Interaction 3D Viewer", true);
 	while (true) {
 		IDepthFrame* df = k2u.getLastDepthFrameFromDefault();
 		if (df != NULL) {
 			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = K2PCL::segmentObjectsFromScene(pcPtr);
-
+			pcl_viewer.setScene(pcPtr);
+			pcl_viewer.setSegmentedClusters(clusters);
+			cout << endl << "-------------------------------------------------" << endl;
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr jointclusters(new pcl::PointCloud<pcl::PointXYZRGB>);
-			for (int i = 0; i < clusters.size(); ++i) {
-				pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
+			for (int i = 0; i < clusters.size(); ++i) 
+			{
+				pcl::PointXYZ cent = K2PCL::compute3DCentroid(clusters[i]);
+				vector<float> stdcent = K2PCL::pclPointToVector(cent);
+				vector<float> origin = { -0.02f, 0.0f, 1.3f };
+				if (Utils::euclideanDistance(stdcent, origin) < 0.4) {
+
+					pair<double, double> areavol = K2PCL::computeAreaVolume(clusters[i]);
+					cout << "Cluster " << i << ": Size: " << clusters[i]->size() << " Area: " << areavol.first << " Volume: " << areavol.second << " Centroid: ";
+					cout << "Centroid: " << cent.x << " " << cent.y << " " << cent.z << " Distance: " << Utils::euclideanDistance(stdcent, origin) << endl << endl;
+					pcl_viewer.setPointingPoint(cent);
+				}
+
+				/*pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
 				pcRGBptr->resize(clusters[i]->size());
 				uint8_t r = rand() % 255, g = rand() % 255, b = rand() % 255;
 				for (int j = 0; j < clusters[i]->size(); ++j) {
@@ -170,11 +185,10 @@ int _tmain(int argc, _TCHAR * argv[]) {
 					auxp.z = clusters[i]->at(j).z;
 					pcRGBptr->at(j) = auxp;
 				}
-				*jointclusters += *pcRGBptr;
+				*jointclusters += *pcRGBptr;*/ /*
 			}
-			pclviewer.showCloud(jointclusters);
+			//pclviewer.showCloud(jointclusters);
 		}
 		SafeRelease(df);
-		// TODO get centroid of clusters and check convexHULL and play with distance parameter of obj clustering
 	}
-}
+}*/

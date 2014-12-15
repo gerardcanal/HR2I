@@ -45,7 +45,7 @@ void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, GRParam
 				inputFrames.push_back(sk);
 			}
 		}
-		if (df) setPCLScene(df, cmapper, ground_coeffs);
+		if (df) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
 		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
 		SafeRelease(df);
 		
@@ -120,11 +120,11 @@ vector<vector<vector<float>>> HR2I_Kinect2::readDynamicModels(string gestPath) {
 	return models;
 }
 
-void HR2I_Kinect2::setPCLScene(IDepthFrame* df, ICoordinateMapper* cmapper, std::vector<float> vec_g_coeffs) {
+/*Deprecated... void HR2I_Kinect2::setPCLScene(IDepthFrame* df, ICoordinateMapper* cmapper, std::vector<float> vec_g_coeffs) {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 	//pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
 	pcl_viewer->setScene(pcPtr);
-}
+}*/
 
 /// Check if ground coefficients are working (true) or need to be recalculated (false)
 /// plane_out is an output parameter with the segmented plane
@@ -211,4 +211,34 @@ void HR2I_Kinect2::setGroundInfo(const vector<float>& ground_coeffs, const vecto
 
 deque<Skeleton>* HR2I_Kinect2::getInputFrames() {
 	return &inputFrames;
+}
+
+void HR2I_Kinect2::getAndDrawScene(Kinect2Utils* k2u, pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, int obj_radius) {
+	bool rightBody = true;
+
+	pcl_viewer->setPointingPoint(pointingPoint);
+
+	ICoordinateMapper* cmapper = NULL;
+	k2u->getCoordinateMapper(cmapper);
+
+	IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
+	if (drawBody) {
+		IBodyFrame* bodyFrame = k2u->getLastBodyFrameFromDefault();
+
+		if (bodyFrame) {
+			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, 0, true);
+			if (body_view != NULL) body_view->setBodyFrameToDraw(bodyFrame);
+			if (pcl_viewer != NULL) pcl_viewer->setPerson(sk);
+		}
+		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
+	}
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
+	if (drawObjects) {
+		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects = K2PCL::segmentObjectsNearPointFromScene(pcPtr, OBJECT_RADIUS, pointingPoint);
+		pcl_viewer->setSegmentedClusters(objects);
+	}
+	
+	if (df) pcl_viewer->setScene(pcPtr);
+	
+	SafeRelease(df);
 }
