@@ -1,1 +1,1 @@
-Ground_Plane_Coefficients: -0.0345496 -0.998998 -0.028446
+Ground_Plane_Coefficients: -0.0195607 -0.999237 -0.0338077

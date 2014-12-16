@@ -74,7 +74,7 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 		hr2i.writeGroundPlaneCoefficients(ground_coeffs, GROUND_PARAMS_PATH);
 		cout << "DONE: ground coefficients were stored in \"" << GROUND_PARAMS_PATH << "\"" << endl;
 	}
-	else cout << "DONE";
+	else cout << "DONE" << endl;
 	//hr2i.setGroundCoefficients(ground_coeffs); // Redundant...
 	// Get plane point
 	pcl::PointXYZ p = groundplane->at(groundplane->size() / 2); // Get random point

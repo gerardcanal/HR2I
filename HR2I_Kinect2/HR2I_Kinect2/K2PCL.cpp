@@ -178,8 +178,10 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsNearPointF
 		if (Utils::euclideanDistance(K2PCL::pclPointToVector(cluster_centroid), K2PCL::pclPointToVector(nearPoint)) > distance) { 
 			*cloud += *clusters[i]; // Add the cluster to the scene again
 			clusters.erase(clusters.begin() + i);
+			std::cout << "erased " << i << " size: " << clusters.size() << std::endl;
 		}
 	}
+	std::cout << distance << " " << clusters.size() << std::endl;
 	return clusters;
 }
 

@@ -132,6 +132,29 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 		}
 		else { viewer.updatePointCloud(scenecp, "scene"); }
 		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "floor");
+
+		// Remove old clusters
+		for (int i = 0; i < added_clusters; ++i) viewer.removePointCloud("cluster" + std::to_string(i));
+		added_clusters = 0;
+		if (clusters_updated) {
+			clusters_mtx.lock();
+			clusters_updated = false;
+			for (int i = 0; i < clusters.size(); ++i) {
+				std::string cloudid = "cluster" + std::to_string(i);
+				viewer.addPointCloud(clusters[i], cloudid);
+				double r = std::max((double)rand() / RAND_MAX, 0.75); // So we don't get confused with the floor
+				double g = (double)rand() / RAND_MAX;
+				double b = (double)rand() / RAND_MAX;
+				if ((r < 0.35 && g < 0.35 && b < 0.35) || (r > 0.75 && g > 0.75 && b > 0.75)) {
+					r = std::max((double)rand() / RAND_MAX, 0.75); // So we don't get confused with the floor
+					g = (double)rand() / RAND_MAX;
+					b = (double)rand() / RAND_MAX;
+				}
+				viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cloudid);
+			}
+			added_clusters = clusters.size();
+			clusters_mtx.unlock();
+		}
 	}
 
 	// Point
@@ -141,7 +164,7 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 		viewer.addSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 1, "pointingPoint");
 		//viewer.updateSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
 		if (body_updated) viewer.removeShape("PointArrow");
-		if (_person.getTrackingID() != 0 && body_updated) {
+		if (_person.getTrackingID() != 0/* && body_updated*/) {
 			Joint finger = _person.getJoint(JointType_HandTipRight);
 			pcl::PointXYZ pA(finger.Position.X, finger.Position.Y, finger.Position.Z);
 			viewer.addArrow(_pointingPoint, pA, 1.0, 1.0, 0.0, false, "PointArrow");
@@ -152,32 +175,6 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 		viewer.removeShape("PointArrow");
 	}
 	pointingpoint_mtx.unlock();
-
-	if (clusters_updated) {
-		clusters_mtx.lock();
-		for (int i = 0; i < added_clusters; ++i) viewer.removePointCloud("cluster" + std::to_string(i));
-		added_clusters = 0;
-		clusters_updated = false;
-		for (int i = 0; i < clusters.size(); ++i) {
-			std::string cloudid = "cluster" + std::to_string(i);
-			viewer.addPointCloud(clusters[i], cloudid);
-			double r = std::max((double)rand() / RAND_MAX, 0.75); // So we don't get confused with the floor
-			double g = (double)rand() / RAND_MAX;
-			double b = (double)rand() / RAND_MAX;
-			if ((r < 0.35 && g < 0.35 && b < 0.35) || (r > 0.75 && g > 0.75 && b > 0.75)) {
-				r = std::max((double)rand() / RAND_MAX, 0.75); // So we don't get confused with the floor
-				g = (double)rand() / RAND_MAX;
-				b = (double)rand() / RAND_MAX;
-			}
-			viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, r, g, b, cloudid);
-		}
-		added_clusters = clusters.size();
-		clusters_mtx.unlock();
-	}
-	else {
-		for (int i = 0; i < added_clusters; ++i) viewer.removePointCloud("cluster" + std::to_string(i));
-		added_clusters = 0;
-	}
 
 }
 
