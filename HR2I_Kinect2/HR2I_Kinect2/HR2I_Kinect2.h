@@ -17,7 +17,7 @@
 // ROS
 #include "hr2i_thesis/GestureRecognitionResult.h"
 
-#define OBJECT_RADIUS 0.0 // Distance between the point and the objects which are to be segmented
+#define OBJECT_RADIUS 0.5 // Distance between the point and the objects which are to be segmented
 
 using namespace std;
 

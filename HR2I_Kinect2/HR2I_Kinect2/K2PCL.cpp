@@ -170,9 +170,12 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsFromScene(
 
 /// Distance is the euclidean distance between nearPoint and the centroid of the object clusters. Those which are in a distance < distance
 /// Returns and output parameters are the same as segmentObjectsFromScene
-std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsNearPointFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, const int distance,  pcl::PointXYZ nearPoint, int max_size, int min_size, double cluster_tolerance) {
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsNearPointFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, const double distance_th,  pcl::PointXYZ nearPoint, int max_size, int min_size, double cluster_tolerance) {
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = segmentObjectsFromScene(cloud, max_size, min_size, cluster_tolerance);
-	for (int i = 0; i < clusters.size(); ++i) {
+
+	/* Inefficient version
+	int i = 0;
+	while (i < clusters.size()) {
 		pcl::PointXYZ cluster_centroid = K2PCL::compute3DCentroid(clusters[i]);
 		// if distance between the centroid and nearPoint is greater than the threshold, we remove the cluster and add it again to the scene cloud
 		if (Utils::euclideanDistance(K2PCL::pclPointToVector(cluster_centroid), K2PCL::pclPointToVector(nearPoint)) > distance) { 
@@ -180,8 +183,22 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsNearPointF
 			clusters.erase(clusters.begin() + i);
 			std::cout << "erased " << i << " size: " << clusters.size() << std::endl;
 		}
-	}
-	std::cout << distance << " " << clusters.size() << std::endl;
+		else ++i;
+	}*/
+	int i = 0;
+	clusters.erase(std::remove_if(clusters.begin(), clusters.end(),
+		[&](const pcl::PointCloud<pcl::PointXYZ>::Ptr val) -> bool {
+		pcl::PointXYZ cluster_centroid = K2PCL::compute3DCentroid(val);
+		/*if (Utils::euclideanDistance(K2PCL::pclPointToVector(cluster_centroid), K2PCL::pclPointToVector(nearPoint)) > distance_th ||
+			K2PCL::computeAreaVolume(val).second < VOLUME_THRESHOLD) {
+			*cloud += *val; // Add the cluster to the scene again
+			return true;
+		}
+		else std::cout << K2PCL::computeAreaVolume(val).second << std::endl;*/
+		std::cout << K2PCL::computeAreaVolume(val).second << "   " << val->size() << std::endl;
+			return false;
+		}),
+		clusters.end());
 	return clusters;
 }
 

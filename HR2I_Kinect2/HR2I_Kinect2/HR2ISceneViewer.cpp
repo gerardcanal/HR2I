@@ -106,6 +106,26 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 	}
 	ppmtx.unlock();
 
+	// Point
+	pointingpoint_mtx.lock();
+	if (_pointingPoint.x != 0 || _pointingPoint.y != 0 || _pointingPoint.z != 0) {
+		viewer.removeShape("pointingPoint");
+		viewer.addSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 1, "pointingPoint");
+		//viewer.updateSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
+		//if (body_updated) viewer.removeShape("PointArrow"); // Not really needed...
+		if (_person.getTrackingID() != 0/* && body_updated*/) {
+			Joint finger = _person.getJoint(JointType_HandTipRight);
+			pcl::PointXYZ pA(finger.Position.X, finger.Position.Y, finger.Position.Z);
+			viewer.addArrow(_pointingPoint, pA, 1.0, 1.0, 0.0, false, "PointArrow");
+		}
+	}
+	else {
+		viewer.removeShape("pointingPoint");
+		viewer.removeShape("PointArrow");
+	}
+	pointingpoint_mtx.unlock();
+
+	// Body
 	if (body_updated) {
 		// Person
 		person_mtx.lock();
@@ -156,25 +176,6 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 			clusters_mtx.unlock();
 		}
 	}
-
-	// Point
-	pointingpoint_mtx.lock();
-	if (_pointingPoint.x != 0 || _pointingPoint.y != 0 || _pointingPoint.z != 0) {
-		viewer.removeShape("pointingPoint");
-		viewer.addSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 1, "pointingPoint");
-		//viewer.updateSphere(_pointingPoint, SPHERE_RADIUS, 0, 0, 255, "pointingPoint");
-		if (body_updated) viewer.removeShape("PointArrow");
-		if (_person.getTrackingID() != 0/* && body_updated*/) {
-			Joint finger = _person.getJoint(JointType_HandTipRight);
-			pcl::PointXYZ pA(finger.Position.X, finger.Position.Y, finger.Position.Z);
-			viewer.addArrow(_pointingPoint, pA, 1.0, 1.0, 0.0, false, "PointArrow");
-		}
-	}
-	else {
-		viewer.removeShape("pointingPoint");
-		viewer.removeShape("PointArrow");
-	}
-	pointingpoint_mtx.unlock();
 
 }
 

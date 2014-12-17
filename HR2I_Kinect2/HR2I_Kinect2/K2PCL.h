@@ -25,10 +25,10 @@
 #define EQUAL_PLANE_TH  0.1
 #define PLANE_DIST_TH   0.01
 
-#define MIN_CLUSTER_SIZE 100
+#define MIN_CLUSTER_SIZE 500
 #define MAX_CLUSTER_SIZE 3000
-#define CLUSTER_TOLERANCE 0.045 // default: 0.02 (2 cm)
-
+#define CLUSTER_TOLERANCE 0.025 // default: 0.02 (2 cm)
+#define VOLUME_THRESHOLD 0.0005
 class K2PCL
 {
 public:
@@ -39,7 +39,7 @@ public:
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr segmentPlaneByDirection(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, const std::vector<float>& direction,
 		                                                               const float equal_plane_th = EQUAL_PLANE_TH, const int max_planes = MAX_PLANES_ITER, const int max_iter = MAX_ITER_DEF);
 	static std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> segmentObjectsFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, int max_size = MAX_CLUSTER_SIZE, int min_size = MIN_CLUSTER_SIZE, double cluster_tolerance = CLUSTER_TOLERANCE);
-	static std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> segmentObjectsNearPointFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, const int distance, pcl::PointXYZ nearPoint,
+	static std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> segmentObjectsNearPointFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, const double distance_th, pcl::PointXYZ nearPoint,
 																							 int max_size = MAX_CLUSTER_SIZE, int min_size = MIN_CLUSTER_SIZE, double cluster_tolerance = CLUSTER_TOLERANCE);
 
 	static pcl::PointXYZ compute3DCentroid(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud);

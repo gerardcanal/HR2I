@@ -83,7 +83,8 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 	pcl_viewer.setGroundCoeffs(ground_coeffs);
 }
 
-// MAIN
+// MAIN 
+/*
 int _tmain(int argc, _TCHAR * argv[]) {
 	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt"; 
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
@@ -132,11 +133,11 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	cout << "Hello World!" << endl;
 	int x; cin >> x;
 	iface.join();
-}
+}*/
 
 
 //FAKEMAIN 
-/*
+
 int _tmain(int argc, _TCHAR * argv[]) {
 	cout << "Initializing Kinect 2 interface... ";
 	Kinect2Utils k2u;
@@ -185,10 +186,10 @@ int _tmain(int argc, _TCHAR * argv[]) {
 					auxp.z = clusters[i]->at(j).z;
 					pcRGBptr->at(j) = auxp;
 				}
-				*jointclusters += *pcRGBptr;*/ /*
+				*jointclusters += *pcRGBptr;*/ 
 			}
 			//pclviewer.showCloud(jointclusters);
 		}
 		SafeRelease(df);
 	}
-}*/
+}
