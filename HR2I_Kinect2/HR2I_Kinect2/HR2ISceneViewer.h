@@ -18,7 +18,7 @@ public:
 	void setScene(pcl::PointCloud<pcl::PointXYZ>::Ptr scene, bool downsample = true);
 	void setPerson(const Skeleton& skel);
 	void setPointingPoint(const pcl::PointXYZ& point);
-	void setSegmentedClusters(const std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters);
+	void setSceneAndSegmentedClusters(const pcl::PointCloud<pcl::PointXYZ>::Ptr scene, const std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters);
 	
 	void unregisterPointPickingCb();
 	void registerPointPickingCb();

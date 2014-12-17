@@ -9,7 +9,8 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/kdtree/kdtree.h>
+//#include <pcl/kdtree/kdtree.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/common/centroid.h>
 #include <pcl/surface/convex_hull.h>
@@ -28,7 +29,7 @@
 #define MIN_CLUSTER_SIZE 500
 #define MAX_CLUSTER_SIZE 3000
 #define CLUSTER_TOLERANCE 0.025 // default: 0.02 (2 cm)
-#define VOLUME_THRESHOLD 0.0005
+#define VOLUME_THRESHOLD 0.001
 class K2PCL
 {
 public:

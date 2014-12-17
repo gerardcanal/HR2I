@@ -84,7 +84,6 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 }
 
 // MAIN 
-/*
 int _tmain(int argc, _TCHAR * argv[]) {
 	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt"; 
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
@@ -124,7 +123,6 @@ int _tmain(int argc, _TCHAR * argv[]) {
 		hr2i_thesis::GestureRecognitionResult gr_res = hr2i.recognizeGestures(GR_PARAMS_PATH, hr2i.readDynamicModels(GESTURE_MODELS_PATH), k2u);
 		if (gr_res.gestureId == gr_res.idPointAt) {
 			pcl::PointXYZ ppoint(gr_res.ground_point.x, gr_res.ground_point.y, gr_res.ground_point.z);
-			//pcl_viewer.setPointingPoint(ppoint);
 			hr2i.getAndDrawScene(&k2u, ppoint, true, true, OBJECT_RADIUS);
 			Sleep(15000);
 			pcl_viewer.setPointingPoint(pcl::PointXYZ(0,0,0));
@@ -133,11 +131,11 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	cout << "Hello World!" << endl;
 	int x; cin >> x;
 	iface.join();
-}*/
+}
 
 
 //FAKEMAIN 
-
+/*
 int _tmain(int argc, _TCHAR * argv[]) {
 	cout << "Initializing Kinect 2 interface... ";
 	Kinect2Utils k2u;
@@ -158,7 +156,9 @@ int _tmain(int argc, _TCHAR * argv[]) {
 		IDepthFrame* df = k2u.getLastDepthFrameFromDefault();
 		if (df != NULL) {
 			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
-			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = K2PCL::segmentObjectsFromScene(pcPtr);
+			//vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = K2PCL::segmentObjectsFromScene(pcPtr);
+			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = K2PCL::segmentObjectsNearPointFromScene(pcPtr, OBJECT_RADIUS, pcl::PointXYZ(-0.1103f, -0.5095f, 1.4396f));
+
 			pcl_viewer.setScene(pcPtr);
 			pcl_viewer.setSegmentedClusters(clusters);
 			cout << endl << "-------------------------------------------------" << endl;
@@ -167,7 +167,7 @@ int _tmain(int argc, _TCHAR * argv[]) {
 			{
 				pcl::PointXYZ cent = K2PCL::compute3DCentroid(clusters[i]);
 				vector<float> stdcent = K2PCL::pclPointToVector(cent);
-				vector<float> origin = { -0.02f, 0.0f, 1.3f };
+				vector<float> origin = { -0.1103f, -0.5095f, 1.4396f };
 				if (Utils::euclideanDistance(stdcent, origin) < 0.4) {
 
 					pair<double, double> areavol = K2PCL::computeAreaVolume(clusters[i]);
@@ -186,10 +186,10 @@ int _tmain(int argc, _TCHAR * argv[]) {
 					auxp.z = clusters[i]->at(j).z;
 					pcRGBptr->at(j) = auxp;
 				}
-				*jointclusters += *pcRGBptr;*/ 
+				*jointclusters += *pcRGBptr;*/ /*
 			}
 			//pclviewer.showCloud(jointclusters);
 		}
 		SafeRelease(df);
 	}
-}
+}*/

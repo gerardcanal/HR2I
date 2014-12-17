@@ -232,14 +232,15 @@ void HR2I_Kinect2::getAndDrawScene(Kinect2Utils* k2u, pcl::PointXYZ pointingPoin
 		}
 		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
 	}
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
-	if (drawObjects) {
-		std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects = K2PCL::segmentObjectsNearPointFromScene(pcPtr, OBJECT_RADIUS, pointingPoint);
-		pcl_viewer->setSegmentedClusters(objects);
-		std::cout << objects.size() << " clusters have been segmented." << std::endl;
+	if (df) {
+		pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
+		if (drawObjects) {
+			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects = K2PCL::segmentObjectsNearPointFromScene(pcPtr, OBJECT_RADIUS, pointingPoint);
+			pcl_viewer->setSceneAndSegmentedClusters(pcPtr, objects);
+			std::cout << objects.size() << " clusters have been segmented." << std::endl;
+		}
+		else pcl_viewer->setScene(pcPtr);
 	}
-	
-	if (df) pcl_viewer->setScene(pcPtr);
 	
 	SafeRelease(df);
 }

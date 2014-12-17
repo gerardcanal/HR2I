@@ -74,10 +74,11 @@ void HR2ISceneViewer::setPointingPoint(const pcl::PointXYZ& point) {
 	pointingpoint_mtx.unlock();
 }
 
-void HR2ISceneViewer::setSegmentedClusters(const std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters) {
+void HR2ISceneViewer::setSceneAndSegmentedClusters(const pcl::PointCloud<pcl::PointXYZ>::Ptr scene, const std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>& clusters) {
 	clusters_mtx.lock();
 	this->clusters = clusters;
 	clusters_updated = true;
+	this->setScene(scene);
 	clusters_mtx.unlock();
 }
 
@@ -140,23 +141,11 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 	}
 
 	if (scene_updated) {
-		scene_mtx.lock();
-		pcl::PointCloud<pcl::PointXYZ>::Ptr scenecp = _scene->makeShared();
-		scene_updated = false;
-		scene_mtx.unlock();
-		// Scene
-		if (ground_coeffs.size() > 0) {
-			pcl::PointCloud<pcl::PointXYZ>::Ptr floor = K2PCL::segmentPlaneByDirection(scenecp, ground_coeffs);
-			viewer.updatePointCloud(scenecp, "scene");
-			viewer.updatePointCloud(floor, "floor");
-		}
-		else { viewer.updatePointCloud(scenecp, "scene"); }
-		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "floor");
-
+		// Treat clusters first
 		// Remove old clusters
 		for (int i = 0; i < added_clusters; ++i) viewer.removePointCloud("cluster" + std::to_string(i));
 		added_clusters = 0;
-		if (clusters_updated) {
+		if (clusters_updated) { // Add new clusters
 			clusters_mtx.lock();
 			clusters_updated = false;
 			for (int i = 0; i < clusters.size(); ++i) {
@@ -175,6 +164,20 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 			added_clusters = clusters.size();
 			clusters_mtx.unlock();
 		}
+
+		// Scene
+		scene_mtx.lock();
+		pcl::PointCloud<pcl::PointXYZ>::Ptr scenecp = _scene->makeShared();
+		scene_updated = false;
+		scene_mtx.unlock();
+		// Scene
+		if (ground_coeffs.size() > 0) {
+			pcl::PointCloud<pcl::PointXYZ>::Ptr floor = K2PCL::segmentPlaneByDirection(scenecp, ground_coeffs);
+			viewer.updatePointCloud(scenecp, "scene");
+			viewer.updatePointCloud(floor, "floor");
+		}
+		else { viewer.updatePointCloud(scenecp, "scene"); }
+		viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, 1, 0, 0, "floor");
 	}
 
 }
