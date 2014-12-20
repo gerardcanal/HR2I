@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from smach import StateMachine, CBState
-from hr2i_smach_states import ReadObjectSegmentationTopic, ReleaseNAOFromWifiBotState, WBGoToLocationNearPoint
+from hr2i_smach_states import ReadObjectSegmentationTopic, ReleaseNAOFromWifiBotState, WBMoveCloseToPoint
 from nao_smach_utils.move_to_state import MoveToState
 
 LAST_ORIENT = True
@@ -30,7 +30,7 @@ class PointAtResponseExecutionSM(StateMachine):
                              remapping={'in_NAO_riding': 'in_NAO_riding', 'out_NAO_riding': 'out_NAO_riding'},
                              transitions={'possible': 'MOVE_TO_POINTING_PLACE', 'impossible': 'not_riding_wb'})
 
-            StateMachine.add('MOVE_TO_POINTING_PLACE', WBGoToLocationNearPoint(), transitions={'succeeded': 'WAIT_FOR_BLOBS'},
+            StateMachine.add('MOVE_TO_POINTING_PLACE', WBMoveCloseToPoint(), transitions={'succeeded': 'WAIT_FOR_BLOBS'},
                              remapping={'request': 'move_to_request'})
 
             StateMachine.add('WAIT_FOR_BLOBS', ReadObjectSegmentationTopic(), transitions={'succeeded': 'RELEASE_NAO'})

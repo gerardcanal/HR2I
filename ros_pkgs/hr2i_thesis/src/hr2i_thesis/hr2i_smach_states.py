@@ -91,7 +91,7 @@ def _Pose2D_to_str(pose):
     return '(' + str(pose.x) + ', ' + str(pose.y) + ', ' + str(pose.theta) + ')'
 
 
-class WBGoToLocationNearPoint(StateMachine):
+class WBMoveCloseToPoint(StateMachine):
     ''' Make the wifibot go to a location which is in the direction of a point but stopping at dist_to_loc m'''
     def __init__(self, dist_to_loc=0.2):
         StateMachine.__init__(self, outcomes=['succeeded', 'preempted', 'aborted'], input_keys=['ground_point'])
@@ -162,6 +162,8 @@ class NaoGoToLocationInFront(StateMachine):
             and rotate it alpha degrees to have the direction in robot coordinates. Finally translate the
             object point in the direction of the rotated v vector.
     '''
+    SIZE_TH = 0.95  # If ratio between sizemax/sizemin > 0.95 then we assume ambiguous size
+
     def __init__(self, K=0.2):
         StateMachine.__init__(self, outcomes=['succeeded', 'aborted'], input_keys=['alpha', 'location_point'])
 
@@ -193,3 +195,34 @@ class NaoGoToLocationInFront(StateMachine):
 
             StateMachine.add('MOVE_TO_FRONT_OBJECT', MoveToState(), remapping={'objective': 'target_loc'},
                              transitions={'succeeded': 'succeeded', 'aborted': 'aborted', 'preempted': 'aborted'})
+
+
+class DesambiguateBlobs(StateMachine):
+    def __init__(self):
+        StateMachine.__init__(self, outcomes=['succeeded', 'aborted'], input_keys=['info_clusters'],
+                              output_keys=['selected_cluster_centroid'])
+
+        with self:
+            def check_generate_cb(ud):
+                # TODO generate question (big / small, left/right)
+                # First check if distance ratio is enough to differenciate... TODO
+
+                # Check if size is not ambiguous and use size if it isn't
+                # Sort lists
+                unziped_sorted = zip(*sorted(zip(ud.in_cluster_info.cluster_sizes, ud.in_cluster_info.cluster_centroids)))
+                pcc_sorted = PointCloudClusterCentroids()
+                pcc_sorted.cluster_sizes = unziped_sorted[0]
+                pcc_sorted.cluster_centroids = unziped_sorted[1]
+                for i in xrange(0, len(pcc_sorted.cluster_sizes)):
+                    for j in xrange(i+1, len(pcc_sorted.cluster_sizes)):
+                        if (pcc_sorted.cluster_sizes[i]/pcc_sorted.cluster_sizes[j]) > SIZE_TH:
+                            # They are sorted so it will be always below 1.
+                            pass
+
+                # If size was not enough, check position...
+
+            StateMachine.add('GENERATE_PREPARE_INFO', CBState(check_generate_cb, outcomes=['succeeded'],
+                                                              input_keys=['in_cluster_info'],
+                                                              output_keys=['out_sorted_info']),
+                             remapping={},
+                             transitions={'None': ''})
