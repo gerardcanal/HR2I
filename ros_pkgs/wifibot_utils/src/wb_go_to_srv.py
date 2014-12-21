@@ -13,27 +13,28 @@ import matplotlib.pyplot as plt
 ################
 ### Variables ##
 ################
-R = 0.07 # Radius (7cm)
-L = 0.30 # Distance between wheels (30cm)
-PIDw = ( 0.05,    #Kp 0.1
-         0.002,  #Ki 0.02
-         0.000   #Kd 0.00
-    )
+R = 0.07  # Radius (7cm)
+L = 0.30  # Distance between wheels (30cm)
+PIDw = (0.05,   # Kp 0.1
+        0.002,  # Ki 0.02
+        0.000)  # Kd 0.00
+
 ###############
 # Constants ###
 ###############
 WB_ODOM_TOPIC = '/wifibot/odom'
 WB_SPEED_TOPIC = '/wifibot/cmd_speed'
 RESET_INFO_SRV = '/wifibot/reset_odom'
-ERROR_THETA_TH = 0.015 #0.025
+ERROR_THETA_TH = 0.015  # 0.025
 ERROR_DIST_TH = 0.045
-V = 0.01 # Linear velocity
+V = 0.01  # Linear velocity
 verbose = True
 plot = False
-SLEEP_TIME = 0.5 # seconds
+SLEEP_TIME = 0.5  # seconds
 FACTOR_ORIENT = 1.4
 FACTOR_Y = 1.35
 OFFSET_FACTOR_Y_ORIENT = 0.05
+
 
 class WifiBotMoveToService:
     def __init__(self):
@@ -54,7 +55,7 @@ class WifiBotMoveToService:
         t = rospy.get_time()
         dt = t - self._old_time
         self._old_time = t
-        
+
         #Start control
         quaternion = data.pose.pose.orientation
         odom = (data.pose.pose.position, euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))[2])
@@ -68,31 +69,30 @@ class WifiBotMoveToService:
             print "Goal: Pose: "+str((self._goal.x, self._goal.y, 0.0))
 
         # Get w by PID
-        theta_g = atan2(self._goal.y-odom[0].y, self._goal.x-odom[0].x) # Desired theta
+        theta_g = atan2(self._goal.y-odom[0].y, self._goal.x-odom[0].x)  # Desired theta
 
-        e_k = theta_g - odom[1] # Error
+        e_k = theta_g - odom[1]  # Error
         e_k = atan2(sin(e_k), cos(e_k))
-
 
         # Check if finished
         dist = sqrt((odom[0].x-self._goal.x)**2+(odom[0].y-self._goal.y)**2)
 
         #raw_input('Press a key...')
         #if (dist <= ERROR_DIST_TH and abs(e_k) <= ERROR_THETA_TH): # We're have arrived at the place and have the correct orientation for the goal
-        if (dist <= ERROR_DIST_TH) or self._lastOrient: # We're have arrived at the place and have the correct orientation for the goal
-            if self._orient: # We have to orient to the request orientation
+        if (dist <= ERROR_DIST_TH) or self._lastOrient:  # We're have arrived at the place and have the correct orientation for the goal
+            if self._orient:  # We have to orient to the request orientation
                 self._lastOrient = True
-                theta_g = atan2(sin(self._goal.theta), cos(self._goal.theta)) # To force it to be between -pi,pi
+                theta_g = atan2(sin(self._goal.theta), cos(self._goal.theta))  # To force it to be between -pi,pi
                 theta_g *= FACTOR_ORIENT
                 theta_g = atan2(sin(theta_g), cos(theta_g))
 
-                e_k = theta_g - odom[1] # Error
+                e_k = theta_g - odom[1]  # Error
                 e_k = atan2(sin(e_k), cos(e_k))
-                self._V = 0 # We don't want to move forward anymore
-            if not self._orient or abs(e_k) <= ERROR_THETA_TH: # We're done
-                self._reached = True # Make the service end
-                self._subs.unregister() # No need to move the robot again
-                self._V = V # Restore value
+                self._V = 0  # We don't want to move forward anymore
+            if not self._orient or abs(e_k) <= ERROR_THETA_TH:  # We're done
+                self._reached = True  # Make the service end
+                self._subs.unregister()  # No need to move the robot again
+                self._V = V  # Restore value
 
                 # Plot if activated... to see the last points
                 if plot:
@@ -122,11 +122,12 @@ class WifiBotMoveToService:
         (vl, vr) = self.uni_to_diff(self._V, w)
         self._pub.publish(vl, vr)
 
-
     def handle_move_to_service(self, req):
         self._reset_info()
-        if (req.orient): rospy.loginfo("Received call to move wifibot to ORIENTED position (%f, %f, %f)..." % (req.pose.x, req.pose.y, req.pose.theta))
-        else: rospy.loginfo("Received call to move wifibot to position (%f, %f, %f)..." % (req.pose.x, req.pose.y, req.pose.theta))
+        if (req.orient):
+            rospy.loginfo("Received call to move wifibot to ORIENTED position (%f, %f, %f)..." % (req.pose.x, req.pose.y, req.pose.theta))
+        else:
+            rospy.loginfo("Received call to move wifibot to position (%f, %f, %f)..." % (req.pose.x, req.pose.y, req.pose.theta))
         if (self._running):
             rospy.logerr("Called service while already running!")
             return False
@@ -149,7 +150,7 @@ class WifiBotMoveToService:
             self.create_plot()
 
         self._subs = rospy.Subscriber(WB_ODOM_TOPIC, Odometry, self.odom_cb, queue_size=1)
-        while (not self._reached): # Wait until we have reached the position
+        while (not self._reached):  # Wait until we have reached the position
             if plot:
                 self.plot()
             else:
@@ -204,8 +205,8 @@ class WifiBotMoveToService:
         plt.title('Error plot')
 
         plt.draw()
-            
+
 
 if __name__ == "__main__":
     srv = WifiBotMoveToService()
-    srv.run_service()   
+    srv.run_service()
