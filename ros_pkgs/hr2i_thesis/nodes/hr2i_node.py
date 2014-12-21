@@ -6,7 +6,7 @@ from smach import StateMachine
 from nao_smach_utils.check_nodes import CheckNodesState
 from nao_smach_utils.home_onoff import HomeOff_SM
 from nao_smach_utils.stiffness_states import EnableStiffnessState
-from hr2i_mainSM import HR2I_SM
+from hr2i_thesis.hr2i_mainSM import HR2I_SM
 
 if __name__ == "__main__":
     rospy.init_node('HR2I_main_pipeline_node')
@@ -34,5 +34,7 @@ if __name__ == "__main__":
     outcome = sm.execute()
 
     # Wait for ctrl-c to stop the application
+    print 'Press Ctrl+C to exit the node...'
     rospy.spin()
     sis.stop()
+    print  # So the prompt is not concatenated to the ^C symbol in the command line

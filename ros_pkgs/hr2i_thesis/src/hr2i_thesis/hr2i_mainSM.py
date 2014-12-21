@@ -8,17 +8,30 @@ from hr2i_pointat_sm import PointAtResponseExecutionSM
 class HR2I_SM(StateMachine):
     def __init__(self):
         StateMachine.__init__(self, outcomes=['succeeded', 'preempted', 'aborted'])
-        self.userdata.NAO_riding = True  # At the beginning, NAO will be riding the WifiBot
+        self.userdata.NAO_riding_wb = True  # At the beginning, NAO will be riding the WifiBot
 
         with self:
+            welcome_pool = ['Welcome! I am here to help you', 'Hey there! How may I help you?', 'Hello! I understand some gestures. Do you wanna try?']
+            StateMachine.add('WELCOME', SpeechFromPoolSM(pool=welcome_pool), transitions={'succeeded': 'WAIT_FOR_GESTURE'})
+
             StateMachine.add('WAIT_FOR_GESTURE', WaitForGestureRecognitionSM(),
                              transitions={'hello_recognized': 'SAY_HELLO', 'pointat_recognized': 'POINT_AT_SM'},
                              remapping={'out_ground_point': 'ground_point'})
 
-            StateMachine.add('SAY_HELLO', NaoSayHello(), transitions={'succeeded': 'WAIT_FOR_GESTURE'})
+            StateMachine.add('SAY_HELLO', NaoSayHello(), remapping={'riding_wifibot': 'NAO_riding_wb'},
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})
 
             StateMachine.add('POINT_AT_SM', PointAtResponseExecutionSM(),
-                             transitions={'succeeded': 'SAY_DONE'})
+                             transitions={'succeeded': 'SAY_DONE', 'not_riding_wb': 'SAY_CAN_NOT'})
+
+            cannot_pool = ['I see you are pointing somewhere, but I can not go there as I am not riding the wifibot.',
+                           'It would be cool to help you, but I am not on the wifibot.',
+                           'I can not get there without my cool wifibot transport.',
+                           'I would wish to go there, but I am not on the wifibot and too tired to walk there',
+                           'I am tired and I will not walk to that position. I am sorry']
+            StateMachine.add('SAY_CAN_NOT', SpeechFromPoolSM(pool=cannot_pool),
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE', 'preempted': 'WAIT_FOR_GESTURE', 'aborted': 'WAIT_FOR_GESTURE'})
 
             text_pool = ['I am done! What else?', 'No more gestures for me?', 'Look I got it!', 'Heyo I am awesome!']
-            StateMachine.add('SAY_DONE', SpeechFromPoolSM(pool=text_pool), transitions={'succeeded': 'WaitForGestureRecognitionSM'})
+            StateMachine.add('SAY_DONE', SpeechFromPoolSM(pool=text_pool),
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE', 'preempted': 'WAIT_FOR_GESTURE', 'aborted': 'WAIT_FOR_GESTURE'})

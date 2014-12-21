@@ -2,7 +2,7 @@
 import math
 
 from smach import StateMachine, CBState
-from nao_smach_utils.tts_states import SpeechFromPoolSM
+from nao_smach_utils.tts_state import SpeechFromPoolSM
 from nao_smach_utils.get_user_speech_answer import GetUserAnswer
 from hr2i_thesis.msg import PointCloudClusterCentroids
 
@@ -30,11 +30,12 @@ class DisambiguateBlobs(StateMachine):
                              remapping={'question_pool': 'speech_pool', 'out_sorted_info': 'sorted_info', 'out_used_metric': 'used_metric', 'out_asked_id': 'asked_id'},
                              transitions={'disambiguate': 'ASK_QUESTION', 'succeeded': 'SAY_FOUND'})
 
-            StateMachine.add('ASK_QUESTION', SpeechFromPoolSM(), remapping={'pool': 'speech_pool'}, transitions={'succeeded': 'LISTEN_ANSWER'})
+            StateMachine.add('ASK_QUESTION', SpeechFromPoolSM(), remapping={'pool': 'speech_pool'},
+                             transitions={'succeeded': 'LISTEN_USER', 'preempted': 'LISTEN_USER', 'aborted': 'LISTEN_USER'})
 
             StateMachine.add('LISTEN_USER', GetUserAnswer(get_one=True, ask_for_repetition=True),
                              remapping={'recognition_result': 'user_answer'},
-                             transitions={'succeeded': 'CHECK_RECOGNITION'})
+                             transitions={'succeeded': 'CHECK_RECOGNITION', 'preempted': 'LISTEN_USER', 'aborted': 'LISTEN_USER'})
 
             def check_yesno(ud):
                 if ud.user_answer == 'yes':  # We have it!
@@ -67,7 +68,8 @@ class DisambiguateBlobs(StateMachine):
                                           'answer_no': 'ASK_QUESTION',
                                           'remaining_one': 'SAY_FOUND'})
 
-            StateMachine.add('SAY_FOUND', SpeechFromPoolSM(), remapping={'pool': 'speech_pool'}, transitions={'succeeded': 'succeeded'})
+            StateMachine.add('SAY_FOUND', SpeechFromPoolSM(), remapping={'pool': 'speech_pool'},
+                             transitions={'succeeded': 'succeeded', 'preempted': 'succeeded', 'aborted': 'succeeded'})
 
     def check_generate_cb(self, ud):
         ud.out_asked_id = 0  # We will always ask for the first one
