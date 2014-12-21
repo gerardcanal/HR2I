@@ -11,7 +11,7 @@ from hr2i_thesis.hr2i_mainSM import HR2I_SM
 if __name__ == "__main__":
     rospy.init_node('HR2I_main_pipeline_node')
 
-    TOPIC_LIST_NAMES = ['/recognized_gesture', '/kinect2_blobs']
+    TOPIC_LIST_NAMES = ['/recognized_gesture', '/kinect2_clusters']
     SERVICES_LIST_NAMES = ['/cmd_pose_srv', '/wb_move_to_srv']
     ACTION_LIST_NAMES = ['/speech', '/joint_angles_action']
     PARAMS_LIST_NAMES = []

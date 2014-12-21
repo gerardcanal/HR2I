@@ -110,7 +110,9 @@ class WaitForGestureRecognitionSM(StateMachine):
 def _Pose2D_to_str(pose):
     # Small function to get a str from a Pose2D in a single line for displaying purposes.
     # Maybe should be moved to some better place so it can be used in more scripts
-    return '(' + str(pose.x) + ', ' + str(pose.y) + ', ' + str(pose.theta) + ')'
+    if isinstance(pose, Pose2D):
+        return '(' + str(pose.x) + ', ' + str(pose.y) + ', ' + str(pose.theta) + ')'
+    return '(' + str(pose.x) + ', ' + str(pose.y) + ', ' + str(pose.z) + ')'
 
 
 class WBMoveCloseToPoint(StateMachine):
@@ -143,6 +145,9 @@ class WBMoveCloseToPoint(StateMachine):
                 ##########
                 # Euclidean dist between point 0 and ground_point (as robot reference point is 0,0)
                 D = math.sqrt(ud.in_ground_point.x**2+ud.in_ground_point.y**2)
+                if D <= dist_to_loc:
+                    ud.out_move_req = MoveToServiceRequest()
+                    return 'succeeded'
                 _a = dist_to_loc*float(ud.in_ground_point.x)/D
                 _b = dist_to_loc*float(ud.in_ground_point.y)/D
                 req = MoveToServiceRequest()

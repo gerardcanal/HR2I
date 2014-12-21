@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from smach import StateMachine, CBState
 from hr2i_smach_states import ReadObjectSegmentationTopic, ReleaseNAOFromWifiBotState, WBMoveCloseToPoint, NaoGoToLocationInFront
-from disambiguate_sm import DisambiguateBlobs
+from hr2i_disambiguate_sm import DisambiguateBlobs
 from nao_smach_utils.read_topic_state import ReadTopicState
 from nao_smach_utils.execute_choregraphe_behavior_state import ExecuteBehavior
 from nao_smach_utils.tts_state import SpeechFromPoolSM
@@ -33,15 +33,21 @@ class PointAtResponseExecutionSM(StateMachine):
                                                           output_keys=['out_NAO_riding'],
                                                           outcomes=['possible', 'impossible']),
                              remapping={'in_NAO_riding': 'in_NAO_riding', 'out_NAO_riding': 'out_NAO_riding'},
-                             transitions={'possible': 'MOVE_TO_POINTING_PLACE', 'impossible': 'not_riding_wb'})
+                             transitions={'possible': 'SAY_GOING_POINT', 'impossible': 'not_riding_wb'})
 
-            StateMachine.add('MOVE_TO_POINTING_PLACE', WBMoveCloseToPoint(dist_to_loc=0.2), transitions={'succeeded': 'WAIT_FOR_BLOBS'},
-                             remapping={'request': 'move_to_request'})
+            going_pool = ['I see you are ponting there, I will go to check.', 'I saw where you pointed at!', 'Okay, I am going there now!',
+                          'Let\'s go!!']
+            StateMachine.add('SAY_GOING_POINT', SpeechFromPoolSM(pool=going_pool, blocking=False),
+                             transitions={'succeeded': 'MOVE_TO_POINTING_PLACE', 'aborted': 'MOVE_TO_POINTING_PLACE', 'preempted': 'MOVE_TO_POINTING_PLACE'})
+
+            StateMachine.add('MOVE_TO_POINTING_PLACE', WBMoveCloseToPoint(dist_to_loc=0.6),
+                             remapping={'ground_point': 'in_ground_point'},
+                             transitions={'succeeded': 'WAIT_FOR_BLOBS'})
 
             StateMachine.add('WAIT_FOR_BLOBS', ReadObjectSegmentationTopic(), remapping={'received_clusters': 'segmented_clusters'},
                              transitions={'succeeded': 'DISAMBIGUATE', 'timeouted': 'SAY_CHECKING'})
 
-            _pool = ['I am not seeing the objects there...', 'I have to clean my cameras, let me check again...',
+            _pool = ['I am not seeing the objects there.', 'I have to clean my cameras, let me check again.',
                      'I am sorry, I look like blind today']
             StateMachine.add('SAY_CHECKING', SpeechFromPoolSM(_pool),
                              transitions={'succeeded': 'WAIT_FOR_BLOBS', 'aborted': 'WAIT_FOR_BLOBS', 'preempted': 'WAIT_FOR_BLOBS'})
@@ -63,7 +69,7 @@ class PointAtResponseExecutionSM(StateMachine):
             StateMachine.add('EXTRACT_THETA', CBState(get_theta, outcomes=['succeeded'], input_keys=['wb_odom'], output_keys=['theta_wb']),
                              transitions={'succeeded': 'NAO_GO_TO_BLOB'})
 
-            StateMachine.add('NAO_GO_TO_BLOB', NaoGoToLocationInFront(K=0.2), remapping={'location_point': 'object_pose', 'alpha': 'theta_wb'},
+            StateMachine.add('NAO_GO_TO_BLOB', NaoGoToLocationInFront(K=0.025), remapping={'location_point': 'object_pose', 'alpha': 'theta_wb'},
                              transitions={'succeeded': 'GRASP_OBJECT'})
 
             StateMachine.add('GRASP_OBJECT', ExecuteBehavior(behavior_name='tomato_grasp'),

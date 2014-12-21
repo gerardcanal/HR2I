@@ -22,6 +22,7 @@ class HR2I_SM(StateMachine):
                              transitions={'succeeded': 'WAIT_FOR_GESTURE'})
 
             StateMachine.add('POINT_AT_SM', PointAtResponseExecutionSM(),
+                             remapping={'in_ground_point': 'ground_point', 'in_NAO_riding': 'NAO_riding_wb', 'out_NAO_riding': 'NAO_riding_wb'},
                              transitions={'succeeded': 'SAY_DONE', 'not_riding_wb': 'SAY_CAN_NOT'})
 
             cannot_pool = ['I see you are pointing somewhere, but I can not go there as I am not riding the wifibot.',

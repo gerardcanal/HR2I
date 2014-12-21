@@ -25,9 +25,11 @@ class DisambiguateBlobs(StateMachine):
         with self:
 
             StateMachine.add('GENERATE_PREPARE_INFO', CBState(self.check_generate_cb, outcomes=['succeeded', 'disambiguate'],
-                                                              input_keys=['in_cluster_info'],
+                                                              input_keys=['in_cluster_info', 'in_ground_point'],
                                                               output_keys=['out_sorted_info', 'out_used_metric', 'out_asked_id', 'question_pool', 'selected_cluster_centroid']),
-                             remapping={'question_pool': 'speech_pool', 'out_sorted_info': 'sorted_info', 'out_used_metric': 'used_metric', 'out_asked_id': 'asked_id'},
+                             remapping={'question_pool': 'speech_pool', 'out_sorted_info': 'sorted_info',
+                                        'out_used_metric': 'used_metric', 'out_asked_id': 'asked_id',
+                                        'in_cluster_info': 'info_clusters', 'in_ground_point': 'ground_point'},
                              transitions={'disambiguate': 'ASK_QUESTION', 'succeeded': 'SAY_FOUND'})
 
             StateMachine.add('ASK_QUESTION', SpeechFromPoolSM(), remapping={'pool': 'speech_pool'},
@@ -47,7 +49,7 @@ class DisambiguateBlobs(StateMachine):
                 if (nel == 2 or ud.in_asked_id == 2):  # If we only have 2 objects or the last asked object is the one at the other side (the right or the smalles one)
                     text_pool = ['Then it was the remaining one!']
                     if ud.used_metric == 'size':
-                        text_pool += ['Oh so it is the medium sized one!', 'I have to check my glasses... it is the medium one']
+                        text_pool += ['Oh so it is the medium sized one!', 'I have to check my glasses, it is the medium one']
                     else:
                         text_pool += ['So it is the one in the middle!', 'I did not see correctly that it was the object in the middle!']
                     ud.out_speech_pool = text_pool
@@ -84,8 +86,8 @@ class DisambiguateBlobs(StateMachine):
         nel = len(ud.in_cluster_info.cluster_sizes)  # Number of elements/custers
         dists = [0]*nel  # Allocate space
         for i in xrange(0, nel):  # Compute distance between every object and the ground point
-            dists[i] = math.sqrt((centroids_sorted[i].x-ud.ground_point.x)**2 +
-                                 (centroids_sorted[i].y-ud.ground_point.y)**2)
+            dists[i] = math.sqrt((centroids_sorted[i].x-ud.in_ground_point.x)**2 +
+                                 (centroids_sorted[i].y-ud.in_ground_point.y)**2)
         # Now check if an object is clearly pointed
         min_index, min_value = min(enumerate(dists), key=lambda val: val[1])  # Get the one with min distance to the ground point
         for i in xrange(0, nel):
