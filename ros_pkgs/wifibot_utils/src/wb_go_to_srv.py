@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import rospy
-import math
+
 from wifibot_utils.srv import MoveToService, MoveToServiceResponse
 from roswifibot.msg import speed_msg
 from geometry_msgs.msg import Point
