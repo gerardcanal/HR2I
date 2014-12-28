@@ -1,13 +1,16 @@
 #include "HR2I_Kinect2.h"
 
-HR2I_Kinect2::HR2I_Kinect2(BodyRGBViewer* view, HR2ISceneViewer* pcl_viewer) {
+HR2I_Kinect2::HR2I_Kinect2(BodyRGBViewer* view, HR2ISceneViewer* pcl_viewer, Kinect2Utils* k2u, ros::NodeHandle* nh) {
 	get_data = true;
 	body_view = view;
 	this->pcl_viewer = pcl_viewer;
+	this->k2u = k2u;
+	this->nh = nh;
+	k2cmd.command = -1;
 }
 HR2I_Kinect2::~HR2I_Kinect2() {}
 
-void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, GRParameters params) {
+void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 	bool rightBody = true;
 	gr_mtx.lock();
 	bool _work = get_data;
@@ -53,10 +56,11 @@ void HR2I_Kinect2::dataGetter(Kinect2Utils* k2u, GestureRecognition* gr, GRParam
 		gr_mtx.lock();
 		_work = get_data;
 		gr_mtx.unlock();
+		nh->spinOnce(); // to make sure
 	}
 }
 
-hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const string& GRParams_path, const vector<vector<vector<float>>>& models, Kinect2Utils& k2u) {
+hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const string& GRParams_path, const vector<vector<vector<float>>>& models) {
 	const float DESCEND_DIREC_TH = -0.05;
 	inputFrames.clear();
 	GestureRecognition gr;
@@ -65,7 +69,7 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 
 	// Start data getter thread and start gesture recognition from this data
 	get_data = true;
-	thread datagetter(&HR2I_Kinect2::dataGetter, this, &k2u, &gr, params);
+	thread datagetter(&HR2I_Kinect2::dataGetter, this, &gr, params);
 	Gesture gest = gr.RecognizeGesture(models, params);
 
 	// Stop data getter thread as we have recognized a gesture
@@ -109,6 +113,13 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 	}
 	else if (gest == SALUTE) result.gestureId = result.idHello;
 	else result.gestureId = -2; // Strange failure
+	result.header.frame_id = "Kinect2";
+
+	// Person position will be the Spin Base join while doing the gesture
+	CameraSpacePoint ppos = inputFrames[inputFrames.size() - 5].getJointPosition(JointType_SpineBase);
+	result.person_position.x = ppos.X;
+	result.person_position.y = ppos.Y;
+	result.person_position.z = ppos.Z;
 	return result;
 }
 
@@ -128,14 +139,14 @@ vector<vector<vector<float>>> HR2I_Kinect2::readDynamicModels(string gestPath) {
 
 /// Check if ground coefficients are working (true) or need to be recalculated (false)
 /// plane_out is an output parameter with the segmented plane
-bool HR2I_Kinect2::checkGroundCoefficients(Kinect2Utils* k2u, std::vector<float> vec_g_coeffs, pcl::PointCloud<pcl::PointXYZ>::Ptr& plane_out) {
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = getOnePointCloudFromKinect(k2u);
+bool HR2I_Kinect2::checkGroundCoefficients(std::vector<float> vec_g_coeffs, pcl::PointCloud<pcl::PointXYZ>::Ptr& plane_out) {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = getOnePointCloudFromKinect();
 	K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs).swap(plane_out);
 	return plane_out->points.size() > 0;
 }
 
-std::vector<float> HR2I_Kinect2::computeGroundCoefficientsFromUser(Kinect2Utils* k2u) {
-	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = getOnePointCloudFromKinect(k2u);
+std::vector<float> HR2I_Kinect2::computeGroundCoefficientsFromUser() {
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = getOnePointCloudFromKinect();
 
 	// Show scene
 	pcl_viewer->setScene(pcPtr, false);
@@ -143,7 +154,7 @@ std::vector<float> HR2I_Kinect2::computeGroundCoefficientsFromUser(Kinect2Utils*
 	// Get the three points from user
 	pcl_viewer->registerPointPickingCb();
 	std::cout << "Shift+click on three floor points (in a CLOCKWISE order)..." << std::endl;
-	while (pcl_viewer->getNumPickedPoints() < 3); // Wait until we have enough points
+	while (pcl_viewer->getNumPickedPoints() < 3) nh->spinOnce(); // Wait until we have enough points
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pickedPoints = pcl_viewer->getPickedPointsCloud();
 
 	// Compute the ground plane model coefficients
@@ -188,7 +199,7 @@ std::vector<float> HR2I_Kinect2::readGroundPlaneCoefficients(string path) {
 	return vec_g_coeffs;
 }
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr HR2I_Kinect2::getOnePointCloudFromKinect(Kinect2Utils* k2u) {
+pcl::PointCloud<pcl::PointXYZ>::Ptr HR2I_Kinect2::getOnePointCloudFromKinect() {
 	ICoordinateMapper* cmapper = NULL;
 	k2u->getCoordinateMapper(cmapper);
 
@@ -213,7 +224,8 @@ deque<Skeleton>* HR2I_Kinect2::getInputFrames() {
 	return &inputFrames;
 }
 
-void HR2I_Kinect2::getAndDrawScene(Kinect2Utils* k2u, pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, int obj_radius) {
+/// ObjectsPtr is an output parameter with the segmented clusters
+void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, int obj_radius, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>* objectsPtr) {
 	bool rightBody = true;
 
 	pcl_viewer->setPointingPoint(pointingPoint);
@@ -235,12 +247,129 @@ void HR2I_Kinect2::getAndDrawScene(Kinect2Utils* k2u, pcl::PointXYZ pointingPoin
 	if (df) {
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 		if (drawObjects) {
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects = K2PCL::segmentObjectsNearPointFromScene(pcPtr, OBJECT_RADIUS, pointingPoint);
-			pcl_viewer->setSceneAndSegmentedClusters(pcPtr, objects);
-			std::cout << objects.size() << " clusters have been segmented." << std::endl;
+			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _objects = K2PCL::segmentObjectsNearPointFromScene(pcPtr, OBJECT_RADIUS, pointingPoint);
+			pcl_viewer->setSceneAndSegmentedClusters(pcPtr, _objects);
+			std::cout << _objects.size() << " clusters have been segmented." << std::endl;
+			if (objectsPtr != NULL) *objectsPtr = _objects;
 		}
 		else pcl_viewer->setScene(pcPtr);
 	}
 	
 	SafeRelease(df);
+}
+
+// ROS handling and States
+void HR2I_Kinect2::recognizeGestureState(const string& gr_params_path, const string& gr_models_path, ros::Publisher* gesture_pub) {
+	cout << "State: Recognizing gestures..." << endl;
+	// Call gesture recognition
+	hr2i_thesis::GestureRecognitionResult gr_res = recognizeGestures(gr_params_path, readDynamicModels(gr_models_path));
+	gesture_pub->publish(&gr_res);
+	if (gr_res.gestureId == gr_res.idPointAt) {
+		this->pointingPoint = pcl::PointXYZ(gr_res.ground_point.x, gr_res.ground_point.y, gr_res.ground_point.z);
+		getAndDrawScene(pointingPoint, true, true, OBJECT_RADIUS);
+		// Sleep for some time unless we get the message... Sleep(SHOWING_GESTURE_TIME);
+		for (int i = 0; i < SHOWING_GESTURE_TIME / 50; ++i) {
+			roscmd_mtx.lock();
+			if (k2cmd.command != -1) break;
+			roscmd_mtx.unlock();
+			nh->spinOnce();
+			Sleep(50);
+		}
+		pcl_viewer->setPointingPoint(pcl::PointXYZ(0, 0, 0));
+	}
+}
+
+void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
+	cout << "State: Segmenting objects near a point..." << endl;
+	// Get and update ppoint
+	roscmd_mtx.lock();
+	hr2i_thesis::Kinect2Command _k2cmdcp = k2cmd;
+	roscmd_mtx.unlock();
+
+	pcl::PointXYZ newPpoint = pointingPoint;
+	if (_k2cmdcp.header.frame_id == "wifibot") { // Convert pose from wifibot to Kinect: wb+x = kinect+z, wb+y = kinect-x 
+		// Translate the point back to 0
+		newPpoint.x = pointingPoint.x + _k2cmdcp.currrent_pose.y; // As the horizontal axis are sign changed 
+		newPpoint.y = pointingPoint.y; // It's the sameheight
+		newPpoint.z = pointingPoint.z - _k2cmdcp.currrent_pose.x;
+		// Rotate the point
+		//k2cmd.currrent_pose.theta = -k2cmd.currrent_pose.theta;
+		newPpoint.z = newPpoint.z*cos(_k2cmdcp.currrent_pose.theta) - newPpoint.x*sin(_k2cmdcp.currrent_pose.theta);
+		newPpoint.x = newPpoint.z*sin(_k2cmdcp.currrent_pose.theta) + newPpoint.x*cos(_k2cmdcp.currrent_pose.theta);
+	}
+	// Segment objects
+	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects;
+	getAndDrawScene(newPpoint, false, true, OBJECT_RADIUS, &objects);
+
+	// Fill and send message
+	hr2i_thesis::PointCloudClusterCentroids msg;
+	const int numObjects = objects.size();
+	msg.cluster_centroids_length = numObjects;
+	msg.cluster_sizes_length = numObjects;
+	geometry_msgs::Point* centroids = new geometry_msgs::Point[numObjects];
+	float* sizes = new float[numObjects];
+	for (int i = 0; i < numObjects; ++i) {
+		pcl::PointXYZ cent = K2PCL::compute3DCentroid(objects[i]);
+		centroids[i].x = cent.x; centroids[i].y = cent.y; centroids[i].z = cent.z;
+		pair<double, double> areavol = K2PCL::computeAreaVolume(objects[i]);
+		sizes[i] = areavol.first;
+	}
+	msg.cluster_centroids = centroids;
+	msg.cluster_sizes = sizes;
+	msg.header.frame_id = "Kinect2";
+	clusters_pub->publish(&msg); // Send message
+
+	// Show scene for a while...
+	for (int i = 0; i < SHOWING_CLUSTERS_TIME / 50; ++i) {
+		roscmd_mtx.lock();
+		if (k2cmd.command != -1) break;
+		roscmd_mtx.unlock();
+		nh->spinOnce();
+		Sleep(50);
+	}
+	pcl_viewer->setPointingPoint(pcl::PointXYZ(0, 0, 0));
+
+	// Free memory (now just in case we free it before it has been sent or somehting like this)
+	delete[] centroids; // Message is sent, we can free the memory
+	delete[] sizes; // Message is sent, we can free the memory
+}
+
+hr2i_thesis::Kinect2Command HR2I_Kinect2::waitForCommandState() {
+	cout << "State: Waiting for command from wifibot..." << endl;
+	roscmd_mtx.lock();
+	hr2i_thesis::Kinect2Command cmd = k2cmd;
+	roscmd_mtx.unlock();
+	ICoordinateMapper* cmapper = NULL;
+	k2u->getCoordinateMapper(cmapper);
+
+	while (cmd.command == -1) {
+		// Display kinect PCL info
+		IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
+		IBodyFrame* bodyFrame = k2u->getLastBodyFrameFromDefault();
+
+		if (bodyFrame) {
+			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, 0, true);
+			if (body_view != NULL) body_view->setBodyFrameToDraw(bodyFrame);
+			if (pcl_viewer != NULL) pcl_viewer->setPerson(sk);
+		}
+		if (df) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
+		SafeRelease(df);
+		SafeRelease(bodyFrame);
+		nh->spinOnce();
+		// Check if received
+		roscmd_mtx.lock();
+		cmd = k2cmd;
+		roscmd_mtx.unlock();
+	}
+	roscmd_mtx.lock();
+	k2cmd.command = -1; // We already read that command...
+	roscmd_mtx.unlock();
+	return cmd;
+}
+
+
+void HR2I_Kinect2::k2CommandReceivedCb(const hr2i_thesis::Kinect2Command& cmd) {
+	roscmd_mtx.lock();
+	k2cmd = hr2i_thesis::Kinect2Command(cmd);
+	roscmd_mtx.unlock();
 }

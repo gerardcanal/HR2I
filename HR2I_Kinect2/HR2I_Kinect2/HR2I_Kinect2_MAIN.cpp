@@ -7,6 +7,12 @@
 
 // ROS
 #include "ros.h"
+#include "hr2i_thesis/GestureRecognitionResult.h"
+#include "hr2i_thesis/PointCloudClusterCentroids.h"
+#include "hr2i_thesis/Kinect2Command.h"
+
+#define GR_TOPIC_NAME "recognized_gesture"
+#define CLUSTERS_TOPIC_NAME "kinect2_clusters"
 
 // Project includes
 #include "HR2I_Kinect2.h"
@@ -56,21 +62,20 @@ void showMessageRecomputeGC() {
 		       L"User intervention needed", MB_OK | MB_ICONASTERISK);
 }
 
-void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& pcl_viewer) {
-	const string GROUND_PARAMS_PATH = "Parameters\\GroundPlaneCoeffs.txt";
-
+void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& pcl_viewer, const string& GROUND_PARAMS_PATH, ros::NodeHandle& nh) {
 	cout << "Checking ground coefficients... ";
 	bool recomputeGroundCoeffs = false;
 	vector<float> ground_coeffs;
 	try { ground_coeffs = hr2i.readGroundPlaneCoefficients(GROUND_PARAMS_PATH); }
 	catch (exception& e) { recomputeGroundCoeffs = true; }
 	pcl::PointCloud<pcl::PointXYZ>::Ptr groundplane = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
-	if (recomputeGroundCoeffs || !hr2i.checkGroundCoefficients(&k2u, ground_coeffs, groundplane)) {
+	if (recomputeGroundCoeffs || !hr2i.checkGroundCoefficients(ground_coeffs, groundplane)) {
 		do{
 			showMessageRecomputeGC();
 			cout << "Ground coefficients must be recomputed. Please select the points..." << endl;
-			ground_coeffs = hr2i.computeGroundCoefficientsFromUser(&k2u);
-		} while (!hr2i.checkGroundCoefficients(&k2u, ground_coeffs, groundplane));
+			ground_coeffs = hr2i.computeGroundCoefficientsFromUser();
+			nh.spinOnce();
+		} while (!hr2i.checkGroundCoefficients(ground_coeffs, groundplane));
 		hr2i.writeGroundPlaneCoefficients(ground_coeffs, GROUND_PARAMS_PATH);
 		cout << "DONE: ground coefficients were stored in \"" << GROUND_PARAMS_PATH << "\"" << endl;
 	}
@@ -83,13 +88,28 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 	pcl_viewer.setGroundCoeffs(ground_coeffs);
 }
 
+bool USE_ROS = true;
+HR2I_Kinect2* hr2iPtr; // Global because if not the subscriber fucks it.
+void cmd_subs_cb(const hr2i_thesis::Kinect2Command& cmd) { 
+	string cmd_s = (cmd.command == cmd.recGestCmd) ? "Recognize gestures" : "Segment objects";
+	cout << "Command received \"" << cmd_s << "\" from " << cmd.header.frame_id << endl;
+	hr2iPtr->k2CommandReceivedCb(cmd);
+}
+
+
 // MAIN 
 int _tmain(int argc, _TCHAR * argv[]) {
-	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt"; 
+	const string GROUND_PARAMS_PATH = "Parameters\\GroundPlaneCoeffs.txt";
+	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt";
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
 	const int RGB_Depth = 1; // 0 - None, 1 - RGB, 2 - Depth
 
-	// Initialization
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////// Initialization //////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////
+	// Kinect ////
+	//////////////
 	cout << "Initializing Kinect 2 interface... ";
 	Kinect2Utils k2u;
 	HRESULT hr = k2u.initDefaultKinectSensor(true);
@@ -102,7 +122,9 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	if (!SUCCEEDED(hr)) return -1;
 	cout << "DONE" << endl;	
 
-	// Viewers initialization
+	/////////////////////
+	//// Viewers ////////
+	/////////////////////
 	cout << "Initializing visualizers... ";
 	BodyRGBViewer body_view(&k2u);
 	thread iface = body_view.RunThreaded(RGB_Depth, true, false);
@@ -112,24 +134,59 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	HR2ISceneViewer pcl_viewer("Human MultiRobot Interaction 3D Viewer", true, size, pos);
 	cout << "DONE" << endl;
 
+	/////////////////////
+	////// ROS //////////
+	/////////////////////
+	cout << "Initializing ROS... ";
+	ifstream myfile; // Get ROS MASTER URI from file
+	myfile.open("Parameters/ROS_MASTER_HOST.txt");
+	if (!myfile.is_open()) {
+		cerr << "ERROR: ROS_MASTER_HOST.txt is not in Parameters/ROS_MASTER_HOST.txt" << endl;
+		exit(-1);
+	}
+	string ROS_MASTER_HOST;
+	getline(myfile, ROS_MASTER_HOST);
+	while (ROS_MASTER_HOST[0] == '#') std::getline(myfile, ROS_MASTER_HOST);
+	myfile.close();
+
+	ros::NodeHandle nh; // ROS node handle
+	if (USE_ROS) {
+		char *ros_master = const_cast<char*>(ROS_MASTER_HOST.c_str());
+		printf("Connecting to server at %s\n", ros_master);
+		nh.initNode(ros_master);
+	}
+	hr2i_thesis::GestureRecognitionResult gr_msg;
+	ros::Publisher gest_pub(GR_TOPIC_NAME, &gr_msg);
+	nh.advertise(gest_pub);
+
+	hr2i_thesis::PointCloudClusterCentroids pcc_msg;
+	ros::Publisher cluster_pub(CLUSTERS_TOPIC_NAME, &pcc_msg);
+	nh.advertise(cluster_pub);
+	cout << "DONE" << endl;
+
 	// HR2I init
-	HR2I_Kinect2 hr2i(&body_view, &pcl_viewer);
+	HR2I_Kinect2 hr2i(&body_view, &pcl_viewer, &k2u, &nh);
+	hr2iPtr = &hr2i;
+	ros::Subscriber < hr2i_thesis::Kinect2Command > k2cmdSub("kinect2_command", &cmd_subs_cb);
+	nh.subscribe(k2cmdSub);
 
 	// Check ground coefficients
-	checkGroundParams(hr2i, k2u, pcl_viewer);
+	checkGroundParams(hr2i, k2u, pcl_viewer, GROUND_PARAMS_PATH, nh);
+	nh.spinOnce(); // Just in case checkGround takes too much...
 
-	// Main code
-	for (int i = 0; i < 10; ++i) {
-		hr2i_thesis::GestureRecognitionResult gr_res = hr2i.recognizeGestures(GR_PARAMS_PATH, hr2i.readDynamicModels(GESTURE_MODELS_PATH), k2u);
-		if (gr_res.gestureId == gr_res.idPointAt) {
-			pcl::PointXYZ ppoint(gr_res.ground_point.x, gr_res.ground_point.y, gr_res.ground_point.z);
-			hr2i.getAndDrawScene(&k2u, ppoint, true, true, OBJECT_RADIUS);
-			Sleep(15000);
-			pcl_viewer.setPointingPoint(pcl::PointXYZ(0,0,0));
-		}
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////// Main code ///////////////////////////////////////////////////////////////////////
+	////////////////////////////////////////////////////////////////////////////////////////////////////
+	// First state
+	hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
+	nh.spinOnce();
+	while (body_view.isRunning()) {
+		hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
+		if (cmd.command == cmd.recGestCmd) hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
+		else if (cmd.command == cmd.segmentBlobs) hr2i.clusterObjectsState(&cluster_pub);
+		else cerr << "ERROR: Unknown command code \"" << cmd.command << "\" received. Something strange happened.";
+		nh.spinOnce();
 	}
-	cout << "Hello World!" << endl;
-	int x; cin >> x;
 	iface.join();
 }
 

@@ -88,7 +88,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
-    <Text Include="ROS_MASTER_HOST.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\ros_lib\ros.h" />
