@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="rosserial_server" type="socket_node" name="socket_node" required="true" output="screen"/>
+  <node pkg="wifibot_utils" type="wb_go_to_srv.py" name="wb_go_to_srv" required="true" output="screen"/>
+ </launch>

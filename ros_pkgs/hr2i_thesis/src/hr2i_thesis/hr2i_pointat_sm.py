@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 from smach import StateMachine, CBState
-from hr2i_smach_states import ReadObjectSegmentationTopic, ReleaseNAOFromWifiBotState, WBMoveCloseToPoint, NaoGoToLocationInFront
+from hr2i_smach_states import ReadObjectSegmentationTopic, ReleaseNAOFromWifiBotState, WBMoveCloseToPoint, NaoGoToLocationInFront, SendCommandState
 from hr2i_disambiguate_sm import DisambiguateBlobs
+from hr2i_thesis.msg import Kinect2Command
 from nao_smach_utils.read_topic_state import ReadTopicState
 from nao_smach_utils.execute_choregraphe_behavior_state import ExecuteBehavior
 from nao_smach_utils.tts_state import SpeechFromPoolSM
+from nao_smach_utils.timeout_state import TimeOutState
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
 LAST_ORIENT = True
+STABILIZATION_TIME = 2.5  # seconds
 
 
 class PointAtResponseExecutionSM(StateMachine):
@@ -42,6 +45,12 @@ class PointAtResponseExecutionSM(StateMachine):
 
             StateMachine.add('MOVE_TO_POINTING_PLACE', WBMoveCloseToPoint(dist_to_loc=0.6),
                              remapping={'ground_point': 'in_ground_point'},
+                             transitions={'succeeded': 'WAIT_CAMERA_STABILIZATION'})
+
+            StateMachine.add('WAIT_CAMERA_STABILIZATION', TimeOutState(timeout=STABILIZATION_TIME),
+                             transitions={'succeeded': 'SEND_SEGMENT_CLUSTERS_CMD'})
+
+            StateMachine.add('SEND_SEGMENT_CLUSTERS_CMD', SendCommandState(Kinect2Command.segmentBlobs),
                              transitions={'succeeded': 'WAIT_FOR_BLOBS'})
 
             StateMachine.add('WAIT_FOR_BLOBS', ReadObjectSegmentationTopic(), remapping={'received_clusters': 'segmented_clusters'},

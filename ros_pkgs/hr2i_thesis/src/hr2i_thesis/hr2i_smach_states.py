@@ -1,16 +1,19 @@
 #!/usr/bin/env python
 import rospy
 import math
+import sys
 
 from smach import StateMachine, CBState, Concurrence
-from hr2i_thesis.msg import GestureRecognitionResult, PointCloudClusterCentroids
+from hr2i_thesis.msg import GestureRecognitionResult, PointCloudClusterCentroids, Kinect2Command
 from wifibot_utils.srv import MoveToServiceRequest
 from nao_smach_utils.execute_choregraphe_behavior_state import ExecuteBehavior, _checkInstalledBehavior
 from nao_smach_utils.tts_state import SpeechFromPoolSM
 from nao_smach_utils.read_topic_state import ReadTopicState
 from nao_smach_utils.move_to_state import MoveToState
 from wifibot_smach.wifibot_goto_state import GoToPositionState
-from geometry_msgs.msg import Pose2D
+from geometry_msgs.msg import Pose2D, Point
+from nav_msgs.msg import Odometry
+from tf.transformations import euler_from_quaternion
 
 
 class ReleaseNAOFromWifiBotState(ExecuteBehavior):
@@ -60,17 +63,47 @@ class NaoSayHello(Concurrence):
             Concurrence.add('HELLO_GESTURE', hello_gest_sm)
 
 
-class ReadObjectSegmentationTopic(ReadTopicState):
+# Convert a Point in Kinect2 coordinates to Wifibot coordinates
+def K2coordinates2Wb(point):
+    ret = Point()
+    ret.x = point.z  # wb +x axis is kinect +z axis
+    ret.y = point.x  # wb +y axis (left) is kinect +x axis
+    ret.z = 0.57  # Approximatelly the distance from the floor at which the kinect is 57 cm
+    return ret
+
+
+class ReadObjectSegmentationTopic(StateMachine):
     def __init__(self, cluster_topic='/kinect2_clusters', timeout=5):
-        ReadTopicState.__init__(self, topic_name=cluster_topic,
-                                topic_type=PointCloudClusterCentroids,
-                                output_key_name='received_clusters', timeout=timeout)
+        StateMachine.__init__(self, outcomes=['succeeded', 'timeouted'], output_keys=['received_clusters'])
+
+        with self:
+            StateMachine.add('READ_OBJECT_SEGMENTATION_TOPIC', ReadTopicState(topic_name=cluster_topic,
+                                                                              topic_type=PointCloudClusterCentroids,
+                                                                              output_key_name='received_clusters',
+                                                                              timeout=timeout),
+                             remapping={'received_clusters': 'received_clusters'},
+                             transitions={'succeeded': 'TRANSFORM_COORDINATES', 'timeouted': 'timeouted'})
+
+            def transf_centroids(ud):
+                if ud.in_clusters.header.frame_id.lower() == 'kinect2':
+                    ud.out_clusters.frame_id = 'wifibot'
+                    ud.out_clusters.cluster_sizes = ud.in_clusters.cluster_sizes
+                    for i in xrange(len(ud.in_clusters.cluster_centroids)):
+                        ud.out_clusters.cluster_centroids[i] = K2coordinates2Wb(ud.in_clusters.cluster_centroids[i])
+                else:
+                    ud.out_clusters = ud.in_clusters
+                return 'succeeded'
+            StateMachine.add('TRANSFORM_COORDINATES', CBState(transf_centroids, input_keys=['in_clusters'],
+                                                              output_keys=['out_clusters'],
+                                                              outcomes=['succeeded']),
+                             remapping={'in_clusters': 'received_clusters', 'out_clusters': 'received_clusters'},
+                             transitions={'succeeded': 'succeeded'})
 
 
 class WaitForGestureRecognitionSM(StateMachine):
 
     def __init__(self):
-        StateMachine.__init__(self, outcomes=['pointat_recognized', 'hello_recognized'], output_keys=['out_ground_point'])
+        StateMachine.__init__(self, outcomes=['pointat_recognized', 'hello_recognized'], output_keys=['out_ground_point', 'out_person_position'])
 
         with self:
             StateMachine.add('WAIT_FOR_GESTURE', ReadTopicState(topic_name='/recognized_gesture',
@@ -82,7 +115,12 @@ class WaitForGestureRecognitionSM(StateMachine):
 
             def check_result_cb(ud):
                 if ud.gesture_rec_result:  # We have recognized something
-                    ud.ground_point = ud.gesture_rec_result.ground_point
+                    if ud.gesture_rec_result.header.frame_id.lower() == 'kinect2':
+                        ud.ground_point = K2coordinates2Wb(ud.gesture_rec_result.ground_point)
+                        ud.person_position = K2coordinates2Wb(ud.gesture_rec_result.person_position)
+                    else:
+                        ud.ground_point = ud.gesture_rec_result.ground_point
+                        ud.person_position = ud.gesture_rec_result.person_position
                     if ud.gesture_rec_result.gestureId == GestureRecognitionResult.idHello:
                         return 'hello_recognized'
                     elif ud.gesture_rec_result.gestureId == GestureRecognitionResult.idPointAt:
@@ -93,9 +131,11 @@ class WaitForGestureRecognitionSM(StateMachine):
 
             StateMachine.add('CHECK_GESTURE_RESULT', CBState(check_result_cb,
                                                              input_keys=['gesture_rec_result'],
-                                                             output_keys=['ground_point'],
+                                                             output_keys=['ground_point', 'person_position'],
                                                              outcomes=['pointat_recognized', 'hello_recognized', 'failed_recognition']),
-                             remapping={'gesture_rec_result': 'gesture_rec_result', 'ground_point': 'out_ground_point'},
+                             remapping={'gesture_rec_result': 'gesture_rec_result',
+                                        'ground_point': 'out_ground_point',
+                                        'person_position': 'out_person_position'},
                              transitions={'pointat_recognized': 'pointat_recognized',
                                           'hello_recognized': 'hello_recognized',
                                           'failed_recognition': 'SAY_NO_RECOGNITION'})
@@ -189,6 +229,7 @@ class NaoGoToLocationInFront(StateMachine):
             and rotate it alpha degrees to have the direction in robot coordinates. Finally translate the
             object point in the directiWBMoveCloseToPointWBMoveCloseToPointon of the rotated v vector.
     '''
+    NAO_WB_OFFSET = (0.0, 0.0)  # (x,y) Offset of distance at which the NAO is after being released of the wifibot
 
     def __init__(self, K=0.2):
         StateMachine.__init__(self, outcomes=['succeeded', 'aborted'], input_keys=['alpha', 'location_point'])
@@ -201,14 +242,20 @@ class NaoGoToLocationInFront(StateMachine):
 
         with self:
             def prepare_pose(ud):
+                in_point = ud.in_location_point  # Location point copy
+                ##### Translate the location point (which is the base of hte kinect) to NAO coordinates
+                in_point.x = in_point.x - self.NAO_WB_OFFSET[0]
+                in_point.y = in_point.y - self.NAO_WB_OFFSET[1]
+                ##### End translation
+
                 vec = Pose2D(-K, 0.0, 0.0)  # Translation vector in world space
                 rot_v = rotate_point2D(vec, -ud.in_alpha)  # Rotated point. I don't know why - but... -
                 translated_loc = Pose2D()
-                translated_loc.x = ud.in_location_point.x + rot_v.x
-                translated_loc.y = ud.in_location_point.y + rot_v.y
+                translated_loc.x = in_point.x + rot_v.x
+                translated_loc.y = in_point.y + rot_v.y
                 translated_loc.theta = -ud.in_alpha  # Destination point will be with the alpha rotation corrected
                 ud.out_new_loc = translated_loc
-                rospy.loginfo('--- NaoGoToLocationInFront SM -- initial position: ' + _Pose2D_to_str(ud.in_location_point) +
+                rospy.loginfo('--- NaoGoToLocationInFront SM -- initial position: ' + _Pose2D_to_str(in_point) +
                               ', translated_position' + _Pose2D_to_str(translated_loc))
                 rospy.loginfo('--- NaoGoToLocationInFront SM -- translation vector = ' + str((vec.x, vec.y)) +
                               ', ' + str(ud.in_alpha) + 'rad rotated translation vector = ' + str((rot_v.x, rot_v.y)))
@@ -221,3 +268,38 @@ class NaoGoToLocationInFront(StateMachine):
 
             StateMachine.add('MOVE_TO_FRONT_OBJECT', MoveToState(), remapping={'objective': 'target_loc'},
                              transitions={'succeeded': 'succeeded', 'aborted': 'aborted', 'preempted': 'aborted'})
+
+
+# Converts a wb odometry message to a Pose2D
+def Odometry2Pose2D(odom):
+    _pose2d = Pose2D()
+    _pose2d.x = odom.pose.pose.position.x
+    _pose2d.y = odom.pose.pose.position.y
+    quaternion = odom.pose.pose.orientation
+    _pose2d.theta = euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))[2]
+    return _pose2d
+
+
+class SendCommandState(StateMachine):
+    def __init__(self, command_id):
+        if command_id != 0 and command_id != 1:
+            rospy.logerr('Unknown command for kinect' + str(command_id))
+            sys.exit(-1)
+        StateMachine.__init__(self, outcomes=['succeeded'])
+        self._pub = rospy.Publisher("/kinect2_command", Kinect2Command, latch=True, queue_size=10)
+
+        with self:
+            StateMachine.add('GET_ODOM', ReadTopicState(topic_name='/wifibot/odom', topic_type=Odometry, output_key_name='wb_odom', timeout=None),
+                             transitions={'succeeded': 'PUBLISH_COMMAND', 'timeouted': 'GET_ODOM'})
+
+            def publish_command(ud):
+                msg = Kinect2Command()
+                msg.command = command_id
+                msg.command.header.frame_id = 'wifibot'
+                msg.current_pose = Odometry2Pose2D(ud.wb_odom)
+                self._pub.publish(msg)
+                rospy.sleep(0.2)  # give time to publish
+                return 'succeeded'
+            StateMachine.add('PUBLISH_COMMAND', CBState(publish_command, outcomes=['succeeded'],
+                                                        input_keys=['wb_odom']),
+                             transitions={'succeeded': 'succeeded'})
