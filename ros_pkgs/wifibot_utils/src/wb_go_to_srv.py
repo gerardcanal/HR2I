@@ -6,6 +6,7 @@ from roswifibot.msg import speed_msg
 from geometry_msgs.msg import Point
 from nav_msgs.msg import Odometry
 from std_srvs.srv import Empty
+from std_msgs.msg import String
 from tf.transformations import euler_from_quaternion
 from math import atan2, sin, cos, sqrt
 import matplotlib.pyplot as plt
@@ -37,18 +38,23 @@ OFFSET_FACTOR_Y_ORIENT = 0.05
 
 
 class WifiBotMoveToService:
-    def __init__(self):
+    def __init__(self, use_emergency_stop=True):
         rospy.init_node('wifibot_go_to_server')
         rospy.Service('wb_move_to_srv', MoveToService, self.handle_move_to_service)
         rospy.loginfo('Wifibot move_to service started.')
         self._pub = rospy.Publisher(WB_SPEED_TOPIC, speed_msg, queue_size=10)
         self._running = False
         self._createdPlot = False
+        self._use_emergency_stop = use_emergency_stop
         rospy.wait_for_service(RESET_INFO_SRV)
         self._reset_info = rospy.ServiceProxy(RESET_INFO_SRV, Empty)
 
     def run_service(self):
         rospy.spin()
+
+    def emergencystop_cb(self, data):
+        self._reached = True  # Force reached to make it stop
+        rospy.logwarn('Emergency stop message received! Stopping wifibot movement.')
 
     def odom_cb(self, data):
         # Get time step
@@ -148,7 +154,8 @@ class WifiBotMoveToService:
             self._plotPosY = []
             self._plotE = []
             self.create_plot()
-
+        if self._use_emergency_stop:
+            self._emergency_subs = rospy.Subscriber('/emergency_stop', String, self.emergencystop_cb, queue_size=1)
         self._subs = rospy.Subscriber(WB_ODOM_TOPIC, Odometry, self.odom_cb, queue_size=1)
         while (not self._reached):  # Wait until we have reached the position
             if plot:
@@ -157,6 +164,8 @@ class WifiBotMoveToService:
                 rospy.sleep(SLEEP_TIME)
 
         self._subs.unregister()
+        if self._use_emergency_stop:
+            self._emergency_subs.unregister()
         self._running = False
         # if plot:
         #     #plt.ioff()
