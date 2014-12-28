@@ -287,15 +287,15 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 	roscmd_mtx.unlock();
 
 	pcl::PointXYZ newPpoint = pointingPoint;
-	if (_k2cmdcp.header.frame_id == "wifibot") { // Convert pose from wifibot to Kinect: wb+x = kinect+z, wb+y = kinect-x 
+	if (_k2cmdcp.header.frame_id == "wifibot") { // Convert pose from wifibot to Kinect: wb+x = kinect+z, wb+y = kinect+x 
 		// Translate the point back to 0
-		newPpoint.x = pointingPoint.x + _k2cmdcp.currrent_pose.y; // As the horizontal axis are sign changed 
+		newPpoint.x = pointingPoint.x - _k2cmdcp.current_pose.y;
 		newPpoint.y = pointingPoint.y; // It's the sameheight
-		newPpoint.z = pointingPoint.z - _k2cmdcp.currrent_pose.x;
+		newPpoint.z = pointingPoint.z - _k2cmdcp.current_pose.x;
 		// Rotate the point
 		//k2cmd.currrent_pose.theta = -k2cmd.currrent_pose.theta;
-		newPpoint.z = newPpoint.z*cos(_k2cmdcp.currrent_pose.theta) - newPpoint.x*sin(_k2cmdcp.currrent_pose.theta);
-		newPpoint.x = newPpoint.z*sin(_k2cmdcp.currrent_pose.theta) + newPpoint.x*cos(_k2cmdcp.currrent_pose.theta);
+		newPpoint.z = newPpoint.z*cos(_k2cmdcp.current_pose.theta) - newPpoint.x*sin(_k2cmdcp.current_pose.theta);
+		newPpoint.x = newPpoint.z*sin(_k2cmdcp.current_pose.theta) + newPpoint.x*cos(_k2cmdcp.current_pose.theta);
 	}
 	// Segment objects
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects;

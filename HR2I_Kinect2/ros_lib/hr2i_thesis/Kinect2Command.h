@@ -16,7 +16,7 @@ namespace hr2i_thesis
     public:
       int8_t command;
       std_msgs::Header header;
-      geometry_msgs::Pose2D currrent_pose;
+      geometry_msgs::Pose2D current_pose;
       enum { recGestCmd =  0 };
       enum { segmentBlobs =  1 };
 
@@ -31,7 +31,7 @@ namespace hr2i_thesis
       *(outbuffer + offset + 0) = (u_command.base >> (8 * 0)) & 0xFF;
       offset += sizeof(this->command);
       offset += this->header.serialize(outbuffer + offset);
-      offset += this->currrent_pose.serialize(outbuffer + offset);
+      offset += this->current_pose.serialize(outbuffer + offset);
       return offset;
     }
 
@@ -47,12 +47,12 @@ namespace hr2i_thesis
       this->command = u_command.real;
       offset += sizeof(this->command);
       offset += this->header.deserialize(inbuffer + offset);
-      offset += this->currrent_pose.deserialize(inbuffer + offset);
+      offset += this->current_pose.deserialize(inbuffer + offset);
      return offset;
     }
 
     const char * getType(){ return "hr2i_thesis/Kinect2Command"; };
-    const char * getMD5(){ return "3ba31aab1768d70db81148d3c8f8bf71"; };
+    const char * getMD5(){ return "cf0281f1c4e4d1cc6b8e79d7e4c2507b"; };
 
   };
 
