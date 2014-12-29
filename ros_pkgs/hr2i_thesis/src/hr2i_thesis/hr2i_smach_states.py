@@ -229,7 +229,7 @@ class NaoGoToLocationInFront(StateMachine):
             and rotate it alpha degrees to have the direction in robot coordinates. Finally translate the
             object point in the directiWBMoveCloseToPointWBMoveCloseToPointon of the rotated v vector.
     '''
-    NAO_WB_OFFSET = (0.0, 0.0)  # (x,y) Offset of distance at which the NAO is after being released of the wifibot
+    NAO_WB_OFFSET = (0.31, 0.0)  # (x,y) Offset of distance at which the NAO is after being released of the wifibot
 
     def __init__(self, K=0.2):
         StateMachine.__init__(self, outcomes=['succeeded', 'aborted'], input_keys=['alpha', 'location_point'])

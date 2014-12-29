@@ -32,8 +32,8 @@ V = 0.01  # Linear velocity
 verbose = False
 plot = False
 SLEEP_TIME = 0.5  # seconds
-FACTOR_ORIENT = 1.4
-FACTOR_Y = 1.35
+FACTOR_ORIENT = 1.55  # Original no weight: 1.4
+FACTOR_Y = 1.5  # Original no weight: 1.35
 OFFSET_FACTOR_Y_ORIENT = 0.05
 
 
