@@ -1,0 +1,72 @@
+sp {hr2i*propose*recognize-person
+   (state <s> ^name hr2i
+              ^robot <r>
+              ^person <p>
+              ^desired <d>)
+   (<r> ^locId <rlid>)
+   (<p> ^recognized no
+        ^memorized yes
+        ^id <pid>
+        ^locId <rlid>)
+   (<d> ^name recognize-person
+        ^person <dp>)
+   (<dp> ^id <pid>
+         ^recognized yes)
+-->
+   (<s> ^operator <op> + =)
+   (<op> ^name recognize-person         
+         ^toPers <p>)
+}
+
+sp {hr2i*propose*navigate-to*recognize-person
+    (state <s> ^name hr2i
+               ^location <l>
+               ^robot <r>
+               ^person <p>
+               ^desired <d>)
+    (<l> ^id <ploc>)
+    (<r> ^id 1
+         ^locId {<> <ploc> <rloc>})
+    (<p> ^id <pid>
+         ^locId <ploc>
+         ^found no)
+    (<d> ^name recognize-person
+         ^person <dp>)
+    (<dp> ^id <pid>)
+ -->
+   (<s> ^operator <op> + >)
+    (<op> ^name navigate
+          ^toLoc <l>)
+}
+
+sp {hr2i*apply*recognize-person
+   (state <s> ^operator <op>
+              ^io.output-link <out>)
+   (<op> ^name recognize-person
+         ^toPers <pop>) 
+   (<pop> ^id <pid>)
+-->
+   (<out> ^recognize-person.pers <pid>)
+}
+
+sp {hr2i*apply*remove*recognize-person
+   (state <s> ^io.output-link <out>
+              ^operator <op> 
+              ^person <p>
+              ^robot <r>)
+   (<out> ^recognize-person <st>)
+   (<st> ^status complete
+         ^pers <pid>)
+   (<op> ^name recognize-person
+         ^toPers <pop>)
+   (<pop> ^id <pid>)  
+   (<p> ^id <pid>
+        ^recognized <pr>
+        ^near <pn>)
+-->
+   (<p> ^recognized yes
+                    <pr> -
+        ^near yes
+              <pn> -)
+   (<out> ^recognize-person <st> -)
+}

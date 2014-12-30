@@ -1,0 +1,7 @@
+# sp {hr2i*select*prohibit
+#    (state <s> ^name hr2i
+#               ^operator <o> +)
+#    (<o> ^name << point-obj >>)
+
+# -->
+#    (<s> ^operator <o> ~)}

@@ -1,0 +1,34 @@
+sp {hr2i*propose*introduce-me
+   (state <s> ^name hr2i
+              ^robot <r>
+              ^desired <d>)
+   (<r> ^introduced no)
+   (<d> ^robot.introduced yes)
+-->
+   (<s> ^operator <op> + =)
+   (<op> ^name introduce-me
+         ^withRob <r>)
+}
+
+sp {hr2i*apply*introduce-me
+   (state <s> ^operator <op>
+              ^io.output-link <out>)
+   (<op> ^name introduce-me
+         ^withRob <r>)
+-->
+   (<out> ^introduce-me.aux 1)
+}
+
+sp {hr2i*apply*remove*introduce-me
+   (state <s> ^operator <op>
+              ^io.output-link <out>
+              ^robot <r>)
+   (<op> ^name introduce-me)
+   (<r> ^introduced no)
+   (<out> ^introduce-me <st>)
+   (<st> ^status complete)
+-->
+   (<r> ^introduced yes
+                    no -)
+   (<out> ^introduce-me <st> -)
+}
