@@ -1,6 +1,6 @@
 VERSION 4
-/hr2i2/hr2i2.dm
-0	ROOT hr2i2 hr2i2 1
+/hr2i/hr2i.dm
+0	ROOT hr2i hr2i 1
 1	0	FOPERATOR _firstload _firstload.soar 2
 2	0	FOLDER all all 3
 3	0	FOLDER elaborations elaborations 4
