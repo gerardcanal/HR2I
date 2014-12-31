@@ -21,7 +21,7 @@
 #include "hr2i_thesis/Kinect2Command.h"
 #include "hr2i_thesis/PointCloudClusterCentroids.h"
 
-#define OBJECT_RADIUS 0.5 // Distance between the point and the objects which are to be segmented
+#define OBJECT_RADIUS 0.55 // Distance between the point and the objects which are to be segmented
 #define SHOWING_GESTURE_TIME 15000
 #define SHOWING_CLUSTERS_TIME 20000
 

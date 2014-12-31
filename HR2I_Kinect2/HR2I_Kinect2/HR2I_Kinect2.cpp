@@ -297,6 +297,7 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 		newPpoint.z = newPpoint.z*cos(_k2cmdcp.current_pose.theta) - newPpoint.x*sin(_k2cmdcp.current_pose.theta);
 		newPpoint.x = newPpoint.z*sin(_k2cmdcp.current_pose.theta) + newPpoint.x*cos(_k2cmdcp.current_pose.theta);
 	}
+	cout << "\tUpdated pointing location is: (" << newPpoint.x << ", " << newPpoint.y << ", " << newPpoint.z << ")" << endl;
 	// Segment objects
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects;
 	getAndDrawScene(newPpoint, false, true, OBJECT_RADIUS, &objects);
