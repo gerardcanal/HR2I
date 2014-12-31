@@ -13,7 +13,10 @@ class HR2I_SM(StateMachine):
 
         with self:
             welcome_pool = ['Welcome! I am here to help you', 'Hey there! How may I help you?', 'Hello! I understand some gestures. Do you wanna try?']
-            StateMachine.add('WELCOME', SpeechFromPoolSM(pool=welcome_pool), transitions={'succeeded': 'WAIT_FOR_GESTURE'})  # It begins recognizing gestures
+            StateMachine.add('WELCOME', SpeechFromPoolSM(pool=welcome_pool), transitions={'succeeded': 'SEND_RECOGNIZE_GESTURE_CMD'})  # It begins recognizing gestures
+
+            StateMachine.add('SEND_RECOGNIZE_GESTURE_CMD', SendCommandState(Kinect2Command.recGestCmd),
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})
 
             StateMachine.add('WAIT_FOR_GESTURE', WaitForGestureRecognitionSM(),
                              remapping={'out_ground_point': 'ground_point', 'out_person_position': 'person_position'},
@@ -22,12 +25,9 @@ class HR2I_SM(StateMachine):
             StateMachine.add('SAY_HELLO', NaoSayHello(), remapping={'riding_wifibot': 'NAO_riding_wb'},
                              transitions={'succeeded': 'SEND_RECOGNIZE_GESTURE_CMD'})
 
-            StateMachine.add('SEND_RECOGNIZE_GESTURE_CMD', SendCommandState(Kinect2Command.recGestCmd),
-                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})
-
             StateMachine.add('POINT_AT_SM', PointAtResponseExecutionSM(),
                              remapping={'in_ground_point': 'ground_point', 'in_NAO_riding': 'NAO_riding_wb', 'out_NAO_riding': 'NAO_riding_wb'},
-                             transitions={'succeeded': 'SAY_DONE', 'not_riding_wb': 'SAY_CAN_NOT', 'nothing_found': 'WAIT_FOR_GESTURE'})
+                             transitions={'succeeded': 'SAY_DONE', 'not_riding_wb': 'SAY_CAN_NOT', 'nothing_found': 'SEND_RECOGNIZE_GESTURE_CMD'})
 
             cannot_pool = ['I see you are pointing somewhere, but I can not go there as I am not riding the wifibot.',
                            'It would be cool to help you, but I am not on the wifibot.',

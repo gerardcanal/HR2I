@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 from smach import StateMachine, CBState
-from hr2i_smach_states import ReadObjectSegmentationTopic, ReleaseNAOFromWifiBotState, WBMoveCloseToPoint, NaoGoToLocationInFront, SendCommandState
+from hr2i_smach_states import ReleaseNAOFromWifiBotState, SegmentBlobsPipeLine, WBMoveCloseToPoint, NaoGoToLocationInFront
 from hr2i_disambiguate_sm import DisambiguateBlobs
-from hr2i_thesis.msg import Kinect2Command
 from nao_smach_utils.read_topic_state import ReadTopicState
 from nao_smach_utils.execute_choregraphe_behavior_state import ExecuteBehavior
 from nao_smach_utils.tts_state import SpeechFromPoolSM
@@ -12,6 +11,8 @@ from tf.transformations import euler_from_quaternion
 
 LAST_ORIENT = True
 STABILIZATION_TIME = 2.5  # seconds
+WB_DIST_TO_POINTING = 0.90  # metres
+NAO_DIST_TO_OBJECT = 0.05  # metres
 
 
 class PointAtResponseExecutionSM(StateMachine):
@@ -43,17 +44,14 @@ class PointAtResponseExecutionSM(StateMachine):
             StateMachine.add('SAY_GOING_POINT', SpeechFromPoolSM(pool=going_pool, blocking=False),
                              transitions={'succeeded': 'MOVE_TO_POINTING_PLACE', 'aborted': 'MOVE_TO_POINTING_PLACE', 'preempted': 'MOVE_TO_POINTING_PLACE'})
 
-            StateMachine.add('MOVE_TO_POINTING_PLACE', WBMoveCloseToPoint(dist_to_loc=1.6),
+            StateMachine.add('MOVE_TO_POINTING_PLACE', WBMoveCloseToPoint(dist_to_loc=WB_DIST_TO_POINTING),
                              remapping={'ground_point': 'in_ground_point'},
                              transitions={'succeeded': 'WAIT_CAMERA_STABILIZATION'})
 
             StateMachine.add('WAIT_CAMERA_STABILIZATION', TimeOutState(timeout=STABILIZATION_TIME),
-                             transitions={'succeeded': 'SEND_SEGMENT_CLUSTERS_CMD'})
+                             transitions={'succeeded': 'SEGMENT_BLOBS'})
 
-            StateMachine.add('SEND_SEGMENT_CLUSTERS_CMD', SendCommandState(Kinect2Command.segmentBlobs),
-                             transitions={'succeeded': 'WAIT_FOR_BLOBS'})
-
-            StateMachine.add('WAIT_FOR_BLOBS', ReadObjectSegmentationTopic(), remapping={'received_clusters': 'segmented_clusters'},
+            StateMachine.add('SEGMENT_BLOBS', SegmentBlobsPipeLine(), remapping={'segmented_clusters': 'segmented_clusters'},
                              transitions={'succeeded': 'DISAMBIGUATE', 'timeouted': 'SAY_CHECKING', 'no_object_found': 'SAY_NOT_FOUND'})
 
             _not_found_pool = ['I did not see anything there... Let\'s begin again.', 'I found nothing where you pointed at! Do it again',
@@ -64,7 +62,7 @@ class PointAtResponseExecutionSM(StateMachine):
             _pool = ['I am not seeing the objects there.', 'I have to clean my cameras, let me check again.',
                      'I am sorry, I look like blind today']
             StateMachine.add('SAY_CHECKING', SpeechFromPoolSM(_pool),
-                             transitions={'succeeded': 'WAIT_FOR_BLOBS', 'aborted': 'WAIT_FOR_BLOBS', 'preempted': 'WAIT_FOR_BLOBS'})
+                             transitions={'succeeded': 'SEGMENT_BLOBS', 'aborted': 'SEGMENT_BLOBS', 'preempted': 'SEGMENT_BLOBS'})
 
             StateMachine.add('DISAMBIGUATE', DisambiguateBlobs(),
                              remapping={'info_clusters': 'segmented_clusters', 'ground_point': 'in_ground_point', 'selected_cluster_centroid': 'object_pose'},
@@ -83,7 +81,7 @@ class PointAtResponseExecutionSM(StateMachine):
             StateMachine.add('EXTRACT_THETA', CBState(get_theta, outcomes=['succeeded'], input_keys=['wb_odom'], output_keys=['theta_wb']),
                              transitions={'succeeded': 'NAO_GO_TO_BLOB'})
 
-            StateMachine.add('NAO_GO_TO_BLOB', NaoGoToLocationInFront(K=0.025), remapping={'location_point': 'object_pose', 'alpha': 'theta_wb'},
+            StateMachine.add('NAO_GO_TO_BLOB', NaoGoToLocationInFront(K=NAO_DIST_TO_OBJECT), remapping={'location_point': 'object_pose', 'alpha': 'theta_wb'},
                              transitions={'succeeded': 'GRASP_OBJECT'})
 
             StateMachine.add('GRASP_OBJECT', ExecuteBehavior(behavior_name='tomato_grasp'),

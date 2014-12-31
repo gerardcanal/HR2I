@@ -10,6 +10,7 @@ from nao_smach_utils.execute_choregraphe_behavior_state import ExecuteBehavior, 
 from nao_smach_utils.tts_state import SpeechFromPoolSM
 from nao_smach_utils.read_topic_state import ReadTopicState
 from nao_smach_utils.move_to_state import MoveToState
+from nao_smach_utils.joint_trajectory_state import JointAngleState
 from wifibot_smach.wifibot_goto_state import GoToPositionState
 from geometry_msgs.msg import Pose2D, Point
 from nav_msgs.msg import Odometry
@@ -89,7 +90,7 @@ class ReadObjectSegmentationTopic(StateMachine):
                     return 'no_object_found'
                 if ud.in_clusters.header.frame_id.lower() == 'kinect2':
                     _out_clusters = PointCloudClusterCentroids()
-                    _out_clusters.frame_id = 'wifibot'
+                    _out_clusters.header.frame_id = 'wifibot'
                     _out_clusters.cluster_sizes = ud.in_clusters.cluster_sizes
                     for i in xrange(len(ud.in_clusters.cluster_centroids)):
                         _out_clusters.cluster_centroids.append(K2coordinates2Wb(ud.in_clusters.cluster_centroids[i]))
@@ -148,7 +149,11 @@ class WaitForGestureRecognitionSM(StateMachine):
                          'I am waiting for you to move', 'Shake your right arm!', 'This is about gesture recognition',
                          'I understand the Point at gesture and the hello one']
             StateMachine.add('SAY_NO_RECOGNITION', SpeechFromPoolSM(pool=text_pool, blocking=False),
-                             transitions={'succeeded': 'WAIT_FOR_GESTURE', 'preempted': 'WAIT_FOR_GESTURE', 'aborted': 'WAIT_FOR_GESTURE'})
+                             transitions={'succeeded': 'SEND_RECOGNIZE_GESTURE_CMD',
+                                          'preempted': 'SEND_RECOGNIZE_GESTURE_CMD', 'aborted': 'SEND_RECOGNIZE_GESTURE_CMD'})
+
+            StateMachine.add('SEND_RECOGNIZE_GESTURE_CMD', SendCommandState(Kinect2Command.recGestCmd),
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})
 
 
 def _Pose2D_to_str(pose):
@@ -307,3 +312,28 @@ class SendCommandState(StateMachine):
             StateMachine.add('PUBLISH_COMMAND', CBState(publish_command, outcomes=['succeeded'],
                                                         input_keys=['wb_odom']),
                              transitions={'succeeded': 'succeeded'})
+
+
+class SegmentBlobsPipeLine(StateMachine):
+    def __init__(self):
+        StateMachine.__init__(self, outcomes=['succeeded', 'timeouted', 'no_object_found'], output_keys=['segmented_clusters'])
+
+        with self:
+            StateMachine.add('HEAD_AWAY', JointAngleState(['HeadPitch'], [-38]),
+                             transitions={'succeeded': 'SEND_SEGMENT_CLUSTERS_CMD',
+                                          'preempted': 'SEND_SEGMENT_CLUSTERS_CMD', 'aborted': 'SEND_SEGMENT_CLUSTERS_CMD'})
+
+            StateMachine.add('SEND_SEGMENT_CLUSTERS_CMD', SendCommandState(Kinect2Command.segmentBlobs),
+                             transitions={'succeeded': 'WAIT_FOR_BLOBS'})
+
+            StateMachine.add('WAIT_FOR_BLOBS', ReadObjectSegmentationTopic(), remapping={'received_clusters': 'segmented_clusters'},
+                             transitions={'succeeded': 'HEAD_FRONT_succeeded', 'timeouted': 'HEAD_FRONT_timoeuted',
+                                          'no_object_found': 'HEAD_FRONT_no_object_found'})
+
+            head_front = JointAngleState(['HeadPitch'], [-11.5])
+            StateMachine.add('HEAD_FRONT_succeeded', head_front,
+                             transitions={'succeeded': 'succeeded', 'aborted': 'succeeded', 'preempted': 'succeeded'})
+            StateMachine.add('HEAD_FRONT_timoeuted', head_front,
+                             transitions={'succeeded': 'timeouted', 'aborted': 'timeouted', 'preempted': 'timeouted'})
+            StateMachine.add('HEAD_FRONT_no_object_found', head_front,
+                             transitions={'succeeded': 'no_object_found', 'aborted': 'no_object_found', 'preempted': 'no_object_found'})
