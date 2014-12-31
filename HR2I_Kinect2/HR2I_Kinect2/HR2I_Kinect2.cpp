@@ -287,7 +287,7 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 	roscmd_mtx.unlock();
 
 	pcl::PointXYZ newPpoint = pointingPoint;
-	if (_k2cmdcp.header.frame_id == "wifibot") { // Convert pose from wifibot to Kinect: wb+x = kinect+z, wb+y = kinect+x 
+	if (strcmp(_k2cmdcp.header.frame_id, "wifibot") == 0) { // Convert pose from wifibot to Kinect: wb+x = kinect+z, wb+y = kinect+x 
 		// Translate the point back to 0
 		newPpoint.x = pointingPoint.x - _k2cmdcp.current_pose.y;
 		newPpoint.y = pointingPoint.y; // It's the sameheight
