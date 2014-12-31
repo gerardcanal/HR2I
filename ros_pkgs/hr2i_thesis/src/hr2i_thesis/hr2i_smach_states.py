@@ -74,7 +74,7 @@ def K2coordinates2Wb(point):
 
 class ReadObjectSegmentationTopic(StateMachine):
     def __init__(self, cluster_topic='/kinect2_clusters', timeout=5):
-        StateMachine.__init__(self, outcomes=['succeeded', 'timeouted'], output_keys=['received_clusters'])
+        StateMachine.__init__(self, outcomes=['succeeded', 'no_object_found', 'timeouted'], output_keys=['received_clusters'])
 
         with self:
             StateMachine.add('READ_OBJECT_SEGMENTATION_TOPIC', ReadTopicState(topic_name=cluster_topic,
@@ -85,19 +85,23 @@ class ReadObjectSegmentationTopic(StateMachine):
                              transitions={'succeeded': 'TRANSFORM_COORDINATES', 'timeouted': 'timeouted'})
 
             def transf_centroids(ud):
+                if len(ud.in_clusters.cluster_sizes) == 0:
+                    return 'no_object_found'
                 if ud.in_clusters.header.frame_id.lower() == 'kinect2':
-                    ud.out_clusters.frame_id = 'wifibot'
-                    ud.out_clusters.cluster_sizes = ud.in_clusters.cluster_sizes
+                    _out_clusters = PointCloudClusterCentroids()
+                    _out_clusters.frame_id = 'wifibot'
+                    _out_clusters.cluster_sizes = ud.in_clusters.cluster_sizes
                     for i in xrange(len(ud.in_clusters.cluster_centroids)):
-                        ud.out_clusters.cluster_centroids[i] = K2coordinates2Wb(ud.in_clusters.cluster_centroids[i])
+                        _out_clusters.cluster_centroids.append(K2coordinates2Wb(ud.in_clusters.cluster_centroids[i]))
+                    ud.out_clusters = _out_clusters
                 else:
                     ud.out_clusters = ud.in_clusters
                 return 'succeeded'
             StateMachine.add('TRANSFORM_COORDINATES', CBState(transf_centroids, input_keys=['in_clusters'],
                                                               output_keys=['out_clusters'],
-                                                              outcomes=['succeeded']),
+                                                              outcomes=['succeeded', 'no_object_found']),
                              remapping={'in_clusters': 'received_clusters', 'out_clusters': 'received_clusters'},
-                             transitions={'succeeded': 'succeeded'})
+                             transitions={'succeeded': 'succeeded', 'no_object_found': 'no_object_found'})
 
 
 class WaitForGestureRecognitionSM(StateMachine):
@@ -295,7 +299,7 @@ class SendCommandState(StateMachine):
             def publish_command(ud):
                 msg = Kinect2Command()
                 msg.command = command_id
-                msg.command.header.frame_id = 'wifibot'
+                msg.header.frame_id = 'wifibot'
                 msg.current_pose = Odometry2Pose2D(ud.wb_odom)
                 self._pub.publish(msg)
                 rospy.sleep(0.2)  # give time to publish

@@ -22,7 +22,7 @@ class PointAtResponseExecutionSM(StateMachine):
                 - out_NAO_riding: The result of whether the NAO is riding the wifibot or not (basically will be false after the execution)
     '''
     def __init__(self):
-        StateMachine.__init__(self, outcomes=['succeeded', 'aborted', 'not_riding_wb'],
+        StateMachine.__init__(self, outcomes=['succeeded', 'aborted', 'not_riding_wb', 'nothing_found'],
                               input_keys=['in_ground_point', 'in_NAO_riding'], output_keys=['out_NAO_riding'])
         with self:
             def check_on_wb(ud):
@@ -43,7 +43,7 @@ class PointAtResponseExecutionSM(StateMachine):
             StateMachine.add('SAY_GOING_POINT', SpeechFromPoolSM(pool=going_pool, blocking=False),
                              transitions={'succeeded': 'MOVE_TO_POINTING_PLACE', 'aborted': 'MOVE_TO_POINTING_PLACE', 'preempted': 'MOVE_TO_POINTING_PLACE'})
 
-            StateMachine.add('MOVE_TO_POINTING_PLACE', WBMoveCloseToPoint(dist_to_loc=0.6),
+            StateMachine.add('MOVE_TO_POINTING_PLACE', WBMoveCloseToPoint(dist_to_loc=1.6),
                              remapping={'ground_point': 'in_ground_point'},
                              transitions={'succeeded': 'WAIT_CAMERA_STABILIZATION'})
 
@@ -54,7 +54,12 @@ class PointAtResponseExecutionSM(StateMachine):
                              transitions={'succeeded': 'WAIT_FOR_BLOBS'})
 
             StateMachine.add('WAIT_FOR_BLOBS', ReadObjectSegmentationTopic(), remapping={'received_clusters': 'segmented_clusters'},
-                             transitions={'succeeded': 'DISAMBIGUATE', 'timeouted': 'SAY_CHECKING'})
+                             transitions={'succeeded': 'DISAMBIGUATE', 'timeouted': 'SAY_CHECKING', 'no_object_found': 'SAY_NOT_FOUND'})
+
+            _not_found_pool = ['I did not see anything there... Let\'s begin again.', 'I found nothing where you pointed at! Do it again',
+                               'I am sorry nothing was found there... You can repeat if you wish.']
+            StateMachine.add('SAY_NOT_FOUND', SpeechFromPoolSM(_not_found_pool),
+                             transitions={'succeeded': 'nothing_found', 'preempted': 'nothing_found', 'aborted': 'nothing_found'})
 
             _pool = ['I am not seeing the objects there.', 'I have to clean my cameras, let me check again.',
                      'I am sorry, I look like blind today']
