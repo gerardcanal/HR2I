@@ -90,17 +90,15 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 
 bool USE_ROS = true;
 HR2I_Kinect2* hr2iPtr; // Global because if not the subscriber fucks it.
-enum State { WAITING, GESTURE_RECOGNITION, CLUSTER_SEGMENTATION };
-State currentState = GESTURE_RECOGNITION; // 0 - Waiting for command, 1 gesture recognition, 2 obj segmentation
+
 void cmd_subs_cb(const hr2i_thesis::Kinect2Command& cmd) { 
 	string cmd_s = (cmd.command == cmd.recGestCmd) ? "Recognize gestures" : "Segment objects";
 	cout << "Command received \"" << cmd_s << "\" from " << cmd.header.frame_id;
-	if (currentState == WAITING) {
+
+	if (hr2iPtr->getCurrentState() == HR2I_Kinect2::WAITING) {
 		hr2iPtr->k2CommandReceivedCb(cmd);
 	}
-	else {
-		cout << " - ignored as we are not in Waiting state";
-	}
+	else cout << " - ignored as not in Waiting state";
 	cout << endl;
 }
 
@@ -186,18 +184,15 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	////////////////// Main code ///////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	// First state
-	currentState = GESTURE_RECOGNITION;
-	hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
-	nh.spinOnce();
+	//currentState = GESTURE_RECOGNITION;
+	//hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
+	//nh.spinOnce();
 	while (body_view.isRunning()) {
-		currentState = WAITING;
 		hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
 		if (cmd.command == cmd.recGestCmd) {
-			currentState = GESTURE_RECOGNITION;
 			hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
 		}
 		else if (cmd.command == cmd.segmentBlobs) {
-			currentState = CLUSTER_SEGMENTATION;
 			hr2i.clusterObjectsState(&cluster_pub);
 		}
 		else cerr << "ERROR: Unknown command code \"" << cmd.command << "\" received. Something strange happened.";

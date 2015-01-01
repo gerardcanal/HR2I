@@ -260,10 +260,12 @@ void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, b
 
 // ROS handling and States
 void HR2I_Kinect2::recognizeGestureState(const string& gr_params_path, const string& gr_models_path, ros::Publisher* gesture_pub) {
+	currentState = GESTURE_RECOGNITION;
 	cout << "State: Recognizing gestures..." << endl;
 	// Call gesture recognition
 	hr2i_thesis::GestureRecognitionResult gr_res = recognizeGestures(gr_params_path, readDynamicModels(gr_models_path));
 	gesture_pub->publish(&gr_res);
+	currentState = WAITING; // As we already made the recognition
 	if (gr_res.gestureId == gr_res.idPointAt) {
 		this->pointingPoint = pcl::PointXYZ(gr_res.ground_point.x, gr_res.ground_point.y, gr_res.ground_point.z);
 		getAndDrawScene(pointingPoint, true, true, OBJECT_RADIUS);
@@ -280,6 +282,7 @@ void HR2I_Kinect2::recognizeGestureState(const string& gr_params_path, const str
 }
 
 void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
+	currentState = CLUSTER_SEGMENTATION;
 	cout << "State: Segmenting objects near a point..." << endl;
 	// Get and update ppoint
 	roscmd_mtx.lock();
@@ -321,6 +324,7 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 	clusters_pub->publish(&msg); // Send message
 
 	// Show scene for a while...
+	currentState = WAITING; // As we already sent the clustering
 	for (int i = 0; i < SHOWING_CLUSTERS_TIME / 50; ++i) {
 		roscmd_mtx.lock();
 		if (k2cmd.command != -1) break;
@@ -336,6 +340,7 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 }
 
 hr2i_thesis::Kinect2Command HR2I_Kinect2::waitForCommandState() {
+	currentState = WAITING; // As we already made the recognition
 	cout << "State: Waiting for command from wifibot..." << endl;
 	roscmd_mtx.lock();
 	hr2i_thesis::Kinect2Command cmd = k2cmd;
@@ -373,4 +378,8 @@ void HR2I_Kinect2::k2CommandReceivedCb(const hr2i_thesis::Kinect2Command& cmd) {
 	roscmd_mtx.lock();
 	k2cmd = hr2i_thesis::Kinect2Command(cmd);
 	roscmd_mtx.unlock();
+}
+
+HR2I_Kinect2::State HR2I_Kinect2::getCurrentState() {
+	return currentState;
 }

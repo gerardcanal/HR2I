@@ -29,6 +29,8 @@ using namespace std;
 
 class HR2I_Kinect2 {
 public:
+	enum State { WAITING, GESTURE_RECOGNITION, CLUSTER_SEGMENTATION };
+
 	HR2I_Kinect2(BodyRGBViewer* view, HR2ISceneViewer* pcl_viewer, Kinect2Utils* k2u, ros::NodeHandle* nh);
 	~HR2I_Kinect2();
 
@@ -52,6 +54,8 @@ public:
 	void recognizeGestureState(const string& gr_params_path, const string& gr_models_path, ros::Publisher* gesture_pub);
 	hr2i_thesis::Kinect2Command waitForCommandState();
 	void clusterObjectsState(ros::Publisher* clusters_pub);
+
+	State getCurrentState();
 private:
 	// Vars
 	mutex gr_mtx;
@@ -60,6 +64,7 @@ private:
 	vector<float> ground_coeffs;
 	vector<float> groundplane_point;
 	Kinect2Utils* k2u;
+	State currentState = GESTURE_RECOGNITION; // 0 - Waiting for command, 1 gesture recognition, 2 obj segmentation
 
 	// ROS
 	ros::NodeHandle* nh;
