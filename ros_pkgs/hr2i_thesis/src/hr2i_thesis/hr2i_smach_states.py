@@ -319,7 +319,7 @@ class SegmentBlobsPipeLine(StateMachine):
         StateMachine.__init__(self, outcomes=['succeeded', 'timeouted', 'no_object_found'], output_keys=['segmented_clusters'])
 
         with self:
-            StateMachine.add('HEAD_AWAY', JointAngleState(['HeadPitch'], [-38]),
+            StateMachine.add('HEAD_AWAY', JointAngleState(['HeadPitch'], [-0.67]),
                              transitions={'succeeded': 'SEND_SEGMENT_CLUSTERS_CMD',
                                           'preempted': 'SEND_SEGMENT_CLUSTERS_CMD', 'aborted': 'SEND_SEGMENT_CLUSTERS_CMD'})
 
@@ -330,7 +330,7 @@ class SegmentBlobsPipeLine(StateMachine):
                              transitions={'succeeded': 'HEAD_FRONT_succeeded', 'timeouted': 'HEAD_FRONT_timoeuted',
                                           'no_object_found': 'HEAD_FRONT_no_object_found'})
 
-            head_front = JointAngleState(['HeadPitch'], [-11.5])
+            head_front = JointAngleState(['HeadPitch'], [-0.2])
             StateMachine.add('HEAD_FRONT_succeeded', head_front,
                              transitions={'succeeded': 'succeeded', 'aborted': 'succeeded', 'preempted': 'succeeded'})
             StateMachine.add('HEAD_FRONT_timoeuted', head_front,

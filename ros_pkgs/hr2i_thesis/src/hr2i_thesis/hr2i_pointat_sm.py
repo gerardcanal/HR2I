@@ -10,9 +10,9 @@ from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
 LAST_ORIENT = True
-STABILIZATION_TIME = 2.5  # seconds
-WB_DIST_TO_POINTING = 0.90  # metres
-NAO_DIST_TO_OBJECT = 0.05  # metres
+STABILIZATION_TIME = 2.5    # seconds
+WB_DIST_TO_POINTING = 0.95  # metres
+NAO_DIST_TO_OBJECT = 0.1    # metres
 
 
 class PointAtResponseExecutionSM(StateMachine):
