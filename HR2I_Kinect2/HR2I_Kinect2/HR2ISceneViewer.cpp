@@ -137,7 +137,10 @@ void HR2ISceneViewer::updateScene(pcl::visualization::PCLVisualizer& viewer) {
 		if (cppers.getTrackingID() != 0) {
 			drawSkeleton(viewer, cppers);
 		}
-		else removeSkeleton(viewer);
+		else {
+			removeSkeleton(viewer);
+			viewer.removeShape("PointArrow");
+		}
 	}
 
 	if (scene_updated) {
