@@ -111,6 +111,9 @@ class WaitForGestureRecognitionSM(StateMachine):
         StateMachine.__init__(self, outcomes=['pointat_recognized', 'hello_recognized'], output_keys=['out_ground_point', 'out_person_position'])
 
         with self:
+            StateMachine.add('SEND_RECOGNIZE_GESTURE_CMD', SendCommandState(Kinect2Command.recGestCmd),
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})
+
             StateMachine.add('WAIT_FOR_GESTURE', ReadTopicState(topic_name='/recognized_gesture',
                                                                 topic_type=GestureRecognitionResult,
                                                                 output_key_name='gesture_rec_result',
@@ -130,6 +133,8 @@ class WaitForGestureRecognitionSM(StateMachine):
                         return 'hello_recognized'
                     elif ud.gesture_rec_result.gestureId == GestureRecognitionResult.idPointAt:
                         return 'pointat_recognized'
+                    else:
+                        return 'failed_recognition'
                 else:  # In fact should never reach this point...
                     ud.ground_point = None
                     return 'failed_recognition'  # Timeouted
@@ -143,7 +148,7 @@ class WaitForGestureRecognitionSM(StateMachine):
                                         'person_position': 'out_person_position'},
                              transitions={'pointat_recognized': 'pointat_recognized',
                                           'hello_recognized': 'hello_recognized',
-                                          'failed_recognition': 'SAY_NO_RECOGNITION'})
+                                          'failed_recognition': 'SAY_FAILED_GESTURE'})
 
             text_pool = ['I did not see you moving. Are you there?', 'I could not see any gesture I understand.', 'Please, do a gesture',
                          'I am waiting for you to move', 'Shake your right arm!', 'This is about gesture recognition',
@@ -152,8 +157,11 @@ class WaitForGestureRecognitionSM(StateMachine):
                              transitions={'succeeded': 'SEND_RECOGNIZE_GESTURE_CMD',
                                           'preempted': 'SEND_RECOGNIZE_GESTURE_CMD', 'aborted': 'SEND_RECOGNIZE_GESTURE_CMD'})
 
-            StateMachine.add('SEND_RECOGNIZE_GESTURE_CMD', SendCommandState(Kinect2Command.recGestCmd),
-                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})
+            fail_pool = ['I could not recognize your gesture. You did not point to the ground.', 'Hey! I can not fly! Please point to the ground.',
+                         'I am affraid you did not point to the ground.', 'I could not recognize that, please try again,']
+            StateMachine.add('SAY_FAILED_GESTURE', SpeechFromPoolSM(pool=fail_pool, blocking=False),
+                             transitions={'succeeded': 'SEND_RECOGNIZE_GESTURE_CMD',
+                                          'preempted': 'SEND_RECOGNIZE_GESTURE_CMD', 'aborted': 'SEND_RECOGNIZE_GESTURE_CMD'})
 
 
 def _Pose2D_to_str(pose):
@@ -238,7 +246,7 @@ class NaoGoToLocationInFront(StateMachine):
             and rotate it alpha degrees to have the direction in robot coordinates. Finally translate the
             object point in the directiWBMoveCloseToPointWBMoveCloseToPointon of the rotated v vector.
     '''
-    NAO_WB_OFFSET = (0.31, 0.0)  # (x,y) Offset of distance at which the NAO is after being released of the wifibot
+    NAO_WB_OFFSET = (0.37, 0.0)  # (x,y) Offset of distance at which the NAO is after being released of the wifibot
 
     def __init__(self, K=0.2):
         StateMachine.__init__(self, outcomes=['succeeded', 'aborted'], input_keys=['alpha', 'location_point'])
@@ -251,6 +259,7 @@ class NaoGoToLocationInFront(StateMachine):
 
         with self:
             def prepare_pose(ud):
+                print 'original: ', ud.in_location_point
                 in_point = ud.in_location_point  # Location point copy
                 ##### Translate the location point (which is the base of hte kinect) to NAO coordinates
                 in_point.x = in_point.x - self.NAO_WB_OFFSET[0]
@@ -264,10 +273,11 @@ class NaoGoToLocationInFront(StateMachine):
                 translated_loc.y = in_point.y + rot_v.y
                 translated_loc.theta = -ud.in_alpha  # Destination point will be with the alpha rotation corrected
                 ud.out_new_loc = translated_loc
-                rospy.loginfo('--- NaoGoToLocationInFront SM -- initial position: ' + _Pose2D_to_str(in_point) +
-                              ', translated_position' + _Pose2D_to_str(translated_loc))
+                rospy.loginfo('--- NaoGoToLocationInFront SM -- initial position (Point): ' + _Pose2D_to_str(in_point) +
+                              ', translated_position (Pose2D goal): ' + _Pose2D_to_str(translated_loc))
                 rospy.loginfo('--- NaoGoToLocationInFront SM -- translation vector = ' + str((vec.x, vec.y)) +
                               ', ' + str(ud.in_alpha) + 'rad rotated translation vector = ' + str((rot_v.x, rot_v.y)))
+                raw_input('Waiting...')
                 return 'succeeded'
 
             StateMachine.add('PREPARE_POSE', CBState(prepare_pose, input_keys=['in_alpha', 'in_location_point'],

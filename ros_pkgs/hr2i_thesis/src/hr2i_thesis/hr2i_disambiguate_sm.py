@@ -41,7 +41,7 @@ class DisambiguateBlobs(StateMachine):
 
             def check_yesno(ud):
                 if ud.user_answer == 'yes':  # We have it!
-                    ud.selected_cluster_centroid = ud.sorted_info[ud.in_asked_id]
+                    ud.selected_cluster_centroid = ud.sorted_info.cluster_centroids[ud.in_asked_id]
                     ud.out_speech_pool = ['I found it!', 'Of course it is!', 'Yes, I knew it.', 'Yiiii!']
                     return 'answer_yes'
                 # Answer has been 'NO'
@@ -53,7 +53,7 @@ class DisambiguateBlobs(StateMachine):
                     else:
                         text_pool += ['So it is the one in the middle!', 'I did not see correctly that it was the object in the middle!']
                     ud.out_speech_pool = text_pool
-                    ud.selected_cluster_centroid = ud.sorted_info[1]  # It will be the one at pos 1 either if there were 2 or 3 objects
+                    ud.selected_cluster_centroid = ud.sorted_info.cluster_centroids[1]  # It will be the one at pos 1 either if there were 2 or 3 objects
                     return 'remaining_one'
                 else:  # We had 3 obects and already asked one
                     ud.out_asked_id = 2
