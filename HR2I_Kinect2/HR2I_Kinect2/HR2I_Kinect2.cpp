@@ -85,7 +85,8 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 		vector<float> Hand(3, 0.0);
 		vector<float> Elbow(3, 0.0);
 		vector<float> HandTip(3, 0.0);
-		for (int i = 0; i < inputFrames.size(); ++i) {
+		// Average the frames to have a medium vector
+		/*for (int i = 0; i < inputFrames.size(); ++i) {
 			CameraSpacePoint h = inputFrames[i].getJointPosition(JointType_HandRight);
 			Hand[0] += h.X; Hand[1] += h.Y; Hand[2] += h.Z;
 			CameraSpacePoint e = inputFrames[i].getJointPosition(JointType_ElbowRight);
@@ -95,15 +96,21 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 		}
 		Hand[0] /= inputFrames.size(); Hand[1] /= inputFrames.size(); Hand[2] /= inputFrames.size();
 		Elbow[0] /= inputFrames.size(); Elbow[1] /= inputFrames.size(); Elbow[2] /= inputFrames.size();
-		HandTip[0] /= inputFrames.size(); HandTip[1] /= inputFrames.size(); HandTip[2] /= inputFrames.size();
+		HandTip[0] /= inputFrames.size(); HandTip[1] /= inputFrames.size(); HandTip[2] /= inputFrames.size();*/
+		CameraSpacePoint h = inputFrames[inputFrames.size()-7].getJointPosition(JointType_HandRight); // 7 is the magic number
+		Hand[0] += h.X; Hand[1] += h.Y; Hand[2] += h.Z;
+		CameraSpacePoint e = inputFrames[inputFrames.size() - 7].getJointPosition(JointType_ElbowRight);
+		Elbow[0] += e.X; Elbow[1] += e.Y; Elbow[2] += e.Z;
+		CameraSpacePoint ht = inputFrames[inputFrames.size() - 7].getJointPosition(JointType_HandTipRight);
+		HandTip[0] += ht.X; HandTip[1] += ht.Y; HandTip[2] += ht.Z;
 
 		// Get intersection point
-		//vector<float> lineVector = Utils::subtract(Hand, Elbow); // Vector Elbow->Hand EH = H-E
-		vector<float> lineVector = Utils::subtract(HandTip, Elbow); // Vector Elbow->Hand EHt = Ht-E
+		vector<float> lineVector = Utils::subtract(Hand, Elbow); // Vector Elbow->Hand EH = H-E
+		//vector<float> lineVector = Utils::subtract(HandTip, Elbow); // Vector Elbow->Hand EHt = Ht-E
 		//vector<float> lineVector = Utils::subtract(HandTip, Hand); // Vector Hand->HandTip HHT = Ht-H
 		//cout << "\tDirection vector is: (" << lineVector[0] << ", " << lineVector[1] << ", " << lineVector[2] << ")" << endl;
 		if (lineVector[1] < DESCEND_DIREC_TH) { // Direction of pointing is descendent. 0.05 To remove some errors...
-			vector<float> groundPoint = Utils::linePlaneIntersection(HandTip, lineVector, groundplane_point, ground_coeffs); // Hand is a point of the line
+			vector<float> groundPoint = Utils::linePlaneIntersection(Hand, lineVector, groundplane_point, ground_coeffs); // Hand is a point of the line
 			cout << "\tPointed point is: (" << groundPoint[0] << ", " << groundPoint[1] << ", " << groundPoint[2] << ")" << endl;
 			result.gestureId = result.idPointAt;
 			result.ground_point.x = groundPoint[0];

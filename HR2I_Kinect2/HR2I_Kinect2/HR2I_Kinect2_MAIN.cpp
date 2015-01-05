@@ -35,7 +35,7 @@ void setConsolePosition(int posX, int posY) {
 	RECT r;
 	GetWindowRect(console, &r); //stores the console's current dimensions
 
-	SetWindowPos(console, HWND_NOTOPMOST, posX, posY, r.left - r.right, r.bottom - r.top, SWP_NOSIZE | SWP_NOZORDER);
+	SetWindowPos(console, HWND_NOTOPMOST, posX, posY, r.right - r.left+150, r.bottom - r.top-95, /*SWP_NOSIZE | */SWP_NOZORDER);
 }
 
 void computePCLWindowSizeAndPos(std::array<int, 2>& sizeW, std::array<int, 2>& posW, BodyRGBViewer& body_view) {
