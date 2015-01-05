@@ -76,7 +76,7 @@ class DisambiguateBlobs(StateMachine):
     def check_generate_cb(self, ud):
         ud.out_asked_id = 0  # We will always ask for the first one
         # First check if distance ratio is enough to differenciate...
-        unziped_position_sorted = zip(*sorted(zip(ud.in_cluster_info.cluster_sizes, ud.in_cluster_info.cluster_centroids), reverse=True, key=lambda cinfo: cinfo[1].y))
+        unziped_position_sorted = zip(*sorted(zip(ud.in_cluster_info.cluster_sizes, ud.in_cluster_info.cluster_centroids), reverse=False, key=lambda cinfo: cinfo[1].y))
         # We have sorted the blobs by y coordinate in descending order, so the first one will be the left-most one
         centroids_sorted = unziped_position_sorted[1]
 
@@ -90,6 +90,7 @@ class DisambiguateBlobs(StateMachine):
                                  (centroids_sorted[i].y-ud.in_ground_point.y)**2)
         # Now check if an object is clearly pointed
         min_index, min_value = min(enumerate(dists), key=lambda val: val[1])  # Get the one with min distance to the ground point
+        print min_index, min_value
         for i in xrange(0, nel):
             if i == min_index:
                 continue
@@ -97,7 +98,7 @@ class DisambiguateBlobs(StateMachine):
                 break
         else:  # No break, so min_index is the closest one and the others are clearly further away
             ud.selected_cluster_centroid = centroids_sorted[min_index]
-            position = 'left' if min_index == 0 else ('right' if min_index == 2 else 'middle')
+            position = 'left' if min_index == 0 else ('right' if min_index == 2 or nel == 2 else 'middle')
 
             ud.question_pool = ['I see you pointed at the in the %s.' % position,
                                 'Oh the one in the %s.' % position,

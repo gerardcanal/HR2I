@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+import rospy
+import math
+
 from smach import StateMachine, CBState
 from hr2i_smach_states import ReleaseNAOFromWifiBotState, SegmentBlobsPipeLine, WBMoveCloseToPoint, NaoGoToLocationInFront
 from hr2i_disambiguate_sm import DisambiguateBlobs
@@ -49,6 +52,27 @@ class PointAtResponseExecutionSM(StateMachine):
                              transitions={'succeeded': 'WAIT_CAMERA_STABILIZATION'})
 
             StateMachine.add('WAIT_CAMERA_STABILIZATION', TimeOutState(timeout=STABILIZATION_TIME),
+                             transitions={'succeeded': 'GET_ODOM'})
+
+            StateMachine.add('GET_ODOM', ReadTopicState(topic_name='/wifibot/odom', topic_type=Odometry, output_key_name='wb_odom', timeout=None),
+                             transitions={'succeeded': 'UPDATE_GROUND_POINT', 'timeouted': 'GET_ODOM'})
+
+            def update_gp(ud):
+                aux = ud.in_gp
+                aux.x = ud.in_gp.x - ud.wb_odom.pose.pose.position.x
+                aux.y = ud.in_gp.y - ud.wb_odom.pose.pose.position.y
+                quaternion = ud.wb_odom.pose.pose.orientation
+                theta = euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))[2]
+                aux.x = aux.x * math.cos(theta) - aux.y*math.sin(theta)
+                aux.y = aux.x * math.sin(theta) + aux.y*math.cos(theta)
+                ud.out_gp = aux
+                ud.theta_wb = theta
+                rospy.loginfo('--- Updated ground position (x, y) is: (' + str(aux.x) + ', ' + str(aux.y) + ')')
+                return 'succeeded'
+
+            StateMachine.add('UPDATE_GROUND_POINT', CBState(update_gp, outcomes=['succeeded'],
+                                                            input_keys=['wb_odom', 'in_gp'], output_keys=['out_gp', 'theta_wb']),
+                             remapping={'out_gp': 'in_ground_point', 'in_gp': 'in_ground_point'},
                              transitions={'succeeded': 'SEGMENT_BLOBS'})
 
             StateMachine.add('SEGMENT_BLOBS', SegmentBlobsPipeLine(), remapping={'segmented_clusters': 'segmented_clusters'},
@@ -69,17 +93,7 @@ class PointAtResponseExecutionSM(StateMachine):
                              transitions={'succeeded': 'RELEASE_NAO'})
 
             StateMachine.add('RELEASE_NAO', ReleaseNAOFromWifiBotState(), remapping={'NAO_riding_wb': 'out_NAO_riding'},
-                             transitions={'succeeded': 'GET_ODOM', 'preempted': 'GET_ODOM'})
-
-            StateMachine.add('GET_ODOM', ReadTopicState(topic_name='/wifibot/odom', topic_type=Odometry, output_key_name='wb_odom', timeout=None),
-                             transitions={'succeeded': 'EXTRACT_THETA', 'timeouted': 'GET_ODOM'})
-
-            def get_theta(ud):
-                quaternion = ud.wb_odom.pose.pose.orientation
-                ud.theta_wb = euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))[2]
-                return 'succeeded'
-            StateMachine.add('EXTRACT_THETA', CBState(get_theta, outcomes=['succeeded'], input_keys=['wb_odom'], output_keys=['theta_wb']),
-                             transitions={'succeeded': 'NAO_GO_TO_BLOB'})
+                             transitions={'succeeded': 'NAO_GO_TO_BLOB', 'preempted': 'NAO_GO_TO_BLOB'})
 
             StateMachine.add('NAO_GO_TO_BLOB', NaoGoToLocationInFront(K=NAO_DIST_TO_OBJECT), remapping={'location_point': 'object_pose', 'alpha': 'theta_wb'},
                              transitions={'succeeded': 'GRASP_OBJECT'})
