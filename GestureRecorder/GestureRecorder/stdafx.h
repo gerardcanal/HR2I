@@ -14,10 +14,6 @@
 
 // TODO: mencionar aquí los encabezados adicionales que el programa necesita
 
-<<<<<<< HEAD
-
-=======
->>>>>>> df9c394cbe3fa9e45481e905236bdccc9ee5ee01
 // Safe release for interfaces
 template<class Interface>
 inline void SafeRelease(Interface *& pInterfaceToRelease)
@@ -27,8 +23,4 @@ inline void SafeRelease(Interface *& pInterfaceToRelease)
 		pInterfaceToRelease->Release();
 		pInterfaceToRelease = NULL;
 	}
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> df9c394cbe3fa9e45481e905236bdccc9ee5ee01

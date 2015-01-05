@@ -24,19 +24,19 @@
     <ClInclude Include="targetver.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\BodyRGBViewer.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\Kinect2Utils.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\Skeleton.h">
-      <Filter>Archivos de encabezado</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\resource.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\Utils.h">
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\BodyRGBViewer.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Skeleton.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Utils.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Kinect2Utils.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
   </ItemGroup>
@@ -47,16 +47,16 @@
     <ClCompile Include="GestureRecorder.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\BodyRGBViewer.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\BodyRGBViewer.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\Kinect2Utils.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Skeleton.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\Skeleton.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Utils.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\ROS_KINECT_TESTS\ROS_KINECT_TESTS\Utils.cpp">
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Kinect2Utils.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
   </ItemGroup>
