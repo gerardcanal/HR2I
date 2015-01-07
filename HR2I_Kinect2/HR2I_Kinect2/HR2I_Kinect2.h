@@ -22,8 +22,10 @@
 #include "hr2i_thesis/PointCloudClusterCentroids.h"
 
 #define OBJECT_RADIUS 0.55 // Distance between the point and the objects which are to be segmented
+#define OBJECT_RADIUS_CLOSE 0.55 // Distance between the point and the objects which are to be segmented
 #define SHOWING_GESTURE_TIME 15000
 #define SHOWING_CLUSTERS_TIME 20000
+#define OVERANGLE_CORRECTION 1.6
 
 using namespace std;
 
@@ -45,7 +47,7 @@ public:
 	void HR2I_Kinect2::writeGroundPlaneCoefficients(std::vector<float> vec_g_coeffs, string path = "Parameters\\GroundPlaneCoeffs.txt");
 	void setGroundInfo(const vector<float>& ground_coeffs, const vector<float>& groundPoint);
 	deque<Skeleton>* getInputFrames();
-	void getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, int obj_radius = OBJECT_RADIUS, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>* objects = NULL);
+	void getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, double obj_radius = OBJECT_RADIUS, double clust_tol = CLUSTER_TOLERANCE, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>* objects = NULL);
 
 	// Callbacks
 	void k2CommandReceivedCb(const hr2i_thesis::Kinect2Command& cmd);

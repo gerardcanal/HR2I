@@ -170,7 +170,7 @@ std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsFromScene(
 
 /// Distance is the euclidean distance between nearPoint and the centroid of the object clusters. Those which are in a distance < distance
 /// Returns the clusters found in the scene. The input cloud does not have the segmented clusters at the end of the function call
-std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsNearPointFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, const double distance_th,  pcl::PointXYZ nearPoint, int max_size, int min_size, double cluster_tolerance) {
+std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsNearPointFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, const double distance_th, pcl::PointXYZ nearPoint, double cluster_tolerance, int max_size, int min_size) {
 	/////////////////////////////
 	/// Pick the region of the cloud based in the point with radius distance_th.
 	pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr _tree(new pcl::KdTreeFLANN<pcl::PointXYZ>);

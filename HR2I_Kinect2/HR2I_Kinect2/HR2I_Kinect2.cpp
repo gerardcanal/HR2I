@@ -236,7 +236,7 @@ deque<Skeleton>* HR2I_Kinect2::getInputFrames() {
 }
 
 /// ObjectsPtr is an output parameter with the segmented clusters
-void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, int obj_radius, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>* objectsPtr) {
+void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, double obj_radius, double clust_tol, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>* objectsPtr) {
 	bool rightBody = true;
 
 	pcl_viewer->setPointingPoint(pointingPoint);
@@ -258,7 +258,7 @@ void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, b
 	if (df) {
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 		if (drawObjects) {
-			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _objects = K2PCL::segmentObjectsNearPointFromScene(pcPtr, OBJECT_RADIUS, pointingPoint);
+			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _objects = K2PCL::segmentObjectsNearPointFromScene(pcPtr, obj_radius, pointingPoint, clust_tol);
 			pcl_viewer->setSceneAndSegmentedClusters(pcPtr, _objects);
 			std::cout << _objects.size() << " clusters have been segmented." << std::endl;
 			if (objectsPtr != NULL) *objectsPtr = _objects;
@@ -304,10 +304,11 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 	if (strcmp(_k2cmdcp.header.frame_id, "wifibot") == 0) { // Convert pose from wifibot to Kinect: wb+x = kinect+z, wb+y = kinect+x 
 		// Translate the point back to 0
 		newPpoint.x = pointingPoint.x - _k2cmdcp.current_pose.y;
-		newPpoint.y = pointingPoint.y; // It's the sameheight
+		newPpoint.y = pointingPoint.y*1.15; // It's the same height, but as the kinect is inclined it looks like above. This is only for displaying purposes
 		newPpoint.z = pointingPoint.z - _k2cmdcp.current_pose.x;
 		// Rotate the point
-		//k2cmd.currrent_pose.theta = -k2cmd.currrent_pose.theta;
+		_k2cmdcp.current_pose.theta = -_k2cmdcp.current_pose.theta/OVERANGLE_CORRECTION; // As the wifibot turns less than what it should, the angle is overincremented to make it reach goals.
+		//So we have to correct the new angle to the real one
 		newPpoint.z = newPpoint.z*cos(_k2cmdcp.current_pose.theta) - newPpoint.x*sin(_k2cmdcp.current_pose.theta);
 		newPpoint.x = newPpoint.z*sin(_k2cmdcp.current_pose.theta) + newPpoint.x*cos(_k2cmdcp.current_pose.theta);
 	}
@@ -316,7 +317,7 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 	pcl_viewer->setPerson(Skeleton()); // Set empty skeleton
 	// Segment objects
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects;
-	getAndDrawScene(newPpoint, false, true, OBJECT_RADIUS, &objects);
+	getAndDrawScene(newPpoint, false, true, OBJECT_RADIUS_CLOSE, CLOSE_CLUSTER_TOLERANCE, &objects);
 
 	// Fill and send message
 	hr2i_thesis::PointCloudClusterCentroids msg;
