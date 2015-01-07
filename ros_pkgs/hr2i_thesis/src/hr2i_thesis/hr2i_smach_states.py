@@ -24,6 +24,7 @@ class ReleaseNAOFromWifiBotState(ExecuteBehavior):
         self.register_output_keys(['NAO_riding_wb'])
 
     def execute(self, userdata):  # Override so the output key is set properly for this specific test
+        raw_input('Go_down?')
         super_outcome = super(ReleaseNAOFromWifiBotState, self).execute(userdata)
         userdata.NAO_riding_wb = False
         return super_outcome
@@ -69,7 +70,7 @@ def K2coordinates2Wb(point):
     ret = Point()
     ret.x = point.z  # wb +x axis is kinect +z axis
     ret.y = point.x  # wb +y axis (left) is kinect +x axis
-    ret.z = 0.57  # Approximatelly the distance from the floor at which the kinect is 57 cm
+    ret.z = point.y  # 0.57  # Approximatelly the distance from the floor at which the kinect is 57 cm
     return ret
 
 
@@ -271,7 +272,7 @@ class NaoGoToLocationInFront(StateMachine):
                 translated_loc = Pose2D()
                 translated_loc.x = in_point.x + rot_v.x
                 translated_loc.y = in_point.y + rot_v.y
-                translated_loc.theta = -ud.in_alpha  # Destination point will be with the alpha rotation corrected
+                translated_loc.theta = ud.in_alpha  # Alpha is already the other rotation.
                 ud.out_new_loc = translated_loc
                 rospy.loginfo('--- NaoGoToLocationInFront SM -- initial position (Point): ' + _Pose2D_to_str(in_point) +
                               ', translated_position (Pose2D goal): ' + _Pose2D_to_str(translated_loc))

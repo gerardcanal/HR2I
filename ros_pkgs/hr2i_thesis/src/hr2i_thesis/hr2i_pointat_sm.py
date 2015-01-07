@@ -6,16 +6,17 @@ from smach import StateMachine, CBState
 from hr2i_smach_states import ReleaseNAOFromWifiBotState, SegmentBlobsPipeLine, WBMoveCloseToPoint, NaoGoToLocationInFront
 from hr2i_disambiguate_sm import DisambiguateBlobs
 from nao_smach_utils.read_topic_state import ReadTopicState
-from nao_smach_utils.execute_choregraphe_behavior_state import ExecuteBehavior
+from nao_smach_utils.execute_speechgesture_state import SpeechGesture
 from nao_smach_utils.tts_state import SpeechFromPoolSM
 from nao_smach_utils.timeout_state import TimeOutState
 from nav_msgs.msg import Odometry
 from tf.transformations import euler_from_quaternion
 
 LAST_ORIENT = True
-STABILIZATION_TIME = 2.5    # seconds
-WB_DIST_TO_POINTING = 1.00  # metres
-NAO_DIST_TO_OBJECT = 0.1    # metres
+STABILIZATION_TIME = 2.5     # seconds
+WB_DIST_TO_POINTING = 1.00   # metres
+NAO_DIST_TO_OBJECT = 0.25    # metres
+OVERANGLE_CORRECTION = 1.60  # Correction of the increment of angle from the wifibot. MUST be the same as in the windows application
 
 
 class PointAtResponseExecutionSM(StateMachine):
@@ -23,17 +24,17 @@ class PointAtResponseExecutionSM(StateMachine):
                 - in_ground_point: The point in the ground plane which has been pointed by the UserWarning
                 - in_NAO_riding: a boolean which indicates whether the NAO is riding the wifibot or not
         output_keys are:
-                - out_NAO_riding: The result of whether the NAO is riding the wifibot or not (basically will be false after the execution)
+                - out_NAO_riding: The result of whether the NAO is riding the wifibot or not (basically will be false after a successful execution)
     '''
     def __init__(self):
         StateMachine.__init__(self, outcomes=['succeeded', 'aborted', 'not_riding_wb', 'nothing_found'],
                               input_keys=['in_ground_point', 'in_NAO_riding'], output_keys=['out_NAO_riding'])
         with self:
             def check_on_wb(ud):
-                if ud.in_NAO_riding:  # NAO is riding the wifibot, we can go
-                    return 'possible'
                 # Set to the same as the status has not been changed
                 ud.out_NAO_riding = ud.in_NAO_riding
+                if ud.in_NAO_riding:  # NAO is riding the wifibot, we can go
+                    return 'possible'
                 return 'impossible'
 
             StateMachine.add('CHECK_IF_POSSIBLE', CBState(check_on_wb, input_keys=['in_NAO_riding'],
@@ -62,12 +63,12 @@ class PointAtResponseExecutionSM(StateMachine):
                 aux.x = ud.in_gp.x - ud.wb_odom.pose.pose.position.x
                 aux.y = ud.in_gp.y - ud.wb_odom.pose.pose.position.y
                 quaternion = ud.wb_odom.pose.pose.orientation
-                theta = euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))[2]
+                theta = -euler_from_quaternion((quaternion.x, quaternion.y, quaternion.z, quaternion.w))[2] / OVERANGLE_CORRECTION
                 aux.x = aux.x * math.cos(theta) - aux.y*math.sin(theta)
                 aux.y = aux.x * math.sin(theta) + aux.y*math.cos(theta)
                 ud.out_gp = aux
                 ud.theta_wb = theta
-                rospy.loginfo('--- Updated ground position (x, y) is: (' + str(aux.x) + ', ' + str(aux.y) + ')')
+                rospy.loginfo('--- Updated ground position (x, y) after moving wb is: (' + str(aux.x) + ', ' + str(aux.y) + ')')
                 return 'succeeded'
 
             StateMachine.add('UPDATE_GROUND_POINT', CBState(update_gp, outcomes=['succeeded'],
@@ -89,14 +90,33 @@ class PointAtResponseExecutionSM(StateMachine):
                              transitions={'succeeded': 'SEGMENT_BLOBS', 'aborted': 'SEGMENT_BLOBS', 'preempted': 'SEGMENT_BLOBS'})
 
             StateMachine.add('DISAMBIGUATE', DisambiguateBlobs(),
-                             remapping={'info_clusters': 'segmented_clusters', 'ground_point': 'in_ground_point', 'selected_cluster_centroid': 'object_pose'},
+                             remapping={'info_clusters': 'segmented_clusters',
+                                        'ground_point': 'in_ground_point',
+                                        'selected_cluster_centroid': 'object_pose',
+                                        'left_right': 'left_right_arm'},
                              transitions={'succeeded': 'RELEASE_NAO'})
 
             StateMachine.add('RELEASE_NAO', ReleaseNAOFromWifiBotState(), remapping={'NAO_riding_wb': 'out_NAO_riding'},
                              transitions={'succeeded': 'NAO_GO_TO_BLOB', 'preempted': 'NAO_GO_TO_BLOB'})
 
-            StateMachine.add('NAO_GO_TO_BLOB', NaoGoToLocationInFront(K=NAO_DIST_TO_OBJECT), remapping={'location_point': 'object_pose', 'alpha': 'theta_wb'},
-                             transitions={'succeeded': 'GRASP_OBJECT'})
+            StateMachine.add('NAO_GO_TO_BLOB', NaoGoToLocationInFront(K=NAO_DIST_TO_OBJECT),
+                             remapping={'location_point': 'object_pose', 'alpha': 'theta_wb'},
+                             transitions={'succeeded': 'CHECK_WHICH_ARM'})
 
-            StateMachine.add('GRASP_OBJECT', ExecuteBehavior(behavior_name='tomato_grasp'),
+            def check_arm(ud):
+                if ud.left_right_arm == 'left':
+                    return 'left_arm'
+                if ud.left_right == 'right':
+                    return 'right_arm'
+                return 'both_arms'
+            StateMachine.add('CHECK_WHICH_ARM', CBState(check_arm, input_keys=['left_right_arm'],
+                                                        outcomes=['right_arm', 'left_arm', 'both_arms']),
+                             transitions={'right_arm': 'POINT_RIGHT_HAND', 'left_arm': 'POINT_LEFT_HAND', 'both_arms': 'POINT_BOTH_HANDS'})
+
+            point_pool = ['Is this one right?', 'You were pointing at this.' 'You referred to this object.']
+            StateMachine.add('POINT_LEFT_HAND', SpeechGesture(behavior_pool='HR2I_point_left_hand', textpool=point_pool, wait_before_speak=1.5),
+                             transitions={'succeeded': 'succeeded', 'aborted': 'succeeded', 'preempted': 'succeeded'})
+            StateMachine.add('POINT_RIGHT_HAND', SpeechGesture(behavior_pool='HR2I_point_right_hand', textpool=point_pool, wait_before_speak=1.5),
+                             transitions={'succeeded': 'succeeded', 'aborted': 'succeeded', 'preempted': 'succeeded'})
+            StateMachine.add('POINT_BOTH_HANDS', SpeechGesture(behavior_pool='HR2I_point_both_hands', textpool=point_pool, wait_before_speak=1.5),
                              transitions={'succeeded': 'succeeded', 'aborted': 'succeeded', 'preempted': 'succeeded'})

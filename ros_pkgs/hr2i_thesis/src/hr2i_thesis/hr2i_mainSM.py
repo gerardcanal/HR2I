@@ -34,7 +34,7 @@ class HR2I_SM(StateMachine):
                              transitions={'succeeded': 'WAIT_FOR_GESTURE', 'preempted': 'WAIT_FOR_GESTURE',
                                           'aborted': 'WAIT_FOR_GESTURE'})
 
-            text_pool = ['I am done! What else?', 'No more gestures for me?', 'Look I got it!', 'Heyo I am awesome!']
+            text_pool = ['I am done! What else?', 'Are there anymore gestures for me?', 'Look I found it!', 'Heyo I am awesome!']
             StateMachine.add('SAY_DONE', SpeechFromPoolSM(pool=text_pool),
                              transitions={'succeeded': 'WAIT_FOR_GESTURE', 'preempted': 'WAIT_FOR_GESTURE',
                                           'aborted': 'WAIT_FOR_GESTURE'})
