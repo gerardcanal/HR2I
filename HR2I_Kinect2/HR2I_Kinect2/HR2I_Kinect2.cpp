@@ -86,23 +86,27 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 		vector<float> Elbow(3, 0.0);
 		vector<float> HandTip(3, 0.0);
 		// Average the frames to have a medium vector
-		/*for (int i = 0; i < inputFrames.size(); ++i) {
+		int start = std::min(10, (int)inputFrames.size()), numEl = 10;
+		int k = 0;
+		for (int i = start; i < std::min(start+numEl, (int)inputFrames.size()); ++i) {
 			CameraSpacePoint h = inputFrames[i].getJointPosition(JointType_HandRight);
 			Hand[0] += h.X; Hand[1] += h.Y; Hand[2] += h.Z;
 			CameraSpacePoint e = inputFrames[i].getJointPosition(JointType_ElbowRight);
 			Elbow[0] += e.X; Elbow[1] += e.Y; Elbow[2] += e.Z;
 			CameraSpacePoint ht = inputFrames[i].getJointPosition(JointType_HandTipRight);
 			HandTip[0] += ht.X; HandTip[1] += ht.Y; HandTip[2] += ht.Z;
+			k++;
 		}
-		Hand[0] /= inputFrames.size(); Hand[1] /= inputFrames.size(); Hand[2] /= inputFrames.size();
-		Elbow[0] /= inputFrames.size(); Elbow[1] /= inputFrames.size(); Elbow[2] /= inputFrames.size();
-		HandTip[0] /= inputFrames.size(); HandTip[1] /= inputFrames.size(); HandTip[2] /= inputFrames.size();*/
-		CameraSpacePoint h = inputFrames[inputFrames.size()-7].getJointPosition(JointType_HandRight); // 7 is the magic number
+		std::cout << "\tMean point at direction used " << k << " frames." << std::endl;
+		Hand[0] /= k; Hand[1] /= k; Hand[2] /= k;
+		Elbow[0] /= k; Elbow[1] /= numEl; Elbow[2] /= numEl;
+		HandTip[0] /= k; HandTip[1] /= k; HandTip[2] /= k;
+		/*CameraSpacePoint h = inputFrames[inputFrames.size()-7].getJointPosition(JointType_HandRight); // 7 is the magic number
 		Hand[0] += h.X; Hand[1] += h.Y; Hand[2] += h.Z;
 		CameraSpacePoint e = inputFrames[inputFrames.size() - 7].getJointPosition(JointType_ElbowRight);
 		Elbow[0] += e.X; Elbow[1] += e.Y; Elbow[2] += e.Z;
 		CameraSpacePoint ht = inputFrames[inputFrames.size() - 7].getJointPosition(JointType_HandTipRight);
-		HandTip[0] += ht.X; HandTip[1] += ht.Y; HandTip[2] += ht.Z;
+		HandTip[0] += ht.X; HandTip[1] += ht.Y; HandTip[2] += ht.Z;*/
 
 		// Get intersection point
 		vector<float> lineVector = Utils::subtract(Hand, Elbow); // Vector Elbow->Hand EH = H-E
