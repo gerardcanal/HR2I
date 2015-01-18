@@ -1,0 +1,33 @@
+sp {hr2i*propose*nao-go-down-wb
+   (state <s> ^name hr2i  # state s (world) has hr2i as name
+              ^robot <r>) # parameter robot is stored in r (as if r = s.robot)
+   (<r> ^ridingWB true) # NAO is riding
+-->
+   (<s> ^operator <op> + =) # Crea un nou operador que es diu op
+   (<op> ^name nao-go-down-wb) # Parametre del operadors son name = NAME  -pot tenir-ne d'altres
+}
+
+sp {hr2i*apply*nao-go-down-wb
+   (state <s> ^operator <op> # Picks the operator created in the propose and has been chosen
+              ^io.output-link <out>) # output channe. "Must be here and that's it"
+   (<op> ^name nao-go-down-wb) # Check the parameters are the same as in before. If parameters in the operator they should be here too
+-->
+#  (<out> ^navigate.loc <lid>)  # If the previous conditions hold, pick the operator's print and put the loc id
+}
+
+
+sp {hr2i*apply*nao-go-down-wb*remove-nao-go-down-wb
+   (state <s> ^operator <op>
+              ^io.output-link <out>
+              ^robot <r>)
+   (<op> ^name nao-go-down-wb)
+    
+   (<r> ^ridingWB true)
+   
+   (<out> ^nao-go-down-wb <st>)
+   (<st> ^status complete)
+-->
+   (<r> ^ridingWB false
+                  true -)
+   (<out> ^nao-go-down-wb <st> -)
+}

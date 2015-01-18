@@ -11,40 +11,7 @@ sp {hr2i*propose*navigate
    (<s> ^operator <op> + =) # Crea un nou operador que es diu op
    (<op> ^name navigate  # Parametre del operadors son name = navigate i toLoc = l
          ^toLoc <l>)
-}
-
-#sp {hr2i*propose*person*navigate
-#   (state <s> ^name hr2i
-#              ^robot <r>
-#              ^location <l>
-#              ^person <p>
-#              ^desired <d>)
-#   (<r> ^locId <rloc>)
-#   (<l> ^id <ploc>)
-#   (<p> ^id <pid>)
-#   (<d> ^person <pp>)
-#   (<pp> ^id <pid>
-#         ^locId {<> <rloc> <ploc>})
-#-->
-#   (<s> ^operator <op> + =)
-#   (<op> ^name navigate
-#         ^toLoc <l>)
-#}
-
-# sp {hr2i*propose*navigate*best
-#    (state <s> ^name hr2i
-#               ^robot <r>
-#               ^location <l>
-#               ^desired <d>)
-#    (<r> ^locId <rloc>)
-#    (<l> ^id {<> <rloc> <dloc>})
-#    (<d> ^robot.locId <dloc>)
-# -->
-#    (<s> ^operator <op> + >)
-#    (<op> ^name navigate
-#          ^withRob <r>
-#          ^toLoc <l>)
-   
+}   
 
 sp {hr2i*apply*navigate
    (state <s> ^operator <op>  # Agafa l'operador que has creat abans i s'ha triat

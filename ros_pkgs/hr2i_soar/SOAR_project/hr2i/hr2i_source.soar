@@ -5,6 +5,14 @@ popd
 pushd elaborations
 source elaborations_source.soar
 popd
+source disambiguate_objects.soar
 source initialize-hr2i.soar
-source navigate.soar
+source example_reem_navigate.soar
+source nao_approach_object.soar
+source nao_go_down_wb.soar
+source nao_point_object.soar
 source prohibitions-in-run-time.soar
+source say_hello_riding_wb.soar
+source say_hello_standing.soar
+source segment_objects.soar
+source wb_approach_location.soar

@@ -1,4 +1,4 @@
-126
+144
 SOAR_ID 0
 SOAR_ID 1
 SOAR_ID 2
@@ -21,7 +21,7 @@ INTEGER_RANGE 18 -2147483648 2147483647
 ENUMERATION 19 2 no yes
 INTEGER_RANGE 20 -2147483648 2147483647
 SOAR_ID 21
-ENUMERATION 22 1 navigate
+ENUMERATION 22 1 example_reem_navigate
 ENUMERATION 23 2 no yes
 SOAR_ID 24
 ENUMERATION 25 1 initialize-gp
@@ -125,7 +125,25 @@ SOAR_ID 122
 ENUMERATION 123 1 follow
 SOAR_ID 124
 ENUMERATION 125 1 guide
-149
+SOAR_ID 126
+ENUMERATION 127 1 lala
+SOAR_ID 128
+ENUMERATION 129 1 say_hello_riding_wb
+SOAR_ID 130
+ENUMERATION 131 1 say_hello_standing
+SOAR_ID 132
+ENUMERATION 133 1 nao_go_down_wb
+SOAR_ID 134
+ENUMERATION 135 1 wb_approach_location
+SOAR_ID 136
+ENUMERATION 137 1 segment_objects
+SOAR_ID 138
+ENUMERATION 139 1 nao_point_object
+SOAR_ID 140
+ENUMERATION 141 1 nao_approach_object
+SOAR_ID 142
+ENUMERATION 143 1 disambiguate_objects
+167
 0 check-goal 118
 0 desired 106
 0 io 1
@@ -155,6 +173,15 @@ ENUMERATION 125 1 guide
 0 operator 119
 0 operator 122
 0 operator 124
+0 operator 126
+0 operator 128
+0 operator 130
+0 operator 132
+0 operator 134
+0 operator 136
+0 operator 138
+0 operator 140
+0 operator 142
 0 person 17
 0 robot 15
 0 superstate 6
@@ -275,3 +302,12 @@ ENUMERATION 125 1 guide
 119 name 120
 122 name 123
 124 name 125
+126 name 127
+128 name 129
+130 name 131
+132 name 133
+134 name 135
+136 name 137
+138 name 139
+140 name 141
+142 name 143
