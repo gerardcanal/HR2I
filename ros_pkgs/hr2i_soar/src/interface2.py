@@ -1,6 +1,4 @@
 #! /usr/bin/env python
-
-import roslib; roslib.load_manifest('gpsrSoar')
 import rospy
 import sys
 import smach
