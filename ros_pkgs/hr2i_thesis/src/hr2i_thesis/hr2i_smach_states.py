@@ -268,7 +268,7 @@ class NaoGoToLocationInFront(StateMachine):
                 ##### End translation
 
                 vec = Pose2D(-K, 0.0, 0.0)  # Translation vector in world space
-                rot_v = rotate_point2D(vec, -ud.in_alpha)  # Rotated point. I don't know why - but... -
+                rot_v = rotate_point2D(vec, ud.in_alpha)  # Rotated point. Once worked in negative, rolled back to positive I don't know why - but... -)
                 translated_loc = Pose2D()
                 translated_loc.x = in_point.x + rot_v.x
                 translated_loc.y = in_point.y + rot_v.y

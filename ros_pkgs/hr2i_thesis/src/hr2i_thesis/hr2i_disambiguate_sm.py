@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+import rospy
 
 from smach import StateMachine, CBState
 from nao_smach_utils.tts_state import SpeechFromPoolSM
@@ -9,8 +10,8 @@ from hr2i_thesis.msg import PointCloudClusterCentroids
 
 class DisambiguateBlobs(StateMachine):
     ''' It assumes max 3 blobs has been detected '''
-    DIST_TH = 0.1  # metres
-    SIZE_TH = 0.85  # If ratio between sizemax/sizemin > 0.95 then we assume ambiguous size
+    DIST_TH = 0.1   # metres
+    SIZE_TH = 0.75  # If ratio between sizemax/sizemin > SIZE_TH then we assume ambiguous size
 
     position_pool = ['Is it the one at my %s-hand side?', 'Do you mean the %s-most object?', 'Is this one at my %s, is it?',
                      'I think you were pointing to the %s-most one, were you?']
@@ -146,7 +147,10 @@ class DisambiguateBlobs(StateMachine):
         ambiguous = False
         for i in xrange(0, nel):
             for j in xrange(i+1, nel):
-                if (pcc_sorted.cluster_sizes[j]/pcc_sorted.cluster_sizes[i]) > self.SIZE_TH:
+                i_ambiguous = (pcc_sorted.cluster_sizes[j]/pcc_sorted.cluster_sizes[i]) > self.SIZE_TH
+                rospy.loginfo('#### DISAMBIGUATE size: ' + str(pcc_sorted.cluster_sizes[j]) + '/' + str(pcc_sorted.cluster_sizes[i]) +
+                              ' > '+self.SIZE_TH+' = '+i_ambiguous)
+                if i_ambiguous:
                     # They are sorted in descending order, so [j]/[i] will be always below 1.
                     # If this happens, we have ambiguity between sizes
                     ambiguous = True

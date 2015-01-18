@@ -15,8 +15,8 @@ from tf.transformations import euler_from_quaternion
 LAST_ORIENT = True
 STABILIZATION_TIME = 2.5     # seconds
 WB_DIST_TO_POINTING = 1.00   # metres
-NAO_DIST_TO_OBJECT = 0.25    # metres
-OVERANGLE_CORRECTION = 1.60  # Correction of the increment of angle from the wifibot. MUST be the same as in the windows application
+NAO_DIST_TO_OBJECT = 0.22    # metres
+OVERANGLE_CORRECTION = 1.55  # Correction of the increment of angle from the wifibot. MUST be the same as in the windows application
 
 
 class PointAtResponseExecutionSM(StateMachine):
