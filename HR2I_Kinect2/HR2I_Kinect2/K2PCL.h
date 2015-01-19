@@ -26,7 +26,7 @@
 #define EQUAL_PLANE_TH  0.1
 #define PLANE_DIST_TH   0.01
 
-#define MIN_CLUSTER_SIZE 100
+#define MIN_CLUSTER_SIZE 3000
 #define MAX_CLUSTER_SIZE 7000
 #define CLUSTER_TOLERANCE 0.025 // default: 0.02 (2 cm)
 #define CLOSE_CLUSTER_TOLERANCE 0.025// default: 0.02 (2 cm)
