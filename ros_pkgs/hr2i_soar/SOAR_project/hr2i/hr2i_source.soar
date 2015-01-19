@@ -6,8 +6,8 @@ pushd elaborations
 source elaborations_source.soar
 popd
 source disambiguate_objects.soar
-source initialize-hr2i.soar
 source example_reem_navigate.soar
+source initialize-hr2i.soar
 source nao_approach_object.soar
 source nao_go_down_wb.soar
 source nao_point_object.soar

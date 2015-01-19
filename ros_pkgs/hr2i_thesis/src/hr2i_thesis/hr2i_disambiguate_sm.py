@@ -13,7 +13,7 @@ class DisambiguateBlobs(StateMachine):
     DIST_TH = 0.1   # metres
     SIZE_TH = 0.75  # If ratio between sizemax/sizemin > SIZE_TH then we assume ambiguous size
 
-    position_pool = ['Is it the one at my %s-hand side?', 'Do you mean the %s-most object?', 'Is this one at my %s, is it?',
+    position_pool = ['Is it the one at your %s-hand side?', 'Do you mean the %s-most object?', 'Is this one at your %s, is it?',
                      'I think you were pointing to the %s-most one, were you?']
 
     size_pool = ['Is it the %sest one?', 'You were pointing at the %sest object, right?',
@@ -41,6 +41,7 @@ class DisambiguateBlobs(StateMachine):
                              transitions={'succeeded': 'CHECK_RECOGNITION', 'preempted': 'LISTEN_USER', 'aborted': 'LISTEN_USER'})
 
             def check_yesno(ud):
+                rospy.logwarn('Recognized speech is: ' + ud.user_answer)
                 if ud.user_answer == 'yes':  # We have it!
                     ud.selected_cluster_centroid = ud.sorted_info.cluster_centroids[ud.in_asked_id]
                     ud.out_speech_pool = ['I found it!', 'Of course it is!', 'Yes, I knew it.', 'Yiiii!']
@@ -65,7 +66,7 @@ class DisambiguateBlobs(StateMachine):
                     if ud.used_metric == 'size':
                         ud.out_speech_pool = map(lambda s: s % 'small', self.size_pool)
                     else:
-                        ud.out_speech_pool = map(lambda s: s % 'right', self.position_pool)
+                        ud.out_speech_pool = map(lambda s: s % 'left', self.position_pool)  # USER'S LEFT, ROBOT'S RIGHT. All the other position references are in the robot's point of view.
                 return 'answer_no'
             StateMachine.add('CHECK_RECOGNITION', CBState(check_yesno, outcomes=['answer_yes', 'answer_no', 'remaining_one'],
                                                           input_keys=['user_answer', 'used_metric', 'sorted_info', 'in_asked_id'],
@@ -78,7 +79,7 @@ class DisambiguateBlobs(StateMachine):
             StateMachine.add('SAY_FOUND', SpeechFromPoolSM(), remapping={'pool': 'speech_pool'},
                              transitions={'succeeded': 'CHECK_RL', 'preempted': 'CHECK_RL', 'aborted': 'CHECK_RL'})
 
-            def check_rl(ud):
+            def check_rl(ud):  # This uses robot's left/right
                 cluster_centroids = self.sort_by_position(ud.in_cluster_info)[1]  # In case the sorted one is not by pose...
                 idx = cluster_centroids.index(ud.selected_cluster_centroid)  # Get index of the selected cluster
                 if idx == 0:
@@ -132,12 +133,12 @@ class DisambiguateBlobs(StateMachine):
                 break
         else:  # No break, so min_index is the closest one and the others are clearly further away
             ud.selected_cluster_centroid = centroids_sorted[min_index]
-            position = 'left' if min_index == 0 else ('right' if min_index == 2 or nel == 2 else 'middle')
+            position = 'your left' if min_index == 0 else ('your right' if min_index == 2 or nel == 2 else 'the middle')
 
-            ud.question_pool = ['I see you pointed at one the in the %s.' % position,
-                                'Oh the one in the %s.' % position,
-                                'Yes, you were pointing at the one in the %s.' % position,
-                                'I think that you meant the object in the %s.' % position]
+            ud.question_pool = ['I see you pointed at one the in %s.' % position,
+                                'Oh the one in %s.' % position,
+                                'Yes, you were pointing at the one in %s.' % position,
+                                'I think that you meant the object in %s.' % position]
             return 'succeeded'
 
         # Check if size is not ambiguous and use size if it isn't
@@ -149,7 +150,7 @@ class DisambiguateBlobs(StateMachine):
             for j in xrange(i+1, nel):
                 i_ambiguous = (pcc_sorted.cluster_sizes[j]/pcc_sorted.cluster_sizes[i]) > self.SIZE_TH
                 rospy.loginfo('#### DISAMBIGUATE size: ' + str(pcc_sorted.cluster_sizes[j]) + '/' + str(pcc_sorted.cluster_sizes[i]) +
-                              ' > '+self.SIZE_TH+' = '+i_ambiguous)
+                              ' > '+str(self.SIZE_TH)+' = '+str(i_ambiguous))
                 if i_ambiguous:
                     # They are sorted in descending order, so [j]/[i] will be always below 1.
                     # If this happens, we have ambiguity between sizes
@@ -168,5 +169,5 @@ class DisambiguateBlobs(StateMachine):
         pcc_sorted.cluster_centroids = unziped_position_sorted[1]
         ud.out_sorted_info = pcc_sorted
         ud.out_used_metric = 'position'
-        ud.question_pool = map(lambda s: s % 'left', self.position_pool)
+        ud.question_pool = map(lambda s: s % 'right', self.position_pool)  # USER'S RIGHT, ROBOT'S LEFT. All the other position references are in the robot's point of view.
         return 'disambiguate'
