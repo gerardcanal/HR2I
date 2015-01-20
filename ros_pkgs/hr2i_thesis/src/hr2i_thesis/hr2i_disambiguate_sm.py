@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import math
 import rospy
+import random
 
 from smach import StateMachine, CBState
 from nao_smach_utils.tts_state import SpeechFromPoolSM
@@ -12,6 +13,8 @@ class DisambiguateBlobs(StateMachine):
     ''' It assumes max 3 blobs has been detected '''
     DIST_TH = 0.1   # metres
     SIZE_TH = 0.75  # If ratio between sizemax/sizemin > SIZE_TH then we assume ambiguous size
+    REFLECT_DIST_TH = 0.15  # Distance at which a reflection is considered as it
+    REFLECT_Z_TH = 0.10  # If abs(obj.z - reflec.z) > th it is a reflection
 
     position_pool = ['Is it the one at your %s-hand side?', 'Do you mean the %s-most object?', 'Is this one at your %s, is it?',
                      'I think you were pointing to the %s-most one, were you?']
@@ -82,7 +85,9 @@ class DisambiguateBlobs(StateMachine):
             def check_rl(ud):  # This uses robot's left/right
                 cluster_centroids = self.sort_by_position(ud.in_cluster_info)[1]  # In case the sorted one is not by pose...
                 idx = cluster_centroids.index(ud.selected_cluster_centroid)  # Get index of the selected cluster
-                if idx == 0:
+                if len(cluster_centroids) == 1:  # If only one object, do it at random
+                    ud.left_right = random.choice(['left', 'right', 'middle'])
+                elif idx == 0:
                     ud.left_right = 'left'
                 elif idx == 2 or len(cluster_centroids) == 2:  # If three objects and id is 2 it is the rightmost one
                     # or if there are only 2 objects it will be the righter one
@@ -94,7 +99,7 @@ class DisambiguateBlobs(StateMachine):
             StateMachine.add('CHECK_RL', CBState(check_rl, input_keys=['selected_cluster_centroid', 'in_cluster_info'],
                                                  output_keys=['left_right'], outcomes=['succeeded']),
                              remapping={'selected_cluster_centroid': 'selected_cluster_centroid',
-                                        'in_cluster_info': 'info_clusters',
+                                        'in_cluster_info': 'sorted_info',
                                         'left_right': 'left_right'},
                              transitions={'succeeded': 'succeeded'})
 
@@ -106,15 +111,50 @@ class DisambiguateBlobs(StateMachine):
         ud.out_asked_id = 0  # We will always ask for the first one
         # First check if distance ratio is enough to differenciate...
         unziped_position_sorted = self.sort_by_position(ud.in_cluster_info)
+
         # We have sorted the blobs by y coordinate in descending order, so the first one will be the left-most one
         centroids_sorted = unziped_position_sorted[1]
-        print ud.in_ground_point, '\n'
-        print centroids_sorted, unziped_position_sorted[0]
+        print 'Ground point:', ud.in_ground_point, '\n'
+        print 'Clusters:', centroids_sorted, unziped_position_sorted[0]
+
+        ####################################
+        ### Filter object reflections (last minute test fix)
+        print '\n'
+        to_remove = []
+        for i in xrange(0, len(centroids_sorted)-1):
+            ## Only one reflection is assumed, and they will be contiguous in the sorted list
+            dist_to_next = math.sqrt((centroids_sorted[i].x-centroids_sorted[i+1].x)**2 +
+                                     (centroids_sorted[i].y-centroids_sorted[i+1].y)**2)
+            # If distance is below a threshold (objects are really close) and height is very different...
+            if (dist_to_next < self.REFLECT_DIST_TH and abs(abs(centroids_sorted[i].z)-abs(centroids_sorted[i+1].z)) > self.REFLECT_Z_TH):
+                if centroids_sorted[i].z > centroids_sorted[i+1].z:
+                    to_remove.append(i+1)
+                else:
+                    to_remove.append(i)
+        centroids_sorted = list(centroids_sorted)
+        unziped_position_sorted[0] = list(unziped_position_sorted[0])
+        unziped_position_sorted[1] = list(unziped_position_sorted[1])
+        for i in sorted(to_remove, reverse=True):  # Remove ALL the reflections!
+            del centroids_sorted[i]
+            del unziped_position_sorted[0][i]
+            del unziped_position_sorted[1][i]
+        print len(to_remove), ' cluster reflections have been filtered!!'
+        if len(to_remove) > 0:
+            print 'Reflection filtered clusters:', centroids_sorted, unziped_position_sorted[0]
+        print '\n'
+        ####################################
+
+        pcc_sorted = PointCloudClusterCentroids()
+        pcc_sorted.cluster_sizes = unziped_position_sorted[0]
+        pcc_sorted.cluster_centroids = unziped_position_sorted[1]
+        ud.out_sorted_info = pcc_sorted
+        ud.out_used_metric = 'position'
 
         # Now sort by size
-        unziped_size_sorted = zip(*sorted(zip(ud.in_cluster_info.cluster_sizes, ud.in_cluster_info.cluster_centroids), reverse=True))
+        #old: unziped_size_sorted = zip(*sorted(zip(ud.in_cluster_info.cluster_sizes, ud.in_cluster_info.cluster_centroids), reverse=True))
+        unziped_size_sorted = zip(*sorted(zip(unziped_position_sorted[0], unziped_position_sorted[1]), reverse=True))
 
-        nel = len(ud.in_cluster_info.cluster_sizes)  # Number of elements/custers
+        nel = len(unziped_position_sorted[0])  # Number of elements/clusters is the number of cluster sizes
         if nel == 1:
             ud.selected_cluster_centroid = centroids_sorted[0]
             ud.question_pool = ['Yes it is the only one I see.', 'Okay, I can only see one object there', 'It may be the only one I see']
@@ -133,7 +173,7 @@ class DisambiguateBlobs(StateMachine):
                 break
         else:  # No break, so min_index is the closest one and the others are clearly further away
             ud.selected_cluster_centroid = centroids_sorted[min_index]
-            position = 'your left' if min_index == 0 else ('your right' if min_index == 2 or nel == 2 else 'the middle')
+            position = 'your right' if min_index == 0 else ('your left' if min_index == 2 or nel == 2 else 'the middle')
 
             ud.question_pool = ['I see you pointed at one the in %s.' % position,
                                 'Oh the one in %s.' % position,

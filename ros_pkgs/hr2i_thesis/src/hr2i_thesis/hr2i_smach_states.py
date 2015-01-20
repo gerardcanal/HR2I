@@ -273,6 +273,12 @@ class NaoGoToLocationInFront(StateMachine):
                 translated_loc.x = in_point.x + rot_v.x
                 translated_loc.y = in_point.y + rot_v.y
                 translated_loc.theta = ud.in_alpha  # Alpha is already the other rotation.
+
+                ##### FIXME: to avoid NAO going left
+                translated_loc.theta -= 0.185
+                translated_loc.y -= 0.05
+                ################ END FIXME
+
                 ud.out_new_loc = translated_loc
                 rospy.loginfo('--- NaoGoToLocationInFront SM -- initial position (Point): ' + _Pose2D_to_str(in_point) +
                               ', translated_position (Pose2D goal): ' + _Pose2D_to_str(translated_loc))
