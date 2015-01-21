@@ -24,7 +24,7 @@ class ReleaseNAOFromWifiBotState(ExecuteBehavior):
         self.register_output_keys(['NAO_riding_wb'])
 
     def execute(self, userdata):  # Override so the output key is set properly for this specific test
-        raw_input('Go_down?')
+        #raw_input('Go_down?')
         super_outcome = super(ReleaseNAOFromWifiBotState, self).execute(userdata)
         userdata.NAO_riding_wb = False
         return super_outcome
@@ -284,7 +284,7 @@ class NaoGoToLocationInFront(StateMachine):
                               ', translated_position (Pose2D goal): ' + _Pose2D_to_str(translated_loc))
                 rospy.loginfo('--- NaoGoToLocationInFront SM -- translation vector = ' + str((vec.x, vec.y)) +
                               ', ' + str(ud.in_alpha) + 'rad rotated translation vector = ' + str((rot_v.x, rot_v.y)))
-                raw_input('Waiting...')
+                #raw_input('Waiting...')
                 return 'succeeded'
 
             StateMachine.add('PREPARE_POSE', CBState(prepare_pose, input_keys=['in_alpha', 'in_location_point'],
