@@ -500,7 +500,8 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 								std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, const std::vector<float>& alphas,
 								const std::vector<std::vector<float>>& gestTh, const std::vector<float>& handhipdists, const std::vector<float>& elbowAngles, const std::vector<float>& nframes, bool verbose) {
 	time_t begin = time(NULL);
-	float overlap = 0;
+	float st_overlap = 0;
+	float dyn_overlap = 0;
 	bool rightBody = true;
 
 	// Construct sets of gt frames for each sequence and each gesture for faster overlap computation
@@ -558,23 +559,28 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 			}
 		}
 
-		if (gt_sets[i][1].size() == 0 || gt_sets[i][0].size() == 0) 
-			overlap += gest_overlap;
-		else overlap += gest_overlap / N_GESTURES;
+		if (gt_sets[i][1].size() > 0 && gt_sets[i][0].size() > 0) {
+			gest_overlap = gest_overlap / N_GESTURES;
+		}
+		st_overlap += st_ovlp;
+		dyn_overlap += dy_ovlp;
 		if (verbose) {
-			std::cout << "  Static overlap of gesture sequence " << i << ": " << st_ovlp << std::endl;
-			std::cout << "  Dynamic overlap of gesture sequence " << i << ": " << dy_ovlp << std::endl;
-			std::cout << "  Mean overlap of gesture sequence " << i << ": " << gest_overlap / N_GESTURES << std::endl;
-
-
+			std::cout << "    Static overlap of gesture sequence " << i << ": " << st_ovlp << std::endl;
+			std::cout << "    Dynamic overlap of gesture sequence " << i << ": " << dy_ovlp << std::endl;
+			std::cout << "    Mean overlap of gesture sequence " << i << ": " << gest_overlap << std::endl;
 		}
 	}
-	overlap = overlap / inputSkeletons.size();
+	st_overlap /= inputSkeletons.size();
+	dyn_overlap /= inputSkeletons.size();
 	if (verbose) {
-		std::cout << "Resulting mean overlap of the " << inputSkeletons.size() << " sequences is: " << overlap << std::endl;
-		std::cout << "All the LOOCV took " << float(time(NULL) - begin)/60.0 << " minutes." << std::endl;
+		std::cout << "Resulting mean STATIC overlap of the " << inputSkeletons.size() << " sequences is: " << st_overlap << std::endl;
+		std::cout << "Resulting mean DYNAMIC overlap of the " << inputSkeletons.size() << " sequences is: " << dyn_overlap << std::endl;
+
+		std::cout << "Resulting mean overlap of the " << inputSkeletons.size() << " sequences is: " << (st_overlap + dyn_overlap) / 2.0 << std::endl;
+		std::cout << "Resulting mean accuracy of the " << inputSkeletons.size() << " sequences is: " << (st_accuracy + dyn_accuracy) / 2.0 << std::endl;
+		std::cout << "All the LOOCV took " << float(time(NULL) - begin) / 60.0 << " minutes." << std::endl;
 	}
-	return overlap;
+	return (st_overlap + dyn_overlap) / 2.0;
 }
 
 void GestureRecognition::writeParameters(GRParameters params, std::string path) {
