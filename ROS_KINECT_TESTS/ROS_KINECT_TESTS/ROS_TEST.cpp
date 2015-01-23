@@ -1,6 +1,8 @@
 // rosserial_hello_world.cpp : Example of sending command velocities from Windows using rosserial
 // ROS includes
 #include "stdafx.h"
+
+
 #include <string>
 #include <stdio.h>
 #include "ros.h"
@@ -146,7 +148,7 @@ void showLivePCtest() {
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 		SafeRelease(df);
 		
-		viewer.setScene(pcPtr, pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>));
+		viewer.setScene(pcPtr);
 		
 		viewer.registerPointPickingCb();
 		std::cout << "Shift+click on three floor points (clockwise), then press 'Q'..." << std::endl;
@@ -184,9 +186,9 @@ void showLivePCtest() {
 			pcl::PointIndices::Ptr indices = planeinfo.first;*/
 			std::vector<float> vec_g_coeffs = {ground_coeffs[0], ground_coeffs[1], ground_coeffs[2] };
 			//pcl::PointIndices::Ptr indices = K2PCL::segmentPlaneByDirection(pcPtr, std::vector<float>({ /*ground*/0.87f, 0.15f, -0.5f /*floor0.004f, -1, 0.07f*/ }));
-			pcl::PointIndices::Ptr indices = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
+			pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::segmentPlaneByDirection(pcPtr, vec_g_coeffs);
 
-			pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::extractIndices(indices, pcPtr); // pcPtr has the remaining points
+			//pcl::PointCloud<pcl::PointXYZ>::Ptr plane = K2PCL::extractIndices(indices, pcPtr); // pcPtr has the remaining points
 			/*int i;
 			for (i = 0; i < pcPtr->size(); ++i) {
 				pcl::PointXYZRGB auxp(255, 255, 255);
@@ -205,7 +207,7 @@ void showLivePCtest() {
 			//pcRGBptr->width = pcPtr->width; pcRGBptr->height = pcPtr->height;
 			// End paint
 			pclviewer.showCloud(pcRGBptr, "pointCloud");*/
-			viewer.setScene(pcPtr, plane);
+			viewer.setScene(pcPtr);
 		}
 
 		if (bodyFrame != NULL) {
@@ -220,8 +222,11 @@ void showLivePCtest() {
 }
 
 // MAIN
+extern void LOOCV_main();
 int _tmain(int argc, _TCHAR * argv[])
 {
+	LOOCV_main();
+	exit(1);
 	/*pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
 	pcl::io::loadPCDFile("C:/Users/Gerard/Dropbox/MAI/3dSemester/TFM/src/HR2I/PCL_Test1/PCL_Test1/pcd/model.pcd", *cloud);
 	pcl::visualization::CloudViewer viewer("Cloud Viewer");

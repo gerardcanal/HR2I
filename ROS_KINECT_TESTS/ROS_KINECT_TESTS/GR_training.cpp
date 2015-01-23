@@ -74,7 +74,7 @@ void trainDTWParameters() {
 	// Train
 	cout << "Beginning the parameter selection..." << endl;
 	GestureRecognition gr;
-	GRParameters params = gr.trainThresholds(models, feat_sequences, skeletons_seq, gt, alphas, gestTh, true);
+	GRParameters params = gr.trainDynamicThresholds(models, feat_sequences, skeletons_seq, gt, alphas, gestTh, true);
 	params.pointAtTh[0] = 0.25f; params.pointAtTh[1] = 2.8f; params.pointAtTh[2] = 25;
 	GestureRecognition::writeParameters(params, resPath);
 	cout << "Parameters were stored in " << resPath;
@@ -254,4 +254,57 @@ void testEqualDTWMethods() { // Some changes must be done in GestRec.h and in th
 	gr1.addFrames(inputf);
 	// At this point, the RealTimeDTW was modified to write the same information on the file and not return until end of the sequence...
 	gr1.RealTimeDTW(0, modelf, inputf.size(), ALPH, MU);*/
+}
+
+
+void LOOCV_main() {
+	/*TCHAR Buffer[MAX_PATH];
+	DWORD dwRet;
+	dwRet = GetCurrentDirectory(MAX_PATH, Buffer);
+	std::cout << "Current path: " << *Buffer << std::endl;*/
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// LOAD INFO
+	string gestPath = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\HR2I\\GestureRecorder\\GestureRecorder\\gestures\\";
+
+	// Get the models...
+	cout << "Loading the models..." << endl;
+	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
+	models[SALUTE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
+
+	// Load sequences -> I assume nobody changed the sequences names from TestSequenceX.csv!!!
+	cout << "Loading the test sequences... 0.00%";
+	tr2::sys::directory_iterator fit(gestPath + "TestSequence");
+	int nSequences = count_if(fit, tr2::sys::directory_iterator(), [](const tr2::sys::directory_entry & d) {return !tr2::sys::is_directory(d.path()); }) / 2;
+	std::vector<std::vector<std::vector<float>>> feat_sequences(nSequences);
+	std::vector<std::vector<Skeleton>> skeletons_seq(nSequences);
+	for (int i = 0; i < nSequences; ++i) {
+		string basepath = gestPath + "TestSequence\\TestSequence" + to_string(i);
+		skeletons_seq[i] = Skeleton::gestureFromCSV(basepath + ".csv");
+		//feat_sequences[i] = Skeleton::gestureFeaturesFromCSV(basepath + "_features.csv");
+		//assert(skeletons_seq[i].size() == feat_sequences[i].size());
+		Utils::printPercentage(i + 1, nSequences);
+	}
+	cout << endl;
+
+	// Load ground truth
+	cout << "Loading the ground truth..." << endl;
+	std::vector<std::vector<GroundTruth>> gt(nSequences);
+	for (int i = 0; i < nSequences; ++i) gt[i] = GestureRecognition::readGrountTruth(gestPath + "gt_testseq" + to_string(i) + ".csv");
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	// Parameter pool
+	std::vector<std::vector<float>> gestTh(N_DYNAMIC_GESTURES);
+	gestTh[SALUTE] = { 6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 8.5f, 8.75f, 8.95f, 9.0f, 9.15f, 9.25f, 9.5f };
+	std::vector<float> alphas = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f,0.3f, 0.5f, 0.55f, 0.60f, 0.65f, 0.75f };
+	std::vector<float> handhipdists = {0.1f, 0.2f, 0.25f, 0.3f, 0.35f, 0.4f, 0.45f};
+	std::vector<float> elbowAngles = {2.0f, 2.15f, 2.25f, 2.3f, 2.35f, 2.4f, 2.45f, 2.55f};
+	std::vector<float> nframes = {10, 15, 20, 25, 30, 35};
+
+	// Start the party
+	GestureRecognition gr;
+	gr.LOOCV(models, skeletons_seq, gt, alphas, gestTh, handhipdists, elbowAngles, nframes, true);
+
+	std::cout << "Press key to close...";
+	int x;  cin >> x;
 }

@@ -19,9 +19,6 @@ Skeleton::Skeleton() {
 
 Skeleton::~Skeleton()
 {
-	/*delete[] joints;
-	delete[] jointOrientations;
-	int x; std::cout << "THIS IS THE SKELETON DESTROYER!!!" << std::endl;*/
 }
 
 

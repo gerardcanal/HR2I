@@ -35,7 +35,7 @@ struct GRParameters {
 	float ALPHA[N_DYNAMIC_GESTURES]; // L1 distance threshold
 	float pointAtTh[3]; // SIGMA. [0] = hand-hip distance, [1] = elbow angle and [3] consecutive frames -> test values 0.25, 2.8, 25
 	float gestTh[N_DYNAMIC_GESTURES]; // MU - threshold per each gesture type for the DTW
-	float ovlps[N_DYNAMIC_GESTURES]; // Overlap per gesture
+	float ovlps[N_GESTURES]; // Overlap per gesture
 	float bestOvlp; // Best overlap
 };
 
@@ -47,19 +47,21 @@ public:
 	~GestureRecognition();
 
 	Gesture RecognizeGesture(std::vector<std::vector<std::vector<float>>> models, GRParameters params);
-	//void addFrame(const std::vector<float>& frame);
-	//void addFrame(const std::vector<float>& feat, const std::vector<float>& extendedFeat);
 	void addFrame(const std::vector<float>& Dynamic_feat, const std::vector<float>& Static_Feat);
-	//void addFrames(std::vector<std::vector<float>> framelist);
-	GRParameters trainThresholds(std::vector<std::vector<std::vector<float>>> models, std::vector<std::vector<std::vector<float>>> Inputsequences,
+	
+	// Training
+	std::vector<std::vector<std::set<int>>> constructGTsets(int nSequences, const std::vector<std::vector<GroundTruth>>& gt);
+	GRParameters trainDynamicThresholds(std::vector<std::vector<std::vector<float>>> models, std::vector<std::vector<std::vector<float>>> Inputsequences,
 						         std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, std::vector<float> alphas,
 								 std::vector<std::vector<float>> gestTh, bool verbose);
+	GRParameters trainStaticThresholds(std::vector<std::vector<std::vector<float>>> Inputsequences, const std::vector<std::vector<GroundTruth>>& gt,
+									   std::vector<float> handhipdists, std::vector<float> elbowAngles, std::vector<float> nframes, bool verbose);
 
-	float LOOCV(const std::vector<std::vector<std::vector<float>>>& models, const std::vector<std::vector<std::vector<float>>>& Inputsequences,
+	float LOOCV(const std::vector<std::vector<std::vector<float>>>& models,
 				std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, const std::vector<float>& alphas,
-				const std::vector<std::vector<float>>& gestTh, bool verbose);
+				const std::vector<std::vector<float>>& gestTh, const std::vector<float>& handhipdists, const std::vector<float>& elbowAngles, const std::vector<float>& nframes, bool verbose);
 
-	//static std::vector<std::vector<float>> addThirdFeature(std::vector<std::vector<float>> model);
+	// I/O
 	static void writeParameters(GRParameters params, std::string path);
 	static GRParameters readParameters(std::string path);
 	static std::vector<GroundTruth> readGrountTruth(std::string path);
@@ -76,10 +78,16 @@ private:
 	void resetCurrentFrames();
 	void clearFrames();
 
-	float getSequencesOverlap(int gestureId, const std::vector<std::vector<float>>& model, const std::vector<std::vector<std::vector<float>>>& sequences,
+	// Private training utilities
+	float getDynamicSequencesOverlap(int gestureId, const std::vector<std::vector<float>>& model, const std::vector<std::vector<std::vector<float>>>& sequences,
 							  const std::vector<std::vector<std::set<int>>>& gt, float ALPHA, float MU);
-	float getSequenceOverlap(const std::vector<std::vector<float>>& model, const std::vector<std::vector<float>>& sequence,
+	float getDynamicSequenceOverlap(const std::vector<std::vector<float>>& model, const std::vector<std::vector<float>>& sequence,
 							 const std::set<int>& gt, float ALPHA, float MU);
+	float getStaticSequenceOverlap(const std::vector<std::vector<float>>& sequence, const std::set<int>& gt, std::vector<float>& pointAtTh);
+	float getStaticSequencesOverlap(int gestureId, const std::vector<std::vector<std::vector<float>>>& sequences, const std::vector<std::vector<std::set<int>>>& gt, std::vector<float> staticThresholds);
+	float computeAccuracy(int gestId, const std::vector<GroundTruth>& gt, std::vector<int> finalframedetections);
+
+
 
 	// Fields
 	std::vector<std::queue<std::vector<float>>> inputFrames; // One frame per gesture

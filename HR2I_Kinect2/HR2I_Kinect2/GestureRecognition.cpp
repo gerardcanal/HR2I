@@ -207,34 +207,6 @@ void GestureRecognition::addFrame(const std::vector<float>& Dynamic_feat, const 
 	#pragma omp flush
 }
 
-/*void GestureRecognition::addFrame(const std::vector<float>& frame) {
-	omp_set_lock(&omp_lock);
-	for (int i = 0; i < N_GESTURES; ++i) 
-		inputFrames[i].push(frame);
-	omp_unset_lock(&omp_lock);
-}
-
-void GestureRecognition::addFrame(const std::vector<float>& feat, const std::vector<float>& extendedFeat) {
-	omp_set_lock(&omp_lock);
-	for (int i = 0; i < N_GESTURES; ++i) {
-		if (static_cast<Gesture>(i) == POINT_AT) inputFrames[i].push(extendedFeat);
-		else inputFrames[i].push(feat);
-	}
-	omp_unset_lock(&omp_lock);
-}
-
-void GestureRecognition::addFrames(std::vector<std::vector<float>> framelist) {
-	// It gets the locks as having frames is essential for the working threads to make any job...
-	// Also it'll mainly be used to initialize the class from a frame sequence
-	omp_set_lock(&omp_lock); 
-	for (int f = 0; f < framelist.size(); ++f) {
-		for (int i = 0; i < N_GESTURES; ++i)
-			inputFrames[i].push(framelist[f]);
-	}
-	omp_unset_lock(&omp_lock);
-	#pragma omp flush
-}*/
-
 void GestureRecognition::clearFrames() {
 	omp_set_lock(&omp_lock);
 	for (int i = 0; i < inputFrames.size(); ++i) {
@@ -259,7 +231,39 @@ void GestureRecognition::resetCurrentFrames() {
 	omp_unset_lock(&omp_lock);
 }
 
-float GestureRecognition::getSequenceOverlap(const std::vector<std::vector<float>>& model, const std::vector<std::vector<float>>& sequence,
+#define DETECTION_MARGIN 10
+float GestureRecognition::computeAccuracy(int gestId, const std::vector<GroundTruth>& gt, std::vector<int> finalframedetections) {
+	int gti = 1;
+	float ndetections = 0;
+	int nfalse_positive = 0;
+	int lastFp = -1; // Last false positive frame
+	int nGt = 0; // Number of GT gestures of type gestId
+	for (int i = 0; i < gt.size(); ++i) {
+		if (gt[i].type == gestId) ++nGt;
+	}
+	std::vector<bool> used_gt(gt.size(), false);
+
+	for (int i = 0; i < finalframedetections.size(); ++i) {
+		int ff = finalframedetections[i];
+		bool detected = false;
+		for (int j = gti-1; j < gt.size(); ++j) { // to make sure we don't skip any gt
+			if (gt[j].type != gestId) continue;
+			if (ff >= (gt[j].firstFrame + (gt[j].lastFrame - gt[j].firstFrame) / 2) && ff <= gt[j].lastFrame + DETECTION_MARGIN) {
+				if (!used_gt[j]) {
+					++ndetections;
+					++gti;
+					used_gt[j] = true;
+				}
+				detected = true;
+				break;
+			}
+		}
+		if (!detected && (lastFp-ff) > DETECTION_MARGIN) ++nfalse_positive;
+	}
+	return ndetections / (nfalse_positive+nGt);
+}
+
+float GestureRecognition::getDynamicSequenceOverlap(const std::vector<std::vector<float>>& model, const std::vector<std::vector<float>>& sequence,
 											 const std::set<int>& gt, float ALPHA, float MU) {
 	std::set<int> detectedFrames;
 	// Get M
@@ -276,39 +280,65 @@ float GestureRecognition::getSequenceOverlap(const std::vector<std::vector<float
 	return Utils::overlap(detectedFrames, gt);
 }
 
-float GestureRecognition::getSequencesOverlap(int gestureId, const std::vector<std::vector<float>>& model, const std::vector<std::vector<std::vector<float>>>& sequences, 
+float GestureRecognition::getStaticSequenceOverlap(const std::vector<std::vector<float>>& sequence, const std::set<int>& gt, std::vector<float>& pointAtTh) {
+	int consFrames = 0;
+	float dist = 0;
+	std::vector<float> lastHandPose;
+
+	std::set<int> detectedFrames;
+	for (int i = 0; i < sequence.size(); ++i)  {
+		if (sequence[i][0] > pointAtTh[0] && sequence[i][1] > pointAtTh[1]) {
+			++consFrames;
+			std::vector<float> handPose(sequence[i].begin() + 2, sequence[i].begin() + 5);
+			if (consFrames > 1) dist += Utils::euclideanDistance(lastHandPose, handPose);
+			lastHandPose = handPose;
+			if (consFrames >= pointAtTh[2]) {
+				if (dist < DIST_TH) { // Recognized!
+					std::vector<int> _v(consFrames);
+					std::iota(_v.begin(), _v.end(), i - consFrames+1);
+					std::copy(_v.begin(), _v.end(), std::inserter(detectedFrames, detectedFrames.end()));
+				}
+				else {
+					dist = 0;
+					consFrames = 0;
+				}
+			}
+		}
+		else {
+			consFrames = 0;
+			dist = 0;
+		}
+	}
+	return Utils::overlap(detectedFrames, gt);
+}
+
+float GestureRecognition::getStaticSequencesOverlap(int gestureId, const std::vector<std::vector<std::vector<float>>>& sequences,
+													const std::vector<std::vector<std::set<int>>>& gt, std::vector<float> staticThresholds) {
+	float seq_ovlp = 0;
+	for (int s = 0; s < sequences.size(); ++s) { // And do it for each sequence...
+
+		seq_ovlp += getStaticSequenceOverlap(sequences[s], gt[s][gestureId], staticThresholds);
+
+	}
+	return seq_ovlp / sequences.size();
+}
+
+float GestureRecognition::getDynamicSequencesOverlap(int gestureId, const std::vector<std::vector<float>>& model, const std::vector<std::vector<std::vector<float>>>& sequences, 
 											  const std::vector<std::vector<std::set<int>>>& gt, float ALPHA, float MU) {
 	float seq_ovlp = 0;
 	for (int s = 0; s < sequences.size(); ++s) { // And do it for each sequence...
 
-		seq_ovlp += getSequenceOverlap(model, sequences[s], gt[s][gestureId], ALPHA, MU);
+		seq_ovlp += getDynamicSequenceOverlap(model, sequences[s], gt[s][gestureId], ALPHA, MU);
 
 	}
 	return seq_ovlp/sequences.size();
 }
 
-GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::vector<float>>> models, std::vector<std::vector<std::vector<float>>> Inputsequences,
-												 std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, std::vector<float> alphas,
-												 std::vector<std::vector<float>> gestTh, bool verbose) {
-	// Initializations
-	assert(N_DYNAMIC_GESTURES == gestTh.size());
-	time_t begin = time(NULL);
-	const bool rightBody = true;
-
-	// Count iterations and prepare output in verbose case
-	int aux = 0;
-	for (int i = 0; i < gestTh.size(); ++i) {
-		/*if (static_cast<Gesture>(i) == POINT_AT) aux += gestTh[i].size()*restTh.size();
-		else*/ aux += gestTh[i].size();
-	}
-	const int totalIter = alphas.size()*aux;
-	int perc = 0;
-	if (verbose) std::cout << "The number to iterations to perform is " << totalIter << std::endl << "\tWorking... 0.00%";
-
+std::vector<std::vector<std::set<int>>> GestureRecognition::constructGTsets(int nSequences, const std::vector<std::vector<GroundTruth>>& gt) {
 	// Construct sets of gt frames for each sequence and each gesture for faster overlap computation
-	std::vector<std::vector<std::set<int>>> gt_sets(Inputsequences.size(), std::vector<std::set<int>>(N_DYNAMIC_GESTURES));
-	for (int i = 0; i < Inputsequences.size(); ++i) {
-		for (int j = 0; j < N_DYNAMIC_GESTURES; ++j) {
+	std::vector<std::vector<std::set<int>>> gt_sets(nSequences, std::vector<std::set<int>>(N_GESTURES));
+	for (int i = 0; i < nSequences; ++i) {
+		for (int j = 0; j < N_GESTURES; ++j) {
 			for (int k = 0; k < gt[i].size(); ++k) {
 				if (j == gt[i][k].type) {
 					//Construct range
@@ -320,9 +350,28 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 			}
 		}
 	}
+	return gt_sets;
+}
 
-	//Set models for the point at
-	//models[POINT_AT] = addThirdFeature(models[POINT_AT]);
+GRParameters GestureRecognition::trainDynamicThresholds(std::vector<std::vector<std::vector<float>>> models, std::vector<std::vector<std::vector<float>>> Inputsequences,
+												 std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, std::vector<float> alphas,
+												 std::vector<std::vector<float>> gestTh, bool verbose) {
+	// Initializations
+	assert(N_DYNAMIC_GESTURES == gestTh.size());
+	time_t begin = time(NULL);
+	const bool rightBody = true;
+
+	// Count iterations and prepare output in verbose case
+	int aux = 0;
+	for (int i = 0; i < gestTh.size(); ++i) {
+		aux += gestTh[i].size();
+	}
+	const int totalIter = alphas.size()*aux;
+	int perc = 0;
+	if (verbose) std::cout << "The number to iterations to perform is " << totalIter << std::endl << "\tWorking... 0.00%";
+
+	// Construct sets of gt frames for each sequence and each gesture for faster overlap computation
+	std::vector<std::vector<std::set<int>>> gt_sets = constructGTsets(Inputsequences.size(), gt);
 
 	// Return variable:
 	GRParameters params;
@@ -336,33 +385,11 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 		for (int g = 0; g < gestTh.size(); ++g) {
 			// Check all the thresholds of the gesture with current ALPHA
 			for (int t = 0; t < gestTh[g].size(); ++t) {
-				if (static_cast<Gesture>(g) == POINT_AT) { /*// If the gesture is a Point At we have to look for the restTh
-					for (int r = 0; r < restTh.size(); ++r) { // For each restTh
-						// Add the third feature
-						std::vector<std::vector<std::vector<float>>> seqs = Inputsequences;
-						for (int s = 0; s < Inputsequences.size(); ++s) {
-							for (int k = 0; k < seqs[s].size(); ++k) inputSkeletons[s][k].addExtendedGRFeature(seqs[s][k], rightBody, restTh[r]);
-						}
-						float ovlp = getSequencesOverlap(g, models[g], seqs, gt_sets, alphas[a], gestTh[g][t]);
-						#pragma omp critical (paramsUpdate)
-						{
-							if (ovlp > params.ovlps[g]) {
-								params.ovlps[g] = ovlp;
-								params.gestTh[g] = gestTh[g][t];
-								params.restTh = restTh[r];
-								params.ALPHA[g] = alphas[a];
-								#pragma omp flush
-							}
-						}
-						if (verbose) {
-							#pragma omp critical (print)
-							Utils::printPercentage(++perc, totalIter);
-						}
-					}*/
+				if (g >= N_DYNAMIC_GESTURES) {
 					continue;
 				}
 				else {
-					float ovlp = getSequencesOverlap(g, models[g], Inputsequences, gt_sets, alphas[a], gestTh[g][t]);
+					float ovlp = getDynamicSequencesOverlap(g, models[g], Inputsequences, gt_sets, alphas[a], gestTh[g][t]);
 					#pragma omp critical (paramsUpdate)
 					{
 						if (ovlp > params.ovlps[g]) {
@@ -389,7 +416,7 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 		}
 	}
 	if (verbose) {
-		std::cout << "\nDone! Parameters are:" << std::endl;
+		std::cout << "\nDone! Dynamic parameters are:" << std::endl;
 		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tALPHA for gesture " << i << ": " << params.ALPHA[i] << std::endl;
 		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tMU for gesture " << i << ": " << params.gestTh[i] << std::endl;
 		//std::cout << "\trestThreshold: " << params.restTh << std::endl;
@@ -400,70 +427,155 @@ GRParameters GestureRecognition::trainThresholds(std::vector<std::vector<std::ve
 	return params;
 }
 
-float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>>>& models, const std::vector<std::vector<std::vector<float>>>& Inputsequences,
+
+GRParameters GestureRecognition::trainStaticThresholds(std::vector<std::vector<std::vector<float>>> Inputsequences, const std::vector<std::vector<GroundTruth>>& gt,
+													   std::vector<float> handhipdists, std::vector<float> elbowAngles, std::vector<float> nframes, bool verbose) {
+	// Initializations
+	time_t begin = time(NULL);
+	const bool rightBody = true;
+
+	// Count iterations and prepare output in verbose case
+	const int totalIter = handhipdists.size()*elbowAngles.size()*nframes.size();
+	int perc = 0;
+	if (verbose) std::cout << "The number to iterations to perform is " << totalIter << std::endl << "\tWorking... 0.00%";
+
+	// Construct sets of gt frames for each sequence and each gesture for faster overlap computation
+	std::vector<std::vector<std::set<int>>> gt_sets = constructGTsets(Inputsequences.size(), gt);
+
+	// Return variable:
+	GRParameters params;
+	params.bestOvlp = -1; // Best overlap
+	for (int i = POINT_AT; i < N_GESTURES; ++i) params.ovlps[i] = -1; // Best overlap for each gesture
+	
+	int g = POINT_AT; // For now only point at gesture is used
+	
+	omp_set_num_threads(omp_get_max_threads()); // Force use of max number of threads
+	#pragma omp parallel for
+	for (int hhd = 0; hhd < handhipdists.size(); ++hhd) { // For each Hand -Hip distance threshold
+		// For each type of gesture
+		for (int ea = 0; ea < elbowAngles.size(); ++ea) {
+			// Check all the thresholds of the gesture with current ALPHA
+			for (int nf = 0; nf < nframes.size(); ++nf) {
+				if (g >= N_DYNAMIC_GESTURES) {
+					std::vector<float> th = { handhipdists[hhd], elbowAngles[ea], nframes[nf] };
+					float ovlp = getStaticSequencesOverlap(g, Inputsequences, gt_sets, th);;
+					#pragma omp critical (paramsUpdate)
+					{
+						if (ovlp > params.ovlps[g]) {
+							params.ovlps[g] = ovlp;
+							params.pointAtTh[0] = th[0];
+							params.pointAtTh[1] = th[1];
+							params.pointAtTh[2] = th[2];
+							#pragma omp flush
+						}
+					}
+					if (verbose) {
+						#pragma omp critical (print)
+						Utils::printPercentage(++perc, totalIter);
+					}
+				}
+			}
+		}
+
+		float Ovlp = std::accumulate(params.ovlps+POINT_AT, params.ovlps + POINT_AT + N_STATIC_GESTURES, 0.0f) / N_STATIC_GESTURES;
+		#pragma omp critical (paramsUpdate)
+		{
+			if (Ovlp > params.bestOvlp) {
+				params.bestOvlp = Ovlp;
+				#pragma omp flush
+			}
+		}
+	}
+	if (verbose) {
+		std::cout << "\nDone! Static parameters are:" << std::endl;
+		for (int i = POINT_AT; i < N_GESTURES; ++i) std::cout << "\tStatic thresholds for gesture " << i << ": " << params.pointAtTh[0] << " " << params.pointAtTh[1] << " " << params.pointAtTh[2] << std::endl;
+		for (int i = POINT_AT; i < N_GESTURES; ++i) std::cout << "\tOverlap for gesture " << i << ": " << params.ovlps[i] << std::endl;
+		std::cout << "\tBest overlap: " << params.bestOvlp << std::endl;
+		std::cout << "It took " << float(time(NULL) - begin) / 60.0 << " minutes." << std::endl;
+	}
+	return params;
+}
+
+float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>>>& models,
 								std::vector<std::vector<Skeleton>>& inputSkeletons, const std::vector<std::vector<GroundTruth>>& gt, const std::vector<float>& alphas,
-								const std::vector<std::vector<float>>& gestTh, bool verbose) {
+								const std::vector<std::vector<float>>& gestTh, const std::vector<float>& handhipdists, const std::vector<float>& elbowAngles, const std::vector<float>& nframes, bool verbose) {
 	time_t begin = time(NULL);
 	float overlap = 0;
 	bool rightBody = true;
 
 	// Construct sets of gt frames for each sequence and each gesture for faster overlap computation
-	std::vector<std::vector<std::set<int>>> gt_sets(Inputsequences.size(), std::vector<std::set<int>>(N_DYNAMIC_GESTURES));
-	for (int i = 0; i < Inputsequences.size(); ++i) {
-		for (int j = 0; j < N_DYNAMIC_GESTURES; ++j) {
-			for (int k = 0; k < gt[i].size(); ++k) {
-				if (j == gt[i][k].type) {
-					//Construct range
-					std::vector<int> _v(gt[i][k].lastFrame - gt[i][k].firstFrame + 1);
-					std::iota(_v.begin(), _v.end(), gt[i][k].firstFrame);
-					// Add to set
-					std::copy(_v.begin(), _v.end(), std::inserter(gt_sets[i][j], gt_sets[i][j].end()));
-				}
-			}
+	std::vector<std::vector<std::set<int>>> gt_sets = constructGTsets(inputSkeletons.size(), gt);
+
+	if (verbose) std::cout << "LOOCV method..." << std::endl;
+	// Compute features
+	if (verbose) std::cout << "   Computing input sequences features... 0.00%";
+	
+	int nit = 0, featcomputed = 0;
+	for (int i = 0; i < inputSkeletons.size(); ++i) nit += inputSkeletons[i].size();
+
+	std::vector<std::vector<std::vector<float>>> dynamicFeatures(inputSkeletons.size());
+	std::vector<std::vector<std::vector<float>>> staticFeatures(inputSkeletons.size());
+	for (int i = 0; i < inputSkeletons.size(); ++i) { // Sequence loop
+		dynamicFeatures[i] = std::vector<std::vector<float>>(inputSkeletons[i].size());
+		staticFeatures[i] = std::vector<std::vector<float>>(inputSkeletons[i].size());
+		for (int j = 0; j < inputSkeletons[i].size(); ++j) { // Frame in sequence loop
+			dynamicFeatures[i][j] = inputSkeletons[i][j].getDynamicGestureRecognitionFeatures(rightBody);
+			staticFeatures[i][j] = inputSkeletons[i][j].getStaticGestureRecognitionFeatures(rightBody, true);
+			Utils::printPercentage(++featcomputed, nit);
 		}
 	}
+	std::cout << std::endl;
 
 	std::vector<std::vector<std::vector<float>>> _models = models;
-	//_models[POINT_AT] = addThirdFeature(_models[POINT_AT]);
-	for (int i = 0; i < Inputsequences.size(); ++i) { // i will be the test sequence
+	for (int i = 0; i < inputSkeletons.size(); ++i) { // i will be the test sequence
 		// Fast and dirty way... copy all the vectors and remove the selected one...
-		std::vector<std::vector<std::vector<float>>> _sequences = Inputsequences;
+		std::vector<std::vector<std::vector<float>>> _static_sequences = staticFeatures;
+		std::vector<std::vector<std::vector<float>>> _dynamic_sequences = dynamicFeatures;
 		std::vector<std::vector<Skeleton>> _skels = inputSkeletons;
 		std::vector<std::vector<GroundTruth>> _gt = gt;
 
 		// Remove the test fold...
-		_sequences.erase(_sequences.begin() + i);
+		_dynamic_sequences.erase(_dynamic_sequences.begin() + i);
+		_static_sequences.erase(_static_sequences.begin() + i);
 		_skels.erase(_skels.begin() + i);
 		_gt.erase(_gt.begin() + i);
 
 		// Train
-		if (verbose) std::cout << "LOOCV fold number " << i << std::endl << "\t";
-		GRParameters gr = trainThresholds(models, _sequences, _skels, _gt, alphas, gestTh, verbose); // Note trainThresholds also adds the third feature... 
-		float gest_overlap = 0;
-		for (int j = 0; j < N_DYNAMIC_GESTURES; ++j) {
-			if (static_cast<Gesture>(j) == POINT_AT) { /*// add third feature...
-				std::vector<std::vector<float>> seq = Inputsequences[i];
-				for (int k = 0; k < seq.size(); ++k) inputSkeletons[i][k].addExtendedGRFeature(seq[k], rightBody, gr.restTh);
-				gest_overlap += getSequenceOverlap(_models[j], seq, gt_sets[i][j], gr.ALPHA[j], gr.gestTh[j]);*/
-				continue;
+		if (verbose) std::cout << "\n\n   LOOCV fold number " << i << std::endl << "\t";
+		GRParameters st_gr = trainStaticThresholds(_static_sequences, _gt, handhipdists, elbowAngles, nframes, verbose);
+		GRParameters dy_gr = trainDynamicThresholds(models, _dynamic_sequences, _skels, _gt, alphas, gestTh, verbose); // Note trainThresholds also adds the third feature... 
+		float gest_overlap = 0, st_ovlp = 0, dy_ovlp = 0;
+		// Test
+		for (int j = 0; j < N_GESTURES; ++j) {
+			if (static_cast<Gesture>(j) >= POINT_AT) {
+				std::vector<float> th = { st_gr.pointAtTh[0], st_gr.pointAtTh[1], st_gr.pointAtTh[2] };
+				st_ovlp += getStaticSequenceOverlap(staticFeatures[i], gt_sets[i][j], th);
+				gest_overlap += st_ovlp;
 			}
-			else gest_overlap += getSequenceOverlap(_models[j], Inputsequences[i], gt_sets[i][j], gr.ALPHA[j], gr.gestTh[j]);
+			else {
+				dy_ovlp =  getDynamicSequenceOverlap(_models[j], dynamicFeatures[i], gt_sets[i][j], dy_gr.ALPHA[j], dy_gr.gestTh[j]);
+				gest_overlap += dy_ovlp;
+			}
 		}
-		overlap += gest_overlap / N_DYNAMIC_GESTURES;
+
+		if (gt_sets[i][1].size() == 0 || gt_sets[i][0].size() == 0) 
+			overlap += gest_overlap;
+		else overlap += gest_overlap / N_GESTURES;
+		if (verbose) {
+			std::cout << "  Static overlap of gesture sequence " << i << ": " << st_ovlp << std::endl;
+			std::cout << "  Dynamic overlap of gesture sequence " << i << ": " << dy_ovlp << std::endl;
+			std::cout << "  Mean overlap of gesture sequence " << i << ": " << gest_overlap / N_GESTURES << std::endl;
+
+
+		}
 	}
-	overlap = overlap / Inputsequences.size();
+	overlap = overlap / inputSkeletons.size();
 	if (verbose) {
-		std::cout << "Resulting mean overlap of the " << Inputsequences.size() << " sequences is: " << overlap << std::endl;
+		std::cout << "Resulting mean overlap of the " << inputSkeletons.size() << " sequences is: " << overlap << std::endl;
 		std::cout << "All the LOOCV took " << float(time(NULL) - begin)/60.0 << " minutes." << std::endl;
 	}
 	return overlap;
 }
-
-/*std::vector<std::vector<float>> GestureRecognition::addThirdFeature(std::vector<std::vector<float>> model) {
-	// For the Point At gesture...
-	for (int i = 0; i < model.size(); ++i) model[i].push_back(0.0f);
-	return model;
-}*/
 
 void GestureRecognition::writeParameters(GRParameters params, std::string path) {
 	std::ofstream of;
