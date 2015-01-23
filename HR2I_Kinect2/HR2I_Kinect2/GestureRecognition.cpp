@@ -577,7 +577,6 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 		std::cout << "Resulting mean DYNAMIC overlap of the " << inputSkeletons.size() << " sequences is: " << dyn_overlap << std::endl;
 
 		std::cout << "Resulting mean overlap of the " << inputSkeletons.size() << " sequences is: " << (st_overlap + dyn_overlap) / 2.0 << std::endl;
-		std::cout << "Resulting mean accuracy of the " << inputSkeletons.size() << " sequences is: " << (st_accuracy + dyn_accuracy) / 2.0 << std::endl;
 		std::cout << "All the LOOCV took " << float(time(NULL) - begin) / 60.0 << " minutes." << std::endl;
 	}
 	return (st_overlap + dyn_overlap) / 2.0;

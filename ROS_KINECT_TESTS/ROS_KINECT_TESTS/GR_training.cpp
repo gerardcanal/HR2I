@@ -299,7 +299,7 @@ void LOOCV_main() {
 	std::vector<float> alphas = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f,0.3f, 0.5f, 0.55f, 0.60f, 0.65f, 0.75f };
 	std::vector<float> handhipdists = {0.1f, 0.2f, 0.25f, 0.3f, 0.35f, 0.4f, 0.45f};
 	std::vector<float> elbowAngles = {2.0f, 2.15f, 2.25f, 2.3f, 2.35f, 2.4f, 2.45f, 2.55f};
-	std::vector<float> nframes = {10, 15, 20, 25, 30, 35};
+	std::vector<float> nframes = {3, 5, 10, 15, 20, 25, 30, 35};
 
 	// Start the party
 	GestureRecognition gr;
