@@ -576,9 +576,20 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 		std::cout << "Resulting mean STATIC overlap of the " << inputSkeletons.size() << " sequences is: " << st_overlap << std::endl;
 		std::cout << "Resulting mean DYNAMIC overlap of the " << inputSkeletons.size() << " sequences is: " << dyn_overlap << std::endl;
 
-		std::cout << "Resulting mean overlap of the " << inputSkeletons.size() << " sequences is: " << (st_overlap + dyn_overlap) / 2.0 << std::endl;
+		std::cout << "Resulting mean overlap of the " << inputSkeletons.size() << " sequences is: " << (st_overlap + dyn_overlap) / 2.0 << std::endl << std::endl;
+	}
+
+	// Give results with the whole training...
+	GRParameters st_gr = trainStaticThresholds(staticFeatures, gt, handhipdists, elbowAngles, nframes, true);
+	GRParameters dy_gr = trainDynamicThresholds(models, dynamicFeatures, inputSkeletons, gt, alphas, gestTh, true);
+	if (verbose) {
+		std::cout << "STATIC overlap of the " << inputSkeletons.size() << " sequences in TRAIN is: " << st_gr.bestOvlp << std::endl;
+		std::cout << "DYNAMIC overlap of the " << inputSkeletons.size() << " sequences in TRAIN is: " << dy_gr.bestOvlp << std::endl;
+
+		std::cout << "Resulting mean overlap of the " << inputSkeletons.size() << " sequences is: " << (st_gr.bestOvlp + dy_gr.bestOvlp) / 2.0 << std::endl;
 		std::cout << "All the LOOCV took " << float(time(NULL) - begin) / 60.0 << " minutes." << std::endl;
 	}
+
 	return (st_overlap + dyn_overlap) / 2.0;
 }
 

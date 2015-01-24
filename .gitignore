@@ -6,3 +6,6 @@
 *.pch
 *.pdb
 *.idb
+*.ipch
+*.suo
+*.suo
