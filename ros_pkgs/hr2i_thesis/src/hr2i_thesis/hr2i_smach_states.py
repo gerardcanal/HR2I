@@ -24,7 +24,7 @@ class ReleaseNAOFromWifiBotState(ExecuteBehavior):
         self.register_output_keys(['NAO_riding_wb'])
 
     def execute(self, userdata):  # Override so the output key is set properly for this specific test
-        raw_input('Go_down?')
+        #raw_input('Go_down?')
         super_outcome = super(ReleaseNAOFromWifiBotState, self).execute(userdata)
         userdata.NAO_riding_wb = False
         return super_outcome
@@ -268,17 +268,23 @@ class NaoGoToLocationInFront(StateMachine):
                 ##### End translation
 
                 vec = Pose2D(-K, 0.0, 0.0)  # Translation vector in world space
-                rot_v = rotate_point2D(vec, -ud.in_alpha)  # Rotated point. I don't know why - but... -
+                rot_v = rotate_point2D(vec, ud.in_alpha)  # Rotated point. Once worked in negative, rolled back to positive I don't know why - but... -)
                 translated_loc = Pose2D()
                 translated_loc.x = in_point.x + rot_v.x
                 translated_loc.y = in_point.y + rot_v.y
                 translated_loc.theta = ud.in_alpha  # Alpha is already the other rotation.
+
+                ##### FIXME: to avoid NAO going left
+                translated_loc.theta -= 0.185
+                translated_loc.y -= 0.05
+                ################ END FIXME
+
                 ud.out_new_loc = translated_loc
                 rospy.loginfo('--- NaoGoToLocationInFront SM -- initial position (Point): ' + _Pose2D_to_str(in_point) +
                               ', translated_position (Pose2D goal): ' + _Pose2D_to_str(translated_loc))
                 rospy.loginfo('--- NaoGoToLocationInFront SM -- translation vector = ' + str((vec.x, vec.y)) +
                               ', ' + str(ud.in_alpha) + 'rad rotated translation vector = ' + str((rot_v.x, rot_v.y)))
-                raw_input('Waiting...')
+                #raw_input('Waiting...')
                 return 'succeeded'
 
             StateMachine.add('PREPARE_POSE', CBState(prepare_pose, input_keys=['in_alpha', 'in_location_point'],

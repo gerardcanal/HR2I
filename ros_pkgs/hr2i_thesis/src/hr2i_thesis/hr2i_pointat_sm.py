@@ -14,9 +14,9 @@ from tf.transformations import euler_from_quaternion
 
 LAST_ORIENT = True
 STABILIZATION_TIME = 2.5     # seconds
-WB_DIST_TO_POINTING = 1.00   # metres
-NAO_DIST_TO_OBJECT = 0.25    # metres
-OVERANGLE_CORRECTION = 1.60  # Correction of the increment of angle from the wifibot. MUST be the same as in the windows application
+WB_DIST_TO_POINTING = 1.00  # 1.00   # metres
+NAO_DIST_TO_OBJECT = 0.22    # metres
+OVERANGLE_CORRECTION = 1.55  # Correction of the increment of angle from the wifibot. MUST be the same as in the windows application
 
 
 class PointAtResponseExecutionSM(StateMachine):
@@ -44,7 +44,7 @@ class PointAtResponseExecutionSM(StateMachine):
                              transitions={'possible': 'SAY_GOING_POINT', 'impossible': 'not_riding_wb'})
 
             going_pool = ['I see you are ponting there, I will go to check.', 'I saw where you pointed at!', 'Okay, I am going there now!',
-                          'Let\'s go!!']
+                          'Let\'s go!']
             StateMachine.add('SAY_GOING_POINT', SpeechFromPoolSM(pool=going_pool, blocking=False),
                              transitions={'succeeded': 'MOVE_TO_POINTING_PLACE', 'aborted': 'MOVE_TO_POINTING_PLACE', 'preempted': 'MOVE_TO_POINTING_PLACE'})
 
@@ -79,8 +79,8 @@ class PointAtResponseExecutionSM(StateMachine):
             StateMachine.add('SEGMENT_BLOBS', SegmentBlobsPipeLine(), remapping={'segmented_clusters': 'segmented_clusters'},
                              transitions={'succeeded': 'DISAMBIGUATE', 'timeouted': 'SAY_CHECKING', 'no_object_found': 'SAY_NOT_FOUND'})
 
-            _not_found_pool = ['I did not see anything there... Let\'s begin again.', 'I found nothing where you pointed at! Do it again',
-                               'I am sorry nothing was found there... You can repeat if you wish.']
+            _not_found_pool = ['I did not see anything there. Let\'s begin again.', 'I found nothing where you pointed at! Do it again',
+                               'I am sorry nothing was found there. You can repeat if you wish.']
             StateMachine.add('SAY_NOT_FOUND', SpeechFromPoolSM(_not_found_pool),
                              transitions={'succeeded': 'nothing_found', 'preempted': 'nothing_found', 'aborted': 'nothing_found'})
 
@@ -106,7 +106,7 @@ class PointAtResponseExecutionSM(StateMachine):
             def check_arm(ud):
                 if ud.left_right_arm == 'left':
                     return 'left_arm'
-                if ud.left_right == 'right':
+                if ud.left_right_arm == 'right':
                     return 'right_arm'
                 return 'both_arms'
             StateMachine.add('CHECK_WHICH_ARM', CBState(check_arm, input_keys=['left_right_arm'],
