@@ -28,6 +28,7 @@ sp {hr2i*apply*nao-point-obj*remove-nao-point-obj
    (<out> ^nao-point-obj <st>)
    (<st> ^status complete)
 -->
-   (<r> ^hasPointedObject true)
+   (<r> ^hasPointedObject true
+                          false -)
    (<out> ^nao-point-obj <st> -)
 }

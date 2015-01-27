@@ -1,4 +1,4 @@
-144
+270
 SOAR_ID 0
 SOAR_ID 1
 SOAR_ID 2
@@ -6,7 +6,7 @@ SOAR_ID 3
 SOAR_ID 4
 ENUMERATION 5 1 state
 ENUMERATION 6 1 nil
-ENUMERATION 7 1 gp
+ENUMERATION 7 2 gp hr2i
 ENUMERATION 8 1 initialize-gp
 SOAR_ID 9
 INTEGER_RANGE 10 -2147483648 2147483647
@@ -143,7 +143,133 @@ SOAR_ID 140
 ENUMERATION 141 1 nao_approach_object
 SOAR_ID 142
 ENUMERATION 143 1 disambiguate_objects
-167
+ENUMERATION 144 2 false true
+ENUMERATION 145 2 false true
+SOAR_ID 146
+ENUMERATION 147 1 disambiguate-objects
+SOAR_ID 148
+ENUMERATION 149 2 false true
+SOAR_ID 150
+ENUMERATION 151 1 initialize-hr2i
+ENUMERATION 152 2 false true
+ENUMERATION 153 2 false true
+ENUMERATION 154 2 false true
+ENUMERATION 155 2 false true
+ENUMERATION 156 1 wave
+SOAR_ID 157
+ENUMERATION 158 1 nao-approach-object
+SOAR_ID 159
+SOAR_ID 160
+ENUMERATION 161 1 nao-go-down-wb
+SOAR_ID 162
+SOAR_ID 163
+ENUMERATION 164 1 nao-point-obj
+SOAR_ID 165
+SOAR_ID 166
+ENUMERATION 167 1 say-hello-riding
+ENUMERATION 168 1 true
+SOAR_ID 169
+ENUMERATION 170 1 complete
+SOAR_ID 171
+ENUMERATION 172 1 say-hello-standing
+SOAR_ID 173
+ENUMERATION 174 2 false true
+SOAR_ID 175
+ENUMERATION 176 1 segment-objects
+SOAR_ID 177
+SOAR_ID 178
+SOAR_ID 179
+SOAR_ID 180
+SOAR_ID 181
+SOAR_ID 182
+SOAR_ID 183
+SOAR_ID 184
+SOAR_ID 185
+SOAR_ID 186
+SOAR_ID 187
+SOAR_ID 188
+SOAR_ID 189
+SOAR_ID 190
+SOAR_ID 191
+SOAR_ID 192
+SOAR_ID 193
+SOAR_ID 194
+SOAR_ID 195
+SOAR_ID 196
+SOAR_ID 197
+SOAR_ID 198
+SOAR_ID 199
+SOAR_ID 200
+SOAR_ID 201
+SOAR_ID 202
+SOAR_ID 203
+SOAR_ID 204
+SOAR_ID 205
+SOAR_ID 206
+SOAR_ID 207
+SOAR_ID 208
+SOAR_ID 209
+SOAR_ID 210
+SOAR_ID 211
+SOAR_ID 212
+SOAR_ID 213
+SOAR_ID 214
+SOAR_ID 215
+SOAR_ID 216
+ENUMERATION 217 1 complete
+SOAR_ID 218
+ENUMERATION 219 1 wb-approach-location
+SOAR_ID 220
+SOAR_ID 221
+SOAR_ID 222
+SOAR_ID 223
+SOAR_ID 224
+SOAR_ID 225
+SOAR_ID 226
+SOAR_ID 227
+SOAR_ID 228
+SOAR_ID 229
+SOAR_ID 230
+SOAR_ID 231
+SOAR_ID 232
+SOAR_ID 233
+SOAR_ID 234
+SOAR_ID 235
+SOAR_ID 236
+SOAR_ID 237
+SOAR_ID 238
+SOAR_ID 239
+SOAR_ID 240
+SOAR_ID 241
+SOAR_ID 242
+SOAR_ID 243
+SOAR_ID 244
+SOAR_ID 245
+SOAR_ID 246
+SOAR_ID 247
+SOAR_ID 248
+SOAR_ID 249
+SOAR_ID 250
+SOAR_ID 251
+SOAR_ID 252
+SOAR_ID 253
+SOAR_ID 254
+SOAR_ID 255
+SOAR_ID 256
+SOAR_ID 257
+SOAR_ID 258
+SOAR_ID 259
+SOAR_ID 260
+SOAR_ID 261
+ENUMERATION 262 1 navigate
+ENUMERATION 263 1 complete
+ENUMERATION 264 1 complete
+ENUMERATION 265 1 complete
+ENUMERATION 266 1 complete
+ENUMERATION 267 1 complete
+SOAR_ID 268
+ENUMERATION 269 1 complete
+293
 0 check-goal 118
 0 desired 106
 0 io 1
@@ -182,6 +308,16 @@ ENUMERATION 143 1 disambiguate_objects
 0 operator 138
 0 operator 140
 0 operator 142
+0 operator 146
+0 operator 150
+0 operator 157
+0 operator 160
+0 operator 163
+0 operator 166
+0 operator 171
+0 operator 175
+0 operator 218
+0 operator 261
 0 person 17
 0 robot 15
 0 superstate 6
@@ -194,16 +330,27 @@ ENUMERATION 143 1 disambiguate_objects
 3 achived 80
 3 ask-name 85
 3 deliver 76
+3 disambiguate-objects 148
 3 exit-apartment 87
 3 grasp 65
 3 introduce-me 89
 3 memorize-person 91
+3 nao-approach-object 159
+3 nao-go-down-wb 162
+3 nao-point-obj 165
 3 navigate 66
 3 point-obj 100
 3 recognize-person 93
+3 say-hello-riding 168
+3 say-hello-riding 169
+3 say-hello-standing 173
 3 search-object 64
 3 search-person 63
+3 segment-objects 216
+3 wb-approach-location 260
+4 goalPos 186
 4 name 8
+4 toGoal 229
 9 id 10
 9 pointed-at 84
 11 delivered 36
@@ -214,11 +361,20 @@ ENUMERATION 143 1 disambiguate_objects
 11 near 104
 11 pointed 43
 11 toBeGrasped 75
+15 hasGoalPosition 154
+15 hasPointedObject 153
 15 id 108
+15 inFrontObject 152
 15 introduced 57
+15 knowsObject 149
 15 locId 16
 15 obj1Id 30
+15 objectsSegmented 145
 15 pointedAtLoc 107
+15 received_gesture 156
+15 ridingWB 144
+15 waved-back 155
+15 wbIsNearGoal 174
 17 askedName 52
 17 followed 83
 17 found 103
@@ -228,42 +384,74 @@ ENUMERATION 143 1 disambiguate_objects
 17 near 19
 17 obj1Id 35
 17 recognized 46
+21 goalPos 198
 21 name 22
+21 toGoal 242
 21 toLoc 9
 21 withRob 15
+24 goalPos 197
 24 name 25
+24 toGoal 241
+26 goalPos 208
 26 name 27
 26 objToSearch 11
+26 toGoal 252
 26 toLoc 9
+28 goalPos 201
 28 name 29
 28 objToGrasp 11
+28 toGoal 245
 28 withRob 15
+31 goalPos 182
 31 name 32
 31 persToSearch 17
+31 toGoal 225
 31 toLoc 9
+33 goalPos 215
 33 name 34
 33 persToSearch 17
+33 toGoal 259
+37 goalPos 187
 37 name 38
+37 toGoal 230
+39 goalPos 189
 39 name 40
+39 toGoal 232
+41 goalPos 202
 41 locId 105
 41 name 42
+41 toGoal 246
 41 withRob 15
+44 goalPos 214
 44 name 45
+44 toGoal 258
 44 toPers 17
 44 withRob 15
+47 goalPos 184
 47 name 48
+47 toGoal 227
 47 toPers 17
 47 withRob 15
+50 goalPos 213
 50 name 51
+50 toGoal 257
 50 toPers 17
 50 withRob 15
+53 goalPos 206
 53 localization 9
 53 name 54
 53 robot 15
+53 toGoal 250
+55 goalPos 212
 55 name 56
+55 toGoal 256
 55 withRob 15
+58 goalPos 188
 58 name 59
+58 toGoal 231
+61 goalPos 190
 61 name 62
+61 toGoal 233
 63 pers 74
 63 status 73
 64 obj 72
@@ -293,21 +481,85 @@ ENUMERATION 143 1 disambiguate_objects
 106 object 11
 106 person 17
 106 robot 15
+109 goalPos 191
 109 name 110
+109 toGoal 234
 111 status 112
 111 true 113
+115 goalPos 179
 115 name 116
+115 toGoal 222
 115 toLoc 117
 115 withRob 15
+119 goalPos 209
 119 name 120
+119 toGoal 253
+122 goalPos 180
 122 name 123
+122 toGoal 223
+124 goalPos 210
 124 name 125
+124 toGoal 254
+126 goalPos 199
 126 name 127
+126 toGoal 243
+128 goalPos 183
 128 name 129
+128 toGoal 226
+130 goalPos 207
 130 name 131
+130 toGoal 251
+132 goalPos 204
 132 name 133
+132 toGoal 248
+134 goalPos 205
 134 name 135
+134 toGoal 249
+136 goalPos 185
 136 name 137
+136 toGoal 228
+138 goalPos 195
 138 name 139
+138 toGoal 239
+140 goalPos 203
 140 name 141
+140 toGoal 247
+142 goalPos 178
 142 name 143
+142 toGoal 221
+146 goalPos 181
+146 name 147
+146 toGoal 224
+148 status 263
+150 goalPos 200
+150 name 151
+150 toGoal 244
+157 goalPos 211
+157 name 158
+157 toGoal 255
+159 status 264
+160 goalPos 177
+160 name 161
+160 toGoal 220
+162 status 265
+163 goalPos 193
+163 name 164
+163 toGoal 236
+165 status 266
+166 goalPos 194
+166 name 167
+166 toGoal 237
+169 status 170
+171 goalPos 196
+171 name 172
+171 toGoal 240
+173 status 267
+175 goalPos 192
+175 name 176
+175 toGoal 235
+216 loc 268
+216 status 217
+218 name 219
+218 toGoal 238
+260 status 269
+261 name 262

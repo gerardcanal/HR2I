@@ -1,8 +1,8 @@
 sp {hr2i*propose*say-hello-riding
    (state <s> ^name hr2i  # state s (world) has hr2i as name
               ^robot <r>) # parameter robot is stored in r (as if r = s.robot)
-   (<r> ^ridingWB true)  # r.ridingWB = true
-        ^received_gesture wave)   # r.received_gesture = wave
+   (<r> ^ridingWB true  # r.ridingWB = true
+        ^received-gesture wave)   # r.received_gesture = wave
 -->
    (<s> ^operator <op> + =) # Crea un nou operador que es diu op
    (<op> ^name say-hello-riding) # Parametre del operadors son name = say-hello-riding  -pot tenir-ne d'altres
@@ -13,7 +13,7 @@ sp {hr2i*apply*say-hello-riding
               ^io.output-link <out>) # output channe. "Must be here and that's it"
    (<op> ^name say-hello-riding) # Check the parameters are the same as in before. If parameters in the operator they should be here too
 -->
-#  (<out> ^navigate.loc <lid>)  # If the previous conditions hold, pick the operator's print and put the loc id
+   (<out> ^say-hello-riding.a true)  # If the previous conditions hold, pick the operator's print and put the loc id
 }
 
 
@@ -23,12 +23,13 @@ sp {hr2i*apply*say-hello-riding*remove-say-hello-riding
               ^robot <r>)
    (<op> ^name say-hello-riding)
     
-   (<r> ^received_gesture <gesture>)
+   (<r> ^received-gesture <gesture>)
    
    (<out> ^say-hello-riding <st>)
    (<st> ^status complete)
 -->
-   (<r> ^waved-back true
-        ^received_gesture <gesture> -)
+   (<r> ^waved-back false -
+                    true
+        ^received-gesture <gesture> -)
    (<out> ^say-hello-riding <st> -)
 }

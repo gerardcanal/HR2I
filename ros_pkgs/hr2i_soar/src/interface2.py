@@ -604,7 +604,7 @@ def main(world):
     first_time = time.time()
     kernel = create_kernel()
     agent = create_agent(kernel, "agent")
-    agent_load_productions(agent,SOAR_GP_PATH)
+    agent_load_productions(agent, SOAR_GP_PATH)
     agent.SpawnDebugger()
 
     # p_cmd = 'learn --on'
