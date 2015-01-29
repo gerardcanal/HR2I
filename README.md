@@ -10,3 +10,7 @@ A brief description of the project is:
 Interaction with a robot in a gesture-based manner. It involves gesture detection and recognition with a depth camera posed on a mobile platform. A NAO robot may be used to perform object manipulation. Example case: a person pointing an object which the robot has to find and maybe grasp.
 
 ===
+
+This branch includes Visual Studio 2013 projects with some tests, a gesture recorder software used to save the DTW models and the main project to interact with ROS, which is in the HR2I_Kinect2 folder.
+
+===
