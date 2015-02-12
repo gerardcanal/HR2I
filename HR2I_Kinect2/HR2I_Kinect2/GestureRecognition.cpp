@@ -7,7 +7,7 @@
 
 const float GestureRecognition::INF = std::numeric_limits<float>::infinity();
 
-GestureRecognition::GestureRecognition() {
+GestureRecognition::GestureRecognition() { 
 	inputFrames = std::vector<std::queue<std::vector<float>>>(N_GESTURES);
 	omp_init_lock(&omp_lock);
 	gestureFound = false;
