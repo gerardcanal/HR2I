@@ -32,27 +32,59 @@ Gesture GestureRecognition::RecognizeGesture(std::vector<std::vector<std::vector
 	const int iFrames = 30;
 	std::vector<float> gest(static_cast<int>(N_GESTURES), INF);
 
-	#pragma omp parallel for num_threads(N_GESTURES) schedule(static, 1) shared(gest) // Should create only one thread per iteration/gesture
-	for (int i = 0; i < N_GESTURES; ++i) {
+	// Thread distribution
+	int _N_THREADS = min(omp_get_max_threads() - 2, N_GESTURES); // Subtract one thread for the interface and the data getter (should in fact be more...)
+	int dynamic_x_thread = ceil(N_DYNAMIC_GESTURES / (_N_THREADS - 1));
+	std::vector<std::vector<int>> gID_thread(_N_THREADS); // First one will be the Dynamic Gesture
+	int gid = WAVE;
+	std::vector<std::vector<std::vector<std::vector<float>>*>> models_thread(_N_THREADS - 1);
+	std::vector<std::vector<float>> alphas_thread(_N_THREADS - 1);
+	std::vector<std::vector<float>> mus_thread(_N_THREADS - 1);
+
+	for (int i = 1; i < _N_THREADS; ++i) { // Distribute each gesture
+		for (int j = 0; j < dynamic_x_thread; ++j) {
+			gID_thread[i].push_back(gid);
+			alphas_thread[i - 1].push_back(params.ALPHA[gid]);
+			mus_thread[i - 1].push_back(params.gestTh[gid]);
+			models_thread[i - 1].push_back(&models[i - 1]);
+			gid++;
+		}
+	}
+	////// Thread distribution
+		
+	
+	// iteration 0 will be the static one. As static does not consume much only one thread is used for static gesture recognition
+	#pragma omp parallel for num_threads(_N_THREADS) schedule(static, 1) shared(gest) // Should create only one thread per iteration/gesture
+	for (int i = 0; i < _N_THREADS; ++i) {
 		float cost;
-		if (static_cast<Gesture>(i) == POINT_AT) cost = staticGetureRecognition(i, params.pointAtTh);
-		else cost = RealTimeDTW(i, models[i], iFrames, params.ALPHA[i], params.gestTh[i]);
+		Gesture gesture; // detected gesture
+		if (i == 0) {
+			cost = staticGetureRecognition(i + POINT_AT, params.pointAtTh);
+			gesture = POINT_AT;
+		}
+		else {
+			std::pair<Gesture, float> gest_cost = RealTimeDTW(gID_thread[i], models_thread[i - 1], iFrames, alphas_thread[i - 1], mus_thread[i - 1]);
+			gesture = gest_cost.first;
+			cost = gest_cost.second;
+		}
 		
 		#pragma omp critical (gesturefound) // So the gestureFound variable is safely updated for the other threads to see
 		{
 			gestureFound = gestureFound || cost < INF; // If gestureFound was set to true, leave it to true to force all the threads to stop
-			gest[i] = cost;
+			gest[static_cast<int>(gesture)] = cost;
 			#pragma omp flush //Ensure memory consistency
 		}
 	}
+	#pragma omp barrier
 
 	int i_min = std::distance(gest.begin(), std::min_element(gest.begin(), gest.end()));
-
+	std::cout << "imin: " << i_min << " casted: " << static_cast<Gesture>(i_min) << " " << (static_cast<Gesture>(i_min) == POINT_AT) << std::endl;
 	return static_cast<Gesture>(i_min);
 }
 
 #define DIST_TH	0.45
 float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh[3]) {
+	// TODO: generalize... When more static gestures are added. In a way similar to the dynamic one...
 	bool found = false;
 	int consFrames = 0; // consecutive frames
 	float dist = 0; // Dist of the hand position during the recognition frames
@@ -89,7 +121,60 @@ float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh
 	return INF; // Not found!
 }
 
-float GestureRecognition::RealTimeDTW(int gestureId, const std::vector<std::vector<float>>& model, int nInputFrames, float ALPHA, float MU) {
+std::pair<Gesture, float> GestureRecognition::RealTimeDTW(const std::vector<int>& gIds, const std::vector<std::vector<std::vector<float>>*>& models, int nInputFrames, std::vector<float> ALPHA, std::vector<float> MU) {
+	int NI = nInputFrames; // columns
+	int ngests = gIds.size();
+	std::vector<int> NMs(ngests);
+	std::vector<SlidingMatrix<float>> Ms(ngests, SlidingMatrix<float>(0,0));
+	for (int i = 0; i < ngests; ++i){
+		NMs[i] = models[i]->size() + 1; // rows
+		// Initialize matrix M of this gesture id
+		Ms[i] = SlidingMatrix<float>(NMs[i], NI, INF); // Access in the matrix is by M[column][row]
+
+		for (int j = 0; j < NI; ++j) (Ms[i])[j][0] = 0; // First row set to 0
+	}
+	SlidingMatrix<float>* M; // Matrix pointed to current gesture
+
+	// Computing M matrix
+	int t = 1; bool slide = false; bool found = false;
+	while (!found) { // For t = 0..INF
+		for (int gid = 0; gid < ngests; ++gid) {
+			int NM = NMs[gid];
+			M = &Ms[gid];
+			int gestureId = gIds[gid];
+
+			while (inputFrames[gestureId].empty()) { // Wait until we have a new frame...
+				Sleep(WAIT_FRAME_SLEEP_MS);
+				#pragma omp flush
+			}
+			std::vector<float> input = getNextFrame(gestureId);
+			if (input[0] == -1.0 && input[1] == -1) break; // Frame which means end of sequence... nothing was recognized
+
+			for (int i = 1; i < NM; ++i) {
+				float neighbors[] = { (*M)[t][i - 1], (*M)[t - 1][i - 1], (*M)[t - 1][i] }; // Upper, upper-left and left neighbors
+				(*M)[t][i] = Utils::L1Distance((*(models[gid]))[i - 1], input, ALPHA[gestureId]) + *std::min_element(neighbors, neighbors + 3); // i-1 as i goes from 1 to N, and the indices in model from 0 to N-1
+			}
+
+			// Check for gesture recognition
+			if ((*M)[t][NM - 1] < MU[gestureId]) return std::make_pair(static_cast<Gesture>(gestureId),(*M)[t][NM - 1]);
+			// End of loop checks
+			if (slide)  // Reached the limit of the matrix...
+				(*M).slide();
+			else {
+				slide = t == (NI - 1);
+				t = (slide) ? NI - 1 : t + 1;
+			}
+			#pragma omp critical (gesturefound)
+			found = gestureFound; // To avoid race conditions
+			if (found) break;
+		}
+	}
+
+	return std::make_pair(static_cast<Gesture>(gIds[0]), INF); // In case INF is returned, the gesture will not be selected so any gesture of this thread is okay.
+}
+
+// Nostalgic backup
+float GestureRecognition::_RealTimeDTW(int gestureId, const std::vector<std::vector<float>>& model, int nInputFrames, float ALPHA, float MU) {
 	int NM = model.size() + 1; // rows
 	int NI = nInputFrames; // columns
 

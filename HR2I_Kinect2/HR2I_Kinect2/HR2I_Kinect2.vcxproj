@@ -47,6 +47,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <LibraryPath>C:\Program Files\PCL\qhull\lib;C:\Program Files\PCL\boost_1_56_0\lib64-msvc-12.0;C:\Program Files\PCL\VTK\lib;C:\Program Files\PCL\flann\lib;C:\Program Files\PCL\PCL\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>

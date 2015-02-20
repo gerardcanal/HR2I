@@ -10,6 +10,7 @@
 #include "hr2i_thesis/GestureRecognitionResult.h"
 #include "hr2i_thesis/PointCloudClusterCentroids.h"
 #include "hr2i_thesis/Kinect2Command.h"
+//#define USE_ROS_HR2I
 
 #define GR_TOPIC_NAME "recognized_gesture"
 #define CLUSTERS_TOPIC_NAME "kinect2_clusters"
@@ -74,7 +75,9 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 			showMessageRecomputeGC();
 			cout << "Ground coefficients must be recomputed. Please select the points..." << endl;
 			ground_coeffs = hr2i.computeGroundCoefficientsFromUser();
+#ifdef USE_ROS_HR2I
 			nh.spinOnce();
+#endif
 		} while (!hr2i.checkGroundCoefficients(ground_coeffs, groundplane));
 		hr2i.writeGroundPlaneCoefficients(ground_coeffs, GROUND_PARAMS_PATH);
 		cout << "DONE: ground coefficients were stored in \"" << GROUND_PARAMS_PATH << "\"" << endl;
@@ -88,7 +91,6 @@ void checkGroundParams(HR2I_Kinect2& hr2i, Kinect2Utils& k2u, HR2ISceneViewer& p
 	pcl_viewer.setGroundCoeffs(ground_coeffs);
 }
 
-bool USE_ROS = true;
 HR2I_Kinect2* hr2iPtr; // Global because if not the subscriber fucks it.
 
 void cmd_subs_cb(const hr2i_thesis::Kinect2Command& cmd) { 
@@ -156,11 +158,11 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	myfile.close();
 
 	ros::NodeHandle nh; // ROS node handle
-	if (USE_ROS) {
+#ifdef USE_ROS_HR2I
 		char *ros_master = const_cast<char*>(ROS_MASTER_HOST.c_str());
 		printf("Connecting to server at %s\n", ros_master);
 		nh.initNode(ros_master);
-	}
+#endif
 	hr2i_thesis::GestureRecognitionResult gr_msg;
 	ros::Publisher gest_pub(GR_TOPIC_NAME, &gr_msg);
 	nh.advertise(gest_pub);
@@ -178,17 +180,18 @@ int _tmain(int argc, _TCHAR * argv[]) {
 
 	// Check ground coefficients
 	checkGroundParams(hr2i, k2u, pcl_viewer, GROUND_PARAMS_PATH, nh);
+#ifdef USE_ROS_HR2I
 	nh.spinOnce(); // Just in case checkGround takes too much...
+#endif
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////// Main code ///////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////
-	// First state
-	//currentState = GESTURE_RECOGNITION;
-	//hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
-	//nh.spinOnce();
 	while (body_view.isRunning()) {
-		hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
+		//hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
+		//// TEST ^uncomment
+		hr2i_thesis::Kinect2Command cmd;  cmd.command = cmd.recGestCmd;
+		//// TEST
 		if (cmd.command == cmd.recGestCmd) {
 			hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
 		}
@@ -196,68 +199,9 @@ int _tmain(int argc, _TCHAR * argv[]) {
 			hr2i.clusterObjectsState(&cluster_pub);
 		}
 		else cerr << "ERROR: Unknown command code \"" << cmd.command << "\" received. Something strange happened.";
+#ifdef USE_ROS_HR2I
 		nh.spinOnce();
+#endif
 	}
 	iface.join();
 }
-
-
-//FAKEMAIN 
-/*
-int _tmain(int argc, _TCHAR * argv[]) {
-	cout << "Initializing Kinect 2 interface... ";
-	Kinect2Utils k2u;
-	HRESULT hr = k2u.initDefaultKinectSensor(true);
-	if (!SUCCEEDED(hr)) return -1;
-
-	hr = k2u.openBodyFrameReader();
-	hr = k2u.openDepthFrameReader();
-	if (!SUCCEEDED(hr)) return -1;
-	cout << "DONE" << endl;
-
-	ICoordinateMapper* cmapper = NULL;
-	k2u.getCoordinateMapper(cmapper);
-
-	std::array<int, 2> size, pos;
-	HR2ISceneViewer pcl_viewer("Human MultiRobot Interaction 3D Viewer", true);
-	while (true) {
-		IDepthFrame* df = k2u.getLastDepthFrameFromDefault();
-		if (df != NULL) {
-			pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
-			//vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = K2PCL::segmentObjectsFromScene(pcPtr);
-			vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> clusters = K2PCL::segmentObjectsNearPointFromScene(pcPtr, OBJECT_RADIUS, pcl::PointXYZ(-0.1103f, -0.5095f, 1.4396f));
-
-			pcl_viewer.setScene(pcPtr);
-			pcl_viewer.setSegmentedClusters(clusters);
-			cout << endl << "-------------------------------------------------" << endl;
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr jointclusters(new pcl::PointCloud<pcl::PointXYZRGB>);
-			for (int i = 0; i < clusters.size(); ++i) 
-			{
-				pcl::PointXYZ cent = K2PCL::compute3DCentroid(clusters[i]);
-				vector<float> stdcent = K2PCL::pclPointToVector(cent);
-				vector<float> origin = { -0.1103f, -0.5095f, 1.4396f };
-				if (Utils::euclideanDistance(stdcent, origin) < 0.4) {
-
-					pair<double, double> areavol = K2PCL::computeAreaVolume(clusters[i]);
-					cout << "Cluster " << i << ": Size: " << clusters[i]->size() << " Area: " << areavol.first << " Volume: " << areavol.second << " Centroid: ";
-					cout << "Centroid: " << cent.x << " " << cent.y << " " << cent.z << " Distance: " << Utils::euclideanDistance(stdcent, origin) << endl << endl;
-					pcl_viewer.setPointingPoint(cent);
-				}
-
-				/*pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcRGBptr(new pcl::PointCloud<pcl::PointXYZRGB>());
-				pcRGBptr->resize(clusters[i]->size());
-				uint8_t r = rand() % 255, g = rand() % 255, b = rand() % 255;
-				for (int j = 0; j < clusters[i]->size(); ++j) {
-					pcl::PointXYZRGB auxp(r, g, b);
-					auxp.x = clusters[i]->at(j).x;
-					auxp.y = clusters[i]->at(j).y;
-					auxp.z = clusters[i]->at(j).z;
-					pcRGBptr->at(j) = auxp;
-				}
-				*jointclusters += *pcRGBptr;*/ /*
-			}
-			//pclviewer.showCloud(jointclusters);
-		}
-		SafeRelease(df);
-	}
-}*/

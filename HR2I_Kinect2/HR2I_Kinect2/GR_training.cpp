@@ -12,7 +12,7 @@ void trainDTWParameters() {
 	// Get the models...
 	cout << "Loading the models..." << endl;
 	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
-	models[SALUTE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
+	models[WAVE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
 	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModelShort_features.csv");
 
 	// Load sequences -> I assume nobody changed the sequences names from TestSequenceX.csv!!!
@@ -42,28 +42,28 @@ void trainDTWParameters() {
 	/* Originals (first try ever)
 	std::vector<float> restTh = { 0.15f, 0.2f, 0.25f, 0.3f, 0.35f, 0.4f, 0.45f };
 	std::vector<std::vector<float>> gestTh(N_GESTURES);
-	gestTh[SALUTE] = {5.0f, 7.0f, 9.0f, 11.0f, 13.0f, 15.0f, 17.0f, 20.0f};
+	gestTh[WAVE] = {5.0f, 7.0f, 9.0f, 11.0f, 13.0f, 15.0f, 17.0f, 20.0f};
 	gestTh[POINT_AT] = {3.5f, 4.0f, 4.5f, 5.0f, 6.0f, 6.5f, 7.0f, 8.0f};
 	std::vector<float> alphas = { 0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 2.0f, 4.0f };*/
 	
 	/*Extended with info from LONG PA model -> iteration 1
 	std::vector<float> restTh = { 0.2f, 0.25f, 0.3f, 0.32f, 0.35f, 0.4f, 0.45f };
 	std::vector<std::vector<float>> gestTh(N_GESTURES);
-	gestTh[SALUTE] = {6.0f, 6.5f, 6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 9.0f };
+	gestTh[WAVE] = {6.0f, 6.5f, 6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 9.0f };
 	gestTh[POINT_AT] = {6.5f, 7.0f, 7.5f, 7.75f, 8.0f, 8.25f, 8.5f, 8.75f };
 	std::vector<float> alphas = { 0.25f, 0.5f, 0.55f, 0.60f, 0.65f, 0.75f, 0.8f, 0.85f, 0.9f, 1.0f };*/
 	
 	/*Extended with info from LONG PA model -> iteration 2
 	std::vector<float> restTh = { 0.2f, 0.25f, 0.27f, 0.3f, 0.32f, 0.35f, 0.4f };
 	std::vector<std::vector<float>> gestTh(N_GESTURES);
-	gestTh[SALUTE] = {6.75f, 7.0f, 7.25f, 7.5f, 7.75f, 8.0f, 8.25f, 8.5f, 9.0f };
+	gestTh[WAVE] = {6.75f, 7.0f, 7.25f, 7.5f, 7.75f, 8.0f, 8.25f, 8.5f, 9.0f };
 	gestTh[POINT_AT] = {6.5f, 6.75f, 7.0f, 7.25f, 7.5f, 7.75f, 8.0f, 8.25f, 8.5f, 8.75f };
 	std::vector<float> alphas = {0.0f, 0.10f, 0.15f, 0.20f, 0.25f, 0.3f, 0.5f, 0.60f, 0.65f, 0.75f, 0.8f };*/
 
 	/*Extended with info from SHORT PA model -> iteration 1*/
 	//std::vector<float> restTh = { 0.2f, 0.23f, 0.25f, 0.27f, 0.3f, 0.32f, 0.35f, 0.4f };
 	std::vector<std::vector<float>> gestTh(N_DYNAMIC_GESTURES);
-	gestTh[SALUTE] = {6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 8.5f, 8.75f, 9.0f, 9.25f };
+	gestTh[WAVE] = {6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 8.5f, 8.75f, 9.0f, 9.25f };
 	//gestTh[POINT_AT] = {6.5f, 7.0f, 7.5f, 7.75f, 8.0f, 8.25f, 8.5f, 8.75f };
 	std::vector<float> alphas = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f, 0.5f, 0.55f, 0.60f, 0.65f, 0.75f };
 
@@ -74,9 +74,10 @@ void trainDTWParameters() {
 	// Train
 	cout << "Beginning the parameter selection..." << endl;
 	GestureRecognition gr;
-	GRParameters params = gr.trainThresholds(models, feat_sequences, skeletons_seq, gt, alphas, gestTh, true);
-	params.pointAtTh[0] = 0.25f; params.pointAtTh[1] = 2.8f; params.pointAtTh[2] = 25;
-	GestureRecognition::writeParameters(params, resPath);
+	// TODO static dynamic train, two calls now
+	//GRParameters params = gr.trainThresholds(models, feat_sequences, skeletons_seq, gt, alphas, gestTh, true);
+	//params.pointAtTh[0] = 0.25f; params.pointAtTh[1] = 2.8f; params.pointAtTh[2] = 25;
+	//GestureRecognition::writeParameters(params, resPath);
 	cout << "Parameters were stored in " << resPath;
 }
 

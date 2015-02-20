@@ -12,8 +12,8 @@
 
 static enum Gesture {
 	/// Add here the Dynamic Gestures
-	SALUTE,
-	N_DYNAMIC_GESTURES = (SALUTE + 1), // SHOULD BE <<LAST DYNAMIC GESTURE>> + 1
+	WAVE,
+	N_DYNAMIC_GESTURES = (WAVE + 1), // SHOULD BE <<LAST DYNAMIC GESTURE>> + 1
 
 	/// Add here the Static Gestures
 	POINT_AT = N_DYNAMIC_GESTURES, // FIRST STATIC GESTURE! DO NOT CHANGE!! To make the gesture sequence continuous, it's equal to the last dynamic gesture + 1
@@ -70,7 +70,9 @@ public:
 	std::deque<int> getWPath(const std::vector<std::vector<float>> &M, int t);
 
 private:
-	float RealTimeDTW(int gestureId, const std::vector<std::vector<float>>& model, int nInputframes, float ALPHA, float MU);
+	std::pair<Gesture, float> RealTimeDTW(const std::vector<int>& gIds, const std::vector<std::vector<std::vector<float>>*>& models, int nInputframes, std::vector<float> ALPHA, std::vector<float> MU);
+	float _RealTimeDTW(int gestureId, const std::vector<std::vector<float>>& model, int nInputframes, float ALPHA, float MU);
+
 	std::deque<int> getWPath(const SlidingMatrix<float> &M, int t);
 	float staticGetureRecognition(int gestureId, float pointAtTh[3]);
 

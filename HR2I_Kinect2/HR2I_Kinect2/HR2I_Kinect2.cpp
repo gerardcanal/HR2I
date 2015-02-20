@@ -56,7 +56,9 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 		gr_mtx.lock();
 		_work = get_data;
 		gr_mtx.unlock();
-		nh->spinOnce(); // to make sure
+#ifdef USE_ROS_HR2I
+		nh->spinOnce();// to make sure
+#endif
 	}
 }
 
@@ -79,7 +81,7 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 	datagetter.join();
 
 	// Process recognized gesture
-	cout << "Recognized gesture: " << ((gest == SALUTE) ? "HELLO!" : "POINT_AT!") << endl;
+	cout << "Recognized gesture: " << ((gest == WAVE) ? "HELLO!" : "POINT_AT!") << endl;
 	if (gest == POINT_AT) {
 		// Take the mean joint points
 		vector<float> Hand(3, 0.0);
@@ -126,7 +128,7 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 			cout << "\tPointing was not directed to the ground!!!" << endl;
 		}
 	}
-	else if (gest == SALUTE) result.gestureId = result.idHello;
+	else if (gest == WAVE) result.gestureId = result.idHello;
 	else result.gestureId = -2; // Strange failure
 	result.header.frame_id = "Kinect2";
 
@@ -140,7 +142,7 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 
 vector<vector<vector<float>>> HR2I_Kinect2::readDynamicModels(string gestPath) {
 	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
-	models[SALUTE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
+	models[WAVE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
 	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModel_features.csv");
 	//models[POINT_AT] = GestureRecognition::addThirdFeature(models[POINT_AT]);
 	return models;
@@ -289,7 +291,9 @@ void HR2I_Kinect2::recognizeGestureState(const string& gr_params_path, const str
 			roscmd_mtx.lock();
 			if (k2cmd.command != -1) break;
 			roscmd_mtx.unlock();
+#ifdef USE_ROS_HR2I
 			nh->spinOnce();
+#endif
 			Sleep(50);
 		}
 		pcl_viewer->setPointingPoint(pcl::PointXYZ(0, 0, 0));
@@ -347,7 +351,9 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 		roscmd_mtx.lock();
 		if (k2cmd.command != -1) break;
 		roscmd_mtx.unlock();
+#ifdef USE_ROS_HR2I
 		nh->spinOnce();
+#endif
 		Sleep(50);
 	}
 	pcl_viewer->setPointingPoint(pcl::PointXYZ(0, 0, 0));
@@ -379,7 +385,9 @@ hr2i_thesis::Kinect2Command HR2I_Kinect2::waitForCommandState() {
 		if (df) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
 		SafeRelease(df);
 		SafeRelease(bodyFrame);
+#ifdef USE_ROS_HR2I
 		nh->spinOnce();
+#endif
 		// Check if received
 		roscmd_mtx.lock();
 		cmd = k2cmd;

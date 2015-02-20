@@ -8,6 +8,7 @@ class SlidingMatrix
 public:
 	SlidingMatrix(int rows, int columns);
 	SlidingMatrix(int rows, int columns, _T init);
+	SlidingMatrix(const SlidingMatrix& sm);
 	~SlidingMatrix();
 
 	void slide();
@@ -19,6 +20,7 @@ public:
 	const std::vector<_T>& operator[](int i) const;
 	_T& operator()(int row, int column); // To acces by m(row, column) instead of m(column, row);
 	const _T& operator()(int row, int column) const; // To acces by m(row, column) instead of m(column, row);
+	SlidingMatrix<_T>& operator=(const SlidingMatrix& sm);
 
 	friend std::ostream &operator<<(std::ostream& os, const SlidingMatrix<_T>& m)  {
 		for (int i = 0; i < m[0].size(); ++i) { // Rows
@@ -52,6 +54,16 @@ const _T& SlidingMatrix<_T>::operator()(int row, int column) const {
 	return (*matrix[column])[row];
 }
 
+template<class _T>
+SlidingMatrix<_T>& SlidingMatrix<_T>::operator=(const SlidingMatrix& sm) {
+	matrix = std::deque<std::vector<_T>*>(sm.matrix.size());
+	for (int i = 0; i < sm.matrix.size(); ++i) {
+		matrix[i] = new std::vector<_T>(sm.matrix[i]->size());
+		for (int j = 0; j < sm.matrix[i]->size(); ++j) (*matrix[i])[j] = (*sm.matrix[i])[j];
+	}
+	return *this;
+}
+
 template <class _T>
 SlidingMatrix<_T>::SlidingMatrix(int rows, int columns)
 {
@@ -67,6 +79,15 @@ SlidingMatrix<_T>::SlidingMatrix(int rows, int columns, _T value)
 	matrix = std::deque<std::vector<_T>*>(columns);
 	for (std::deque<std::vector<_T>*>::iterator it = matrix.begin(); it != matrix.end(); ++it) {
 		*it = new std::vector<_T>(rows, value);
+	}
+}
+
+template <class _T>
+SlidingMatrix<_T>::SlidingMatrix(const SlidingMatrix& sm) {
+	matrix = std::deque<std::vector<_T>*>(sm.matrix.size());
+	for (int i = 0; i < sm.matrix.size(); ++i) {
+		matrix[i] = new std::vector<_T>(sm.matrix[i]->size());
+		for (int j = 0; j < sm.matrix[i]->size(); ++j) (*matrix[i])[j] = (*sm.matrix[i])[j];
 	}
 }
 
