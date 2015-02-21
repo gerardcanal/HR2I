@@ -1,3 +1,5 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
+// Based on the BodyViewer and RGBViewer examples from the Kinect v2 SDK
 #include "stdafx.h"
 #include "BodyRGBViewer.h"
 #include "Kinect.h"

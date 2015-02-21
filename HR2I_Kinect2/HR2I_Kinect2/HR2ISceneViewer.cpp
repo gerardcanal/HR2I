@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "HR2ISceneViewer.h"
 #define DRAW_JOINTS 0
 #define SPHERE_RADIUS 0.07

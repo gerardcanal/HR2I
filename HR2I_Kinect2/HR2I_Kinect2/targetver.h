@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #pragma once
 
 // La inclusión de SDKDDKVer.h define la plataforma Windows más alta disponible.

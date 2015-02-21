@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "K2PCL.h"
 
 //#define MIRROR_PCL // To mirror de PCL

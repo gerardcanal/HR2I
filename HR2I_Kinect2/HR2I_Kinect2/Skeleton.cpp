@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "stdafx.h"
 #include "Skeleton.h"
 #include <exception>

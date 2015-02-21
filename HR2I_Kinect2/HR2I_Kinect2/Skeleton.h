@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #pragma once
 #include "Kinect.h"
 #include <array>

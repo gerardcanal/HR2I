@@ -106,7 +106,7 @@ void recognizeGestures(const vector<vector<vector<float>>>& models, Kinect2Utils
 vector<vector<vector<float>>> readModels() {
 	string gestPath = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
 	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
-	models[SALUTE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
+	models[WAVE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
 	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModel_features.csv");
 	//models[POINT_AT] = GestureRecognition::addThirdFeature(models[POINT_AT]);
 	return models;

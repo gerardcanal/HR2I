@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "stdafx.h"
 #include "Utils.h"
 #include <assert.h>
@@ -137,4 +138,41 @@ std::vector<float> Utils::linePlaneIntersection(std::vector<float> l0, std::vect
 bool Utils::sameDirection(std::vector<float> a, std::vector<float> b, float threshold) {
 	float cosangle = Utils::dotProduct(a, b)/(Utils::magnitude(a)*Utils::magnitude(b));
 	return acos(cosangle) <= threshold;
+}
+
+
+/// <summary>
+/// (From the FaceBasics-D2D example)
+/// Converts rotation quaternion to Euler angles 
+/// And then maps them to a specified range of values to control the refresh rate
+/// </summary>
+/// <param name="pQuaternion">face rotation quaternion</param>
+/// <param name="pPitch">rotation about the X-axis</param>
+/// <param name="pYaw">rotation about the Y-axis</param>
+/// <param name="pRoll">rotation about the Z-axis</param>
+void Utils::ExtractFaceRotationInDegrees(const Vector4* pQuaternion, double* pPitch, double* pYaw, double* pRoll) {
+	double x = pQuaternion->x;
+	double y = pQuaternion->y;
+	double z = pQuaternion->z;
+	double w = pQuaternion->w;
+
+
+	// convert face rotation quaternion to Euler angles in degrees		
+	double dPitch, dYaw, dRoll;
+	dPitch = atan2(2 * (y * z + w * x), w * w - x * x - y * y + z * z) / M_PI * 180.0;
+	dYaw = asin(2 * (w * y - x * z)) / M_PI * 180.0;
+	dRoll = atan2(2 * (x * y + w * z), w * w + x * x - y * y - z * z) / M_PI * 180.0;
+
+	*pPitch = dPitch;
+	*pYaw = dYaw;
+	*pRoll = dRoll;
+
+	// clamp rotation values in degrees to a specified range of values to control the refresh rate
+	/*
+	static const double c_FaceRotationIncrementInDegrees = 5.0f; // From the face example. Not sure where does it come from
+	double increment = c_FaceRotationIncrementInDegrees;
+	*pPitch = static_cast<int>(floor((dPitch + increment / 2.0 * (dPitch > 0 ? 1.0 : -1.0)) / increment) * increment);
+	*pYaw = static_cast<int>(floor((dYaw + increment / 2.0 * (dYaw > 0 ? 1.0 : -1.0)) / increment) * increment);
+	*pRoll = static_cast<int>(floor((dRoll + increment / 2.0 * (dRoll > 0 ? 1.0 : -1.0)) / increment) * increment);
+	*/
 }

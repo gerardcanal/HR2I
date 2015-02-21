@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #pragma once
 #undef max // To avoid windows compilation problems in the pcl
 #undef min // To avoid windows compilation problems in the pcl

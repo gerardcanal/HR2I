@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #pragma once
 #include "Kinect.h"
 #define _USE_MATH_DEFINES // To have PI and other constants
@@ -24,6 +25,8 @@ public:
 	static float dotProduct(std::vector<float> a, std::vector<float> b);
 	static std::vector<float> subtract(std::vector<float> a, std::vector<float> b);
 	static bool sameDirection(std::vector<float> a, std::vector<float> b, float threshold);
+
+	static void ExtractFaceRotationInDegrees(const Vector4* pQuaternion, double* pPitch, double* pYaw, double* pRoll);
 
 	static const double INF;
 };

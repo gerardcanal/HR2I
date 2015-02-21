@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "HR2I_Kinect2.h"
 
 HR2I_Kinect2::HR2I_Kinect2(BodyRGBViewer* view, HR2ISceneViewer* pcl_viewer, Kinect2Utils* k2u, ros::NodeHandle* nh) {
@@ -48,7 +49,7 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 				inputFrames.push_back(sk);
 			}
 		}
-		if (df) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
+		if (df && pcl_viewer != NULL) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
 		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
 		SafeRelease(df);
 		
@@ -245,7 +246,7 @@ deque<Skeleton>* HR2I_Kinect2::getInputFrames() {
 void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, bool drawObjects, double obj_radius, double clust_tol, std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr>* objectsPtr) {
 	bool rightBody = true;
 
-	pcl_viewer->setPointingPoint(pointingPoint);
+	if (pcl_viewer != NULL) pcl_viewer->setPointingPoint(pointingPoint);
 
 	ICoordinateMapper* cmapper = NULL;
 	k2u->getCoordinateMapper(cmapper);
@@ -265,11 +266,11 @@ void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, b
 		pcl::PointCloud<pcl::PointXYZ>::Ptr pcPtr = K2PCL::depthFrameToPointCloud(df, cmapper);
 		if (drawObjects) {
 			std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> _objects = K2PCL::segmentObjectsNearPointFromScene(pcPtr, obj_radius, pointingPoint, clust_tol);
-			pcl_viewer->setSceneAndSegmentedClusters(pcPtr, _objects);
+			if (pcl_viewer != NULL) pcl_viewer->setSceneAndSegmentedClusters(pcPtr, _objects);
 			std::cout << _objects.size() << " clusters have been segmented." << std::endl;
 			if (objectsPtr != NULL) *objectsPtr = _objects;
 		}
-		else pcl_viewer->setScene(pcPtr);
+		else if (pcl_viewer != NULL) pcl_viewer->setScene(pcPtr);
 	}
 	
 	SafeRelease(df);
@@ -296,7 +297,7 @@ void HR2I_Kinect2::recognizeGestureState(const string& gr_params_path, const str
 #endif
 			Sleep(50);
 		}
-		pcl_viewer->setPointingPoint(pcl::PointXYZ(0, 0, 0));
+		if (pcl_viewer != NULL) pcl_viewer->setPointingPoint(pcl::PointXYZ(0, 0, 0));
 	}
 }
 
@@ -322,7 +323,7 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 	}
 	cout << "\tUpdated pointing location is: (" << newPpoint.x << ", " << newPpoint.y << ", " << newPpoint.z << ")" << endl;
 	// Remove body
-	pcl_viewer->setPerson(Skeleton()); // Set empty skeleton
+	if (pcl_viewer != NULL) pcl_viewer->setPerson(Skeleton()); // Set empty skeleton
 	// Segment objects
 	std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> objects;
 	getAndDrawScene(newPpoint, false, true, OBJECT_RADIUS_CLOSE, CLOSE_CLUSTER_TOLERANCE, &objects);
@@ -356,7 +357,7 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 #endif
 		Sleep(50);
 	}
-	pcl_viewer->setPointingPoint(pcl::PointXYZ(0, 0, 0));
+	if (pcl_viewer != NULL) pcl_viewer->setPointingPoint(pcl::PointXYZ(0, 0, 0));
 
 	// Free memory (now just in case we free it before it has been sent or somehting like this)
 	delete[] centroids; // Message is sent, we can free the memory
@@ -382,7 +383,7 @@ hr2i_thesis::Kinect2Command HR2I_Kinect2::waitForCommandState() {
 			if (body_view != NULL) body_view->setBodyFrameToDraw(bodyFrame);
 			if (pcl_viewer != NULL) pcl_viewer->setPerson(sk);
 		}
-		if (df) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
+		if (df && pcl_viewer != NULL) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
 		SafeRelease(df);
 		SafeRelease(bodyFrame);
 #ifdef USE_ROS_HR2I

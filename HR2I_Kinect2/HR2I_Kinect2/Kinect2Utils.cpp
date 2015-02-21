@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "stdafx.h"
 #include "Kinect2Utils.h"
 #include <iostream>
@@ -8,6 +9,7 @@ Kinect2Utils::Kinect2Utils()
 	bfReader = NULL;
 	cfReader = NULL;
 	dfReader = NULL;
+	ffReader = NULL;
 	msfReader = NULL;
 }
 
@@ -18,6 +20,8 @@ Kinect2Utils::~Kinect2Utils()
 	SafeRelease(bfReader);
 	SafeRelease(cfReader);
 	SafeRelease(dfReader);
+	SafeRelease(ffReader);
+	SafeRelease(msfReader);
 }
 
 
@@ -238,4 +242,64 @@ IDepthFrame* Kinect2Utils::getDepthFrame(IMultiSourceFrame* msf) {
 	HRESULT hr = dfRef->AcquireFrame(&df);
 	if (!SUCCEEDED(hr)) return NULL;
 	return df;
+}
+
+HRESULT Kinect2Utils::openFaceFrameReader(DWORD faceFrameFeatures) {
+	if (!ffReader) { //bfReader is NULL
+		IFaceFrameSource* ffSource = NULL;
+		HRESULT  hr = CreateFaceFrameSource(default_sensor, 0, faceFrameFeatures, &ffSource);
+		if (SUCCEEDED(hr))
+			hr = ffSource->OpenReader(&ffReader);
+		SafeRelease(ffSource); // We don't need the frame source anymore...?
+		return hr;
+	}
+	return S_OK; //Already opened
+}
+
+IFaceFrame* Kinect2Utils::getLastFaceFrameFromDefault() {
+	if (!ffReader) return NULL;
+	IFaceFrame* faceFrame = NULL;
+	HRESULT hr = ffReader->AcquireLatestFrame(&faceFrame);
+	if (!SUCCEEDED(hr)) return NULL;
+	return faceFrame;
+}
+
+Face Kinect2Utils::faceFrameResultToFace(IFaceFrameResult* ffr) {
+	Face f;
+	if (ffr == NULL) return f;
+	RectI bbox;
+	HRESULT hr = ffr->get_FaceBoundingBoxInColorSpace(&bbox);
+	if (!SUCCEEDED(hr)) return f;
+
+	PointF facePoints[FacePointType::FacePointType_Count];
+	hr = ffr->GetFacePointsInColorSpace(FacePointType::FacePointType_Count, facePoints);
+	if (!SUCCEEDED(hr)) return f;
+
+	Vector4 rotation;
+	hr = ffr->get_FaceRotationQuaternion(&rotation);
+	if (!SUCCEEDED(hr)) return f;
+
+	DetectionResult faceProperties[FaceProperty::FaceProperty_Count];
+	ffr->GetFaceProperties(FaceProperty::FaceProperty_Count, faceProperties);
+	if (!SUCCEEDED(hr)) return f;
+
+	f = Face(bbox, facePoints, rotation, faceProperties);
+	return f;
+}
+
+Face Kinect2Utils::getFaceFromFaceFrame(IFaceFrame* fframe) {
+	if (fframe == NULL) return Face();
+
+	/////////
+	BOOLEAN tracked = false;
+	fframe->get_IsTrackingIdValid(&tracked);
+	if (!tracked) return Face();
+	////////
+
+	IFaceFrameResult* ffr = NULL;
+	HRESULT hr = fframe->get_FaceFrameResult(&ffr);
+	if (ffr == NULL || !SUCCEEDED(hr)) return Face();
+	Face ret = faceFrameResultToFace(ffr);
+	SafeRelease(ffr);
+	return ret;
 }

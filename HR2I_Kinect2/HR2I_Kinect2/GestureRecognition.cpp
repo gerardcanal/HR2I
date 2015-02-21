@@ -1,6 +1,7 @@
 #include "GestureRecognition.h"
 #include <assert.h>
 #include <numeric>
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include <ctime>
 #include <iostream>
 #include <fstream>

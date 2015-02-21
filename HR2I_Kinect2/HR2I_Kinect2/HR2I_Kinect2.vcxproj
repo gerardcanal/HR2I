@@ -94,6 +94,7 @@
     <ClInclude Include="..\ros_lib\ros.h" />
     <ClInclude Include="..\ros_lib\WindowsSocket.h" />
     <ClInclude Include="BodyRGBViewer.h" />
+    <ClInclude Include="Face.h" />
     <ClInclude Include="GestureRecognition.h" />
     <ClInclude Include="HR2ISceneViewer.h" />
     <ClInclude Include="HR2I_Kinect2.h" />
@@ -111,6 +112,7 @@
     <ClCompile Include="..\ros_lib\time.cpp" />
     <ClCompile Include="..\ros_lib\WindowsSocket.cpp" />
     <ClCompile Include="BodyRGBViewer.cpp" />
+    <ClCompile Include="Face.cpp" />
     <ClCompile Include="GestureRecognition.cpp" />
     <ClCompile Include="GR_training.cpp" />
     <ClCompile Include="HR2ISceneViewer.cpp" />

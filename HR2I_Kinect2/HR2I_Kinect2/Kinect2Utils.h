@@ -1,5 +1,8 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #pragma once
 #include "Kinect.h"
+#include <Kinect.Face.h>
+#include "Face.h"
 #include "Skeleton.h"
 #include <vector>
 
@@ -17,10 +20,12 @@ public:
 	HRESULT openBodyFrameReader();
 	HRESULT openColorFrameReader();
 	HRESULT openDepthFrameReader();
+	HRESULT openFaceFrameReader(DWORD faceFrameFeatures = c_FaceFrameFeatures);
 	HRESULT openMultiSourceFrameReader(DWORD types);
 	IBodyFrame* getLastBodyFrameFromDefault();
 	IColorFrame* getLastColorFrameFromDefault();
 	IDepthFrame* getLastDepthFrameFromDefault();
+	IFaceFrame* getLastFaceFrameFromDefault();
 	IMultiSourceFrame* getLastMultiSourceFrameFromDefault();
 	HRESULT getCoordinateMapper(ICoordinateMapper*&);
 
@@ -31,6 +36,9 @@ public:
 	static Skeleton IBodyToSkeleton(IBody* body);
 	static std::vector<Skeleton> getSkeletonsFromBodyFrame(IBodyFrame* bodyFrame);
 	static Skeleton getTrackedSkeleton(IBodyFrame* bodyFrame, UINT64 id, bool first);
+	
+	static Face faceFrameResultToFace(IFaceFrameResult* ffr);
+	static Face getFaceFromFaceFrame(IFaceFrame* fframe);
 
 
 private:
@@ -38,6 +46,20 @@ private:
 	IBodyFrameReader* bfReader;
 	IColorFrameReader* cfReader;
 	IDepthFrameReader* dfReader;
+	IFaceFrameReader* ffReader;
 	IMultiSourceFrameReader* msfReader;
+
+	static const DWORD c_FaceFrameFeatures =
+		FaceFrameFeatures::FaceFrameFeatures_BoundingBoxInColorSpace
+		| FaceFrameFeatures::FaceFrameFeatures_PointsInColorSpace
+		| FaceFrameFeatures::FaceFrameFeatures_RotationOrientation
+		| FaceFrameFeatures::FaceFrameFeatures_Happy
+		| FaceFrameFeatures::FaceFrameFeatures_RightEyeClosed
+		| FaceFrameFeatures::FaceFrameFeatures_LeftEyeClosed
+		| FaceFrameFeatures::FaceFrameFeatures_MouthOpen
+		| FaceFrameFeatures::FaceFrameFeatures_MouthMoved
+		| FaceFrameFeatures::FaceFrameFeatures_LookingAway
+		| FaceFrameFeatures::FaceFrameFeatures_Glasses
+		| FaceFrameFeatures::FaceFrameFeatures_FaceEngagement;
 };
 

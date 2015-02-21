@@ -1,3 +1,4 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 // STD includes
 #define _CRT_SECURE_NO_WARNINGS // Also in project configuration as putting the define here is not enough
 #include "stdafx.h"
@@ -11,6 +12,7 @@
 #include "hr2i_thesis/PointCloudClusterCentroids.h"
 #include "hr2i_thesis/Kinect2Command.h"
 //#define USE_ROS_HR2I
+//#define USE_PCL_HR2I
 
 #define GR_TOPIC_NAME "recognized_gesture"
 #define CLUSTERS_TOPIC_NAME "kinect2_clusters"
@@ -138,9 +140,11 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	thread iface = body_view.RunThreaded(RGB_Depth, true, false);
 	
 	std::array<int, 2> size, pos;
-	computePCLWindowSizeAndPos(size, pos, body_view);
+	computePCLWindowSizeAndPos(size, pos, body_view); // Puts all the windows in place
+#ifdef USE_PCL_HR2I
 	HR2ISceneViewer pcl_viewer("Human MultiRobot Interaction 3D Viewer", true, size, pos);
 	cout << "DONE" << endl;
+#endif
 
 	/////////////////////
 	////// ROS //////////
@@ -162,6 +166,8 @@ int _tmain(int argc, _TCHAR * argv[]) {
 		char *ros_master = const_cast<char*>(ROS_MASTER_HOST.c_str());
 		printf("Connecting to server at %s\n", ros_master);
 		nh.initNode(ros_master);
+#else
+		cerr << "ROS WAS DISABLED AT COMPILATION TIME! Define the variable USE_ROS_HR2I to enable it." << endl;
 #endif
 	hr2i_thesis::GestureRecognitionResult gr_msg;
 	ros::Publisher gest_pub(GR_TOPIC_NAME, &gr_msg);
@@ -172,14 +178,22 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	nh.advertise(cluster_pub);
 	cout << "DONE" << endl;
 
-	// HR2I init
+	//////////////////////////
+	///////// HR2I init //////
+	//////////////////////////
+#ifdef USE_PCL_HR2I
 	HR2I_Kinect2 hr2i(&body_view, &pcl_viewer, &k2u, &nh);
+#else
+	HR2I_Kinect2 hr2i(&body_view, NULL, &k2u, &nh);
+#endif
 	hr2iPtr = &hr2i;
 	ros::Subscriber < hr2i_thesis::Kinect2Command > k2cmdSub("kinect2_command", &cmd_subs_cb);
 	nh.subscribe(k2cmdSub);
 
 	// Check ground coefficients
+#ifdef USE_PCL_HR2I
 	checkGroundParams(hr2i, k2u, pcl_viewer, GROUND_PARAMS_PATH, nh);
+#endif
 #ifdef USE_ROS_HR2I
 	nh.spinOnce(); // Just in case checkGround takes too much...
 #endif
