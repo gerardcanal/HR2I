@@ -37,8 +37,9 @@ public:
 	static std::vector<Skeleton> getSkeletonsFromBodyFrame(IBodyFrame* bodyFrame);
 	static Skeleton getTrackedSkeleton(IBodyFrame* bodyFrame, UINT64 id, bool first);
 	
-	static Face faceFrameResultToFace(IFaceFrameResult* ffr);
-	static Face getFaceFromFaceFrame(IFaceFrame* fframe);
+	static Face faceFrameResultToFace(IFaceFrameResult* ffr, bool infraredSpace = true);
+	static Face getFaceFromFaceFrame(IFaceFrame* fframe, bool infraredSpace = true);
+	void setFaceTrackingId(UINT64 trid);
 
 
 private:
@@ -48,6 +49,8 @@ private:
 	IDepthFrameReader* dfReader;
 	IFaceFrameReader* ffReader;
 	IMultiSourceFrameReader* msfReader;
+
+	IFaceFrameSource* ffSource;
 
 	static const DWORD c_FaceFrameFeatures =
 		FaceFrameFeatures::FaceFrameFeatures_BoundingBoxInColorSpace

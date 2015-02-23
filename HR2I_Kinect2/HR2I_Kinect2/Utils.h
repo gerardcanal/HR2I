@@ -28,7 +28,14 @@ public:
 
 	static void ExtractFaceRotationInDegrees(const Vector4* pQuaternion, double* pPitch, double* pYaw, double* pRoll);
 
+	template <typename T> 
+	static int sgn(T val); 
+
 	static const double INF;
 };
 
 
+template<typename T>
+int Utils::sgn(T val) {
+	return (T(0) < val) - (val < T(0));
+}

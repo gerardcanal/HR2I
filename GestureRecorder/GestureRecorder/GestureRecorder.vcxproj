@@ -85,6 +85,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\BodyRGBViewer.h" />
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Face.h" />
     <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Kinect2Utils.h" />
     <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Skeleton.h" />
     <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Utils.h" />
@@ -94,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\BodyRGBViewer.cpp" />
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Face.cpp" />
     <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Kinect2Utils.cpp" />
     <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Skeleton.cpp" />
     <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Utils.cpp" />

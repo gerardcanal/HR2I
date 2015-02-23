@@ -8,18 +8,19 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include "Utils.h"
 
 
 class Face
 {
 public:
-	Face(RectI box, PointF points[], Vector4 rotation, DetectionResult properties[]);
+	Face(RectI box, PointF points[], Vector4 rotation, DetectionResult properties[], bool inInfraredSpace);
 	Face();
 	~Face();
 
 	// Setters
 	void setBoundingBox(RectI bbox);
-	void setFacePoints(PointF facePoints[]);
+	void setFacePoints(PointF facePoints[], bool inInfraRedSpace);
 	void setFaceRotation(Vector4 faceRotation);
 	void setFaceProperties(DetectionResult dres[]);
 
@@ -29,6 +30,7 @@ public:
 	Vector4 getFaceRotation();
 	DetectionResult* getFaceProperties();
 	bool getIsEmpty();
+	bool getIsInInfraredSpace();
 
 	// Methods
 	static void faceGestureToCSV(std::vector<Face> gesture, std::string path);
@@ -37,14 +39,15 @@ public:
 
 	friend std::ostream& operator<<(std::ostream& os, const Face& f);
 
-	//void getFaceFeatures(); TODO
-
 private:
 	RectI faceBBox; // Face bounding box
 	PointF facePoints[FacePointType::FacePointType_Count];
 	Vector4 faceRotation;
 	DetectionResult faceProperties[FaceProperty::FaceProperty_Count];
 
+	bool inInfraredSpace; // Space in which the points are
 	bool isEmpty;
+
+	bool checkAllZero();
 };
 

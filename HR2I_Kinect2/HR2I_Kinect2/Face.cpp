@@ -1,13 +1,16 @@
 // Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
+#include "stdafx.h"
 #include "Face.h"
 
 
-Face::Face(RectI box, PointF points[], Vector4 rotation, DetectionResult properties[]) {
+Face::Face(RectI box, PointF points[], Vector4 rotation, DetectionResult properties[], bool _inInfraredSpace) {
+	isEmpty = false;
+	this->inInfraredSpace = _inInfraredSpace;
 	setBoundingBox(box);
-	setFacePoints(points);
+	setFacePoints(points, _inInfraredSpace);
 	setFaceProperties(properties);
 	setFaceRotation(rotation);
-	isEmpty = false;
+	if (checkAllZero()) isEmpty = true;
 }
 
 Face::Face() {
@@ -20,10 +23,12 @@ Face::~Face() {
 
 // Setters
 void Face::setBoundingBox(RectI bbox) { faceBBox = bbox; }
-void Face::setFacePoints(PointF facePoints[]) {
+void Face::setFacePoints(PointF facePoints[], bool inInfraredSpace) {
+	this->inInfraredSpace = inInfraredSpace;
 	for (int i = 0; i < FacePointType::FacePointType_Count; ++i) {
 		this->facePoints[i] = facePoints[i];
 	}
+	isEmpty = false;
 }
 void Face::setFaceRotation(Vector4 faceRotation) { this->faceRotation = faceRotation; }
 void Face::setFaceProperties(DetectionResult dres[]) {
@@ -38,10 +43,21 @@ PointF* Face::getFacePoints() { return facePoints; }
 Vector4 Face::getFaceRotation() { return faceRotation; }
 DetectionResult* Face::getFaceProperties() { return faceProperties; }
 bool Face::getIsEmpty() { return isEmpty; }
+bool Face::getIsInInfraredSpace() { return inInfraredSpace; }
 
+bool Face::checkAllZero() {
+	if (faceBBox.Bottom != 0 || faceBBox.Top != 0 || faceBBox.Left != 0 || faceBBox.Right != 0) return false;
+	for (int i = 0; i < FacePointType::FacePointType_Count; ++i) {
+		if (facePoints[i].X != 0 || facePoints[i].Y != 0) return false;
+	}
+	return true;
+}
 
 std::ostream& operator<<(std::ostream& os, const Face& f) {
 	os << std::setprecision(std::numeric_limits<float>::max_digits10); // Set max precision
+	// Space
+	os << f.inInfraredSpace << ", ";
+
 	// Bounding Box
 	os << f.faceBBox.Top << " " << f.faceBBox.Bottom << " " << f.faceBBox.Left << " " << f.faceBBox.Right << ", ";
 
@@ -72,7 +88,7 @@ void Face::faceGestureToCSV(std::vector<Face> gesture, std::string path) {
 
 	// Write header
 	ofs << "sep=, " << std::endl;
-	ofs << "Bounding Box, ";
+	ofs << "InInfraredSpace, Bounding Box, ";
 	for (int i = 0; i < FacePointType::FacePointType_Count; ++i) ofs << "FacePoint " << i << ", ";
 	ofs << "FaceRotation, ";
 	for (int i = 0; i < FaceProperty::FaceProperty_Count; ++i) ofs << "FaceProperty " << i << ", ";
@@ -102,6 +118,9 @@ std::vector<Face> Face::faceGestureFromCSV(std::string path) {
 		Face frame;
 		std::istringstream iss(line);
 
+		// Space
+		iss >> frame.inInfraredSpace >> delim;
+
 		// Bounding Box
 		RectI bbox;
 		iss >> bbox.Top >> bbox.Bottom >> bbox.Left >> bbox.Right >> delim;
@@ -123,6 +142,9 @@ std::vector<Face> Face::faceGestureFromCSV(std::string path) {
 		}
 		iss >> delim;
 
+		// Not empty
+		if (!frame.checkAllZero()) frame.isEmpty = false;
+
 		// Store this frame
 		gesture.push_back(frame);
 	}
@@ -131,5 +153,3 @@ std::vector<Face> Face::faceGestureFromCSV(std::string path) {
 	ifs.close();
 	return gesture;
 }
-
-// TODO quaternion to euler in UTILS

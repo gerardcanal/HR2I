@@ -34,6 +34,7 @@ public:
 	void setK2U(Kinect2Utils*);
 	bool isRunning();
 	void setBodyFrameToDraw(IBodyFrame*);
+	void setFaceFrameToDraw(Face& f);
 	void closeWindow();
 	void playGesture(std::vector<Skeleton> gesture, bool enableContols, bool closeAfterPlaying);
 	void nextGestureFrame();
@@ -79,6 +80,7 @@ private:
 	ID2D1SolidColorBrush*   m_pBrushHandClosed;
 	ID2D1SolidColorBrush*   m_pBrushHandOpen;
 	ID2D1SolidColorBrush*   m_pBrushHandLasso;
+	ID2D1SolidColorBrush*   m_pFaceBrush;
 
 
 	HRESULT EnsureDirect2DResources();
@@ -106,7 +108,13 @@ private:
 	std::mutex mtx;
 	std::mutex mtx_changeMode;
 	IBody* ppBodiesToDraw[BODY_COUNT]; //Bodies to to draw from the outside
+	Face  faceToDraw;
 	void paintJointsAndHands(Joint joints[], HandState rightHandState, HandState leftHandState, int width, int height);
+
+
+	//Faces
+	void BodyRGBViewer::DrawFaceFrameResults(const RectI* pFaceBox, const PointF* pFacePoints);
+	bool BodyRGBViewer::ValidateFaceBoxAndPoints(const RectI* pFaceBox, const PointF* pFacePoints);
 
 };
 

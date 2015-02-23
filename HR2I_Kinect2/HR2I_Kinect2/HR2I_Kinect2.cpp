@@ -28,13 +28,25 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 
 		IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
 		IBodyFrame* bodyFrame = k2u->getLastBodyFrameFromDefault();
+		IFaceFrame* faceFrame = k2u->getLastFaceFrameFromDefault();
+		
+		//std::cout << "Faceframe: " << faceFrame << std::endl;
+		
+		if (faceFrame) {
+			Face f = Kinect2Utils::getFaceFromFaceFrame(faceFrame, false); // true - infrared, false color
+			if (body_view != NULL && !f.getIsEmpty()) body_view->setFaceFrameToDraw(f);
+		}
 
 		if (bodyFrame) {
 			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, id, first);
 			if (body_view != NULL) body_view->setBodyFrameToDraw(bodyFrame);
 			if (pcl_viewer != NULL) pcl_viewer->setPerson(sk);
+
+			//std::cout << "sk trackid: " << sk.getTrackingID() << std::endl;
+
 			/// temporal cheat -> Don't use person ID
 			if (sk.getTrackingID() > 0) {
+				k2u->setFaceTrackingId(sk.getTrackingID());
 				gr->addFrame(sk.getDynamicGestureRecognitionFeatures(rightBody), sk.getStaticGestureRecognitionFeatures(rightBody, true));
 				inputFrames.push_back(sk);
 			} // end of cheat
@@ -49,9 +61,11 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 				inputFrames.push_back(sk);
 			}
 		}
+
 		if (df && pcl_viewer != NULL) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
 		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
 		SafeRelease(df);
+		SafeRelease(faceFrame);
 		
 		if (inputFrames.size() >= params.pointAtTh[2]) inputFrames.pop_front();
 		gr_mtx.lock();

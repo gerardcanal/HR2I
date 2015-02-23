@@ -11,6 +11,11 @@ static const float c_TrackedBoneThickness = 8.0f;//6.0f;
 static const float c_InferredBoneThickness = 2.0f;//1.0f;
 static const float c_HandSize = 40.0f;//30.0f;
 
+static const float c_FaceBoxThickness = 6.0f;
+static const float c_FacePointThickness = 10.0f;
+static const float c_FacePointRadius = 1.0f;
+
+
 static const int        cDepthWidthSkel = 640;// 512;
 static const int        cDepthHeightSkel = 360;// 424;
 
@@ -37,6 +42,7 @@ BodyRGBViewer::BodyRGBViewer() :
 	m_pBrushHandOpen(NULL),
 	m_nNextStatusTime(0),
 	m_pBrushHandLasso(NULL),
+	m_pFaceBrush(NULL),
 	m_pColorRGBX(NULL)
 {
 	LARGE_INTEGER qpf = { 0 };
@@ -67,6 +73,7 @@ BodyRGBViewer::BodyRGBViewer(Kinect2Utils* k2u_) :
 	m_pBrushHandClosed(NULL),
 	m_pBrushHandOpen(NULL),
 	m_pBrushHandLasso(NULL),
+	m_pFaceBrush(NULL),
 	m_pColorRGBX(NULL)
 {
 	LARGE_INTEGER qpf = { 0 };
@@ -334,6 +341,8 @@ HRESULT BodyRGBViewer::EnsureDirect2DResources()
 			m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 0.5f), &m_pBrushHandClosed);
 			m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Green, 0.5f), &m_pBrushHandOpen);
 			m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Blue, 0.5f), &m_pBrushHandLasso);
+
+			hr = m_pRenderTarget->CreateSolidColorBrush(D2D1::ColorF(0.27f, 0.75f, 0.27f), &m_pFaceBrush);
 		}
 		if (showRGB_Depth > 0) {
 			// Create a bitmap that we can copy image data into and then render to the target
@@ -371,6 +380,7 @@ void BodyRGBViewer::DiscardDirect2DResources()
 		SafeRelease(m_pBrushHandClosed);
 		SafeRelease(m_pBrushHandOpen);
 		SafeRelease(m_pBrushHandLasso);
+		SafeRelease(m_pFaceBrush);
 	}
 	if (showRGB_Depth > 0) {
 		SafeRelease(m_pRenderTarget);
@@ -403,7 +413,7 @@ bool BodyRGBViewer::SetStatusMessage(_In_z_ WCHAR* szMessage, DWORD nShowTimeMse
 /// <summary>
 /// Main processing function
 /// </summary>
-// <param name="pickBodyFrame">Whether it the bodyframe from the Kinect sensor</param>
+// <param name="pickBodyFrame">Whether it picks the bodyframe from the Kinect sensor or not</param>
 //<return> Returns true if painted, false if no draw operation was done </return>
 bool BodyRGBViewer::UpdateSkeleton(bool pickBodyFrame)
 {
@@ -522,6 +532,52 @@ void BodyRGBViewer::ProcessAndPaintBody(INT64 nTime, int nBodyCount, IBody** ppB
 						}
 					}
 				}
+			}
+
+			if (!faceToDraw.getIsEmpty()) {
+				if (showRGB_Depth == 1 && faceToDraw.getIsInInfraredSpace()) { // We need to convert it -> It does not WORK! No faces will be drawn in this case
+					std::cerr << "WARNING: Face information should be in color space in order to be displayed." << std::endl;
+					RectI* bbox = &faceToDraw.getBoundingBox();
+					PointF* fpoints = faceToDraw.getFacePoints();
+
+					UINT16 depth = 0;
+					// Convert points
+					DepthSpacePoint dp; dp.Y = bbox->Top; dp.X = bbox->Left;
+					ColorSpacePoint cp;
+					m_pCoordinateMapper->MapDepthPointToColorSpace(dp, depth, &cp);
+					bbox->Top = cp.Y; bbox->Left = cp.X;
+
+					dp.Y = bbox->Bottom; dp.X = bbox->Right;
+					m_pCoordinateMapper->MapDepthPointToColorSpace(dp, depth, &cp);
+					bbox->Bottom = cp.Y; bbox->Right = cp.X;
+
+					for (int i = 0; i < FacePointType::FacePointType_Count; ++i) {
+						dp.X = fpoints[i].X; dp.Y = fpoints[i].Y;
+						m_pCoordinateMapper->MapDepthPointToColorSpace(dp, depth, &cp);
+						fpoints[i].X = dp.X; fpoints[i].Y = dp.Y;
+					}
+
+					DrawFaceFrameResults(bbox, fpoints);
+				}
+				else if (faceToDraw.getIsInInfraredSpace()) { // Convert to screen pose
+					RectI* bbox = &faceToDraw.getBoundingBox();
+					PointF* fpoints = faceToDraw.getFacePoints();
+					bbox->Top = static_cast<float>(bbox->Top * height) / cDepthHeight;
+					bbox->Bottom = static_cast<float>(bbox->Bottom * height) / cDepthHeight;
+					bbox->Left = static_cast<float>(bbox->Left * width) / cDepthWidth;
+					bbox->Right = static_cast<float>(bbox->Right * width) / cDepthWidth;
+
+					for (int i = 0; i < FacePointType::FacePointType_Count; ++i) {
+						fpoints[i].X = static_cast<float>(fpoints[i].X * width) / cDepthWidth;
+						fpoints[i].Y = static_cast<float>(fpoints[i].Y * height) / cDepthHeight;
+					}
+
+					DrawFaceFrameResults(bbox, fpoints);
+				}
+				else {
+					DrawFaceFrameResults(&faceToDraw.getBoundingBox(), faceToDraw.getFacePoints());
+				}
+				faceToDraw = Face(); // Empty it as it's been drawn
 			}
 
 			hr = m_pRenderTarget->EndDraw();
@@ -1096,6 +1152,12 @@ void BodyRGBViewer::setBodyFrameToDraw(IBodyFrame* bf) {
 	mtx.unlock();
 }
 
+void BodyRGBViewer::setFaceFrameToDraw(Face& f) {
+	mtx.lock();
+	faceToDraw = f;
+	mtx.unlock();
+}
+
 void BodyRGBViewer::playGesture(std::vector<Skeleton> gesture, bool enableControls, bool closeAfterPlaying) {
 	playingGesture = true;
 	if (!running) { // Window is closed, create it for the first time...
@@ -1240,4 +1302,82 @@ bool BodyRGBViewer::getViewPortSize(int& horizontal, int& vertical)
 	horizontal = vport.right;
 	vertical = vport.bottom;
 	return true;
+}
+
+
+// Face
+/// <summary>
+/// Draws face frame results
+/// </summary>
+/// <param name="iFace">the index of the face frame corresponding to a specific body in the FOV</param>
+/// <param name="pFaceBox">face bounding box</param>
+/// <param name="pFacePoints">face points</param>
+/// <param name="pFaceRotation">face rotation</param>
+/// <param name="pFaceProperties">face properties</param>
+/// <param name="pFaceTextLayout">face result text layout</param>
+void BodyRGBViewer::DrawFaceFrameResults(const RectI* pFaceBox, const PointF* pFacePoints)
+{
+	// draw the face frame results only if the face bounding box is valid
+	if (ValidateFaceBoxAndPoints(pFaceBox, pFacePoints))
+	{
+		// draw the face bounding box
+		D2D1_RECT_F faceBox = D2D1::RectF(static_cast<FLOAT>(pFaceBox->Left),
+			static_cast<FLOAT>(pFaceBox->Top),
+			static_cast<FLOAT>(pFaceBox->Right),
+			static_cast<FLOAT>(pFaceBox->Bottom));
+		m_pRenderTarget->DrawRectangle(faceBox, m_pFaceBrush, c_FaceBoxThickness);
+
+		// draw each face point
+		for (int i = 0; i < FacePointType::FacePointType_Count; i++)
+		{
+			D2D1_ELLIPSE facePoint = D2D1::Ellipse(D2D1::Point2F(pFacePoints[i].X, pFacePoints[i].Y), c_FacePointRadius, c_FacePointRadius);
+			m_pRenderTarget->DrawEllipse(facePoint, m_pFaceBrush, c_FacePointThickness);
+		}
+	}
+}
+
+/// <summary>
+/// Validates face bounding box and face points to be within screen space
+/// </summary>
+/// <param name="pFaceBox">the face bounding box</param>
+/// <param name="pFacePoints">the face points</param>
+/// <returns>success or failure</returns>
+bool BodyRGBViewer::ValidateFaceBoxAndPoints(const RectI* pFaceBox, const PointF* pFacePoints)
+{
+	bool isFaceValid = false;
+
+	if (pFaceBox != nullptr)
+	{
+		INT32 screenWidth = (showRGB_Depth == 1) ? cColorWidth : cDepthWidth;
+		INT32 screenHeight = (showRGB_Depth == 1) ? cColorHeight : cDepthHeight;
+
+		INT32 width = pFaceBox->Right - pFaceBox->Left;
+		INT32 height = pFaceBox->Bottom - pFaceBox->Top;
+
+		// check if we have a valid rectangle within the bounds of the screen space
+		isFaceValid = width > 0 &&
+			height > 0 &&
+			pFaceBox->Right <= screenWidth &&
+			pFaceBox->Bottom <= screenHeight;
+
+		if (isFaceValid)
+		{
+			for (int i = 0; i < FacePointType::FacePointType_Count; i++)
+			{
+				// check if we have a valid face point within the bounds of the screen space                        
+				bool isFacePointValid = pFacePoints[i].X > 0.0f &&
+					pFacePoints[i].Y > 0.0f &&
+					pFacePoints[i].X < screenWidth &&
+					pFacePoints[i].Y < screenHeight;
+
+				if (!isFacePointValid)
+				{
+					isFaceValid = false;
+					break;
+				}
+			}
+		}
+	}
+
+	return isFaceValid;
 }

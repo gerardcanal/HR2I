@@ -3,6 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
+  <LocalDebuggerEnvironment>PATH=$(KINECTSDK20_DIR)\bin;$(Path) $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <IncludePath>$(KINECTSDK20_DIR)\inc;$(IncludePath)</IncludePath>
     <LibraryPath>$(KINECTSDK20_DIR)\lib\x64;$(KINECTSDK20_DIR)\lib\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>

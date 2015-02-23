@@ -128,7 +128,13 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	// Multiframe not used because RGB interferes with it...
 	//hr = k2u.openMultiSourceFrameReader(FrameSourceTypes::FrameSourceTypes_Depth | FrameSourceTypes::FrameSourceTypes_Body);
 	hr = k2u.openBodyFrameReader();
+	if (!SUCCEEDED(hr)) return -1;
 	hr = k2u.openDepthFrameReader();
+	if (!SUCCEEDED(hr)) return -1;
+	// infraredspace
+	//hr = k2u.openFaceFrameReader(FaceFrameFeatures::FaceFrameFeatures_BoundingBoxInInfraredSpace | FaceFrameFeatures::FaceFrameFeatures_PointsInInfraredSpace | FaceFrameFeatures::FaceFrameFeatures_RotationOrientation);
+	//Color space
+	hr = k2u.openFaceFrameReader(FaceFrameFeatures::FaceFrameFeatures_BoundingBoxInColorSpace | FaceFrameFeatures::FaceFrameFeatures_PointsInColorSpace | FaceFrameFeatures::FaceFrameFeatures_RotationOrientation);
 	if (!SUCCEEDED(hr)) return -1;
 	cout << "DONE" << endl;	
 

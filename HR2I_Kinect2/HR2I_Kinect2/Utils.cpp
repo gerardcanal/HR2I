@@ -163,16 +163,14 @@ void Utils::ExtractFaceRotationInDegrees(const Vector4* pQuaternion, double* pPi
 	dYaw = asin(2 * (w * y - x * z)) / M_PI * 180.0;
 	dRoll = atan2(2 * (x * y + w * z), w * w + x * x - y * y - z * z) / M_PI * 180.0;
 
-	*pPitch = dPitch;
+	/**pPitch = dPitch;
 	*pYaw = dYaw;
-	*pRoll = dRoll;
+	*pRoll = dRoll;*/
 
 	// clamp rotation values in degrees to a specified range of values to control the refresh rate
-	/*
-	static const double c_FaceRotationIncrementInDegrees = 5.0f; // From the face example. Not sure where does it come from
+	static const double c_FaceRotationIncrementInDegrees = 5.0f; // From the face example. Not sure where does it come from, but means increment in angles from 5 to 5
 	double increment = c_FaceRotationIncrementInDegrees;
 	*pPitch = static_cast<int>(floor((dPitch + increment / 2.0 * (dPitch > 0 ? 1.0 : -1.0)) / increment) * increment);
 	*pYaw = static_cast<int>(floor((dYaw + increment / 2.0 * (dYaw > 0 ? 1.0 : -1.0)) / increment) * increment);
 	*pRoll = static_cast<int>(floor((dRoll + increment / 2.0 * (dRoll > 0 ? 1.0 : -1.0)) / increment) * increment);
-	*/
 }

@@ -39,6 +39,9 @@
     <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Kinect2Utils.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Face.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -57,6 +60,9 @@
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
     <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Kinect2Utils.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\HR2I_Kinect2\HR2I_Kinect2\Face.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
   </ItemGroup>

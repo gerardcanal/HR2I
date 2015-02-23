@@ -11,6 +11,7 @@ Kinect2Utils::Kinect2Utils()
 	dfReader = NULL;
 	ffReader = NULL;
 	msfReader = NULL;
+	ffSource = NULL;
 }
 
 
@@ -22,6 +23,7 @@ Kinect2Utils::~Kinect2Utils()
 	SafeRelease(dfReader);
 	SafeRelease(ffReader);
 	SafeRelease(msfReader);
+	SafeRelease(ffSource);
 }
 
 
@@ -246,11 +248,10 @@ IDepthFrame* Kinect2Utils::getDepthFrame(IMultiSourceFrame* msf) {
 
 HRESULT Kinect2Utils::openFaceFrameReader(DWORD faceFrameFeatures) {
 	if (!ffReader) { //bfReader is NULL
-		IFaceFrameSource* ffSource = NULL;
 		HRESULT  hr = CreateFaceFrameSource(default_sensor, 0, faceFrameFeatures, &ffSource);
 		if (SUCCEEDED(hr))
 			hr = ffSource->OpenReader(&ffReader);
-		SafeRelease(ffSource); // We don't need the frame source anymore...?
+		 // We don't need the frame source anymore...?
 		return hr;
 	}
 	return S_OK; //Already opened
@@ -260,21 +261,34 @@ IFaceFrame* Kinect2Utils::getLastFaceFrameFromDefault() {
 	if (!ffReader) return NULL;
 	IFaceFrame* faceFrame = NULL;
 	HRESULT hr = ffReader->AcquireLatestFrame(&faceFrame);
-	if (!SUCCEEDED(hr)) return NULL;
+	if (!SUCCEEDED(hr)) 
+		return NULL;
 	return faceFrame;
 }
 
-Face Kinect2Utils::faceFrameResultToFace(IFaceFrameResult* ffr) {
+Face Kinect2Utils::faceFrameResultToFace(IFaceFrameResult* ffr, bool infraredSpace) {
 	Face f;
 	if (ffr == NULL) return f;
+	HRESULT hr;
 	RectI bbox;
-	HRESULT hr = ffr->get_FaceBoundingBoxInColorSpace(&bbox);
-	if (!SUCCEEDED(hr)) return f;
+	if (infraredSpace) {
+		HRESULT hr = ffr->get_FaceBoundingBoxInInfraredSpace(&bbox);
+		if (!SUCCEEDED(hr)) return f;
+	}
+	else {
+		hr = ffr->get_FaceBoundingBoxInColorSpace(&bbox);
+		if (!SUCCEEDED(hr)) return f;
+	}
 
 	PointF facePoints[FacePointType::FacePointType_Count];
-	hr = ffr->GetFacePointsInColorSpace(FacePointType::FacePointType_Count, facePoints);
-	if (!SUCCEEDED(hr)) return f;
-
+	if (infraredSpace) {
+		hr = ffr->GetFacePointsInInfraredSpace(FacePointType::FacePointType_Count, facePoints);
+		if (!SUCCEEDED(hr)) return f;
+	}
+	else {
+		hr = ffr->GetFacePointsInColorSpace(FacePointType::FacePointType_Count, facePoints);
+		if (!SUCCEEDED(hr)) return f;
+	}
 	Vector4 rotation;
 	hr = ffr->get_FaceRotationQuaternion(&rotation);
 	if (!SUCCEEDED(hr)) return f;
@@ -283,23 +297,31 @@ Face Kinect2Utils::faceFrameResultToFace(IFaceFrameResult* ffr) {
 	ffr->GetFaceProperties(FaceProperty::FaceProperty_Count, faceProperties);
 	if (!SUCCEEDED(hr)) return f;
 
-	f = Face(bbox, facePoints, rotation, faceProperties);
+	f = Face(bbox, facePoints, rotation, faceProperties, infraredSpace);
 	return f;
 }
 
-Face Kinect2Utils::getFaceFromFaceFrame(IFaceFrame* fframe) {
-	if (fframe == NULL) return Face();
+Face Kinect2Utils::getFaceFromFaceFrame(IFaceFrame* fframe, bool infraredSpace) {
+	if (fframe == NULL) 
+		return Face();
 
 	/////////
 	BOOLEAN tracked = false;
 	fframe->get_IsTrackingIdValid(&tracked);
-	if (!tracked) return Face();
+	UINT64 id = -1;
+	fframe->get_TrackingId(&id);
+	//if (!tracked) return Face();
 	////////
 
 	IFaceFrameResult* ffr = NULL;
 	HRESULT hr = fframe->get_FaceFrameResult(&ffr);
-	if (ffr == NULL || !SUCCEEDED(hr)) return Face();
-	Face ret = faceFrameResultToFace(ffr);
+	if (ffr == NULL || !SUCCEEDED(hr)) 
+		return Face();
+	Face ret = faceFrameResultToFace(ffr, infraredSpace);
 	SafeRelease(ffr);
 	return ret;
+}
+
+void Kinect2Utils::setFaceTrackingId(UINT64 trid) {
+	ffSource->put_TrackingId(trid);
 }

@@ -79,7 +79,6 @@ Gesture GestureRecognition::RecognizeGesture(std::vector<std::vector<std::vector
 	#pragma omp barrier
 
 	int i_min = std::distance(gest.begin(), std::min_element(gest.begin(), gest.end()));
-	std::cout << "imin: " << i_min << " casted: " << static_cast<Gesture>(i_min) << " " << (static_cast<Gesture>(i_min) == POINT_AT) << std::endl;
 	return static_cast<Gesture>(i_min);
 }
 
@@ -149,7 +148,7 @@ std::pair<Gesture, float> GestureRecognition::RealTimeDTW(const std::vector<int>
 				#pragma omp flush
 			}
 			std::vector<float> input = getNextFrame(gestureId);
-			if (input[0] == -1.0 && input[1] == -1) break; // Frame which means end of sequence... nothing was recognized
+			if (input[0] == -1.0 && input[1] == -1) continue; // Frame which means end of sequence... nothing was recognized
 
 			for (int i = 1; i < NM; ++i) {
 				float neighbors[] = { (*M)[t][i - 1], (*M)[t - 1][i - 1], (*M)[t - 1][i] }; // Upper, upper-left and left neighbors
