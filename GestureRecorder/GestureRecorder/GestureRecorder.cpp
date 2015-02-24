@@ -20,8 +20,22 @@ const string BASEPATH = "gestures/";
 const int GESTUREDELAY = 500; //mseconds
 const int PRE_RECORD_SLEEP = 1500; //mseconds
 
-vector<Skeleton> recordGesture(Kinect2Utils* ku, BodyRGBViewer* view) {
+static const DWORD c_FaceFrameFeatures =
+FaceFrameFeatures::FaceFrameFeatures_BoundingBoxInInfraredSpace 
+| FaceFrameFeatures::FaceFrameFeatures_PointsInInfraredSpace
+| FaceFrameFeatures::FaceFrameFeatures_RotationOrientation
+| FaceFrameFeatures::FaceFrameFeatures_Happy
+| FaceFrameFeatures::FaceFrameFeatures_RightEyeClosed
+| FaceFrameFeatures::FaceFrameFeatures_LeftEyeClosed
+| FaceFrameFeatures::FaceFrameFeatures_MouthOpen
+| FaceFrameFeatures::FaceFrameFeatures_MouthMoved
+| FaceFrameFeatures::FaceFrameFeatures_LookingAway
+| FaceFrameFeatures::FaceFrameFeatures_Glasses
+| FaceFrameFeatures::FaceFrameFeatures_FaceEngagement;
+
+pair<vector<Skeleton>, vector<Face>> recordGesture(Kinect2Utils* ku, BodyRGBViewer* view) {
 	vector<Skeleton> gesture;
+	vector<Face> facial_gesture;
 	UINT64 id = 0;
 	bool first = true;
 	mtx.lock();
@@ -29,29 +43,51 @@ vector<Skeleton> recordGesture(Kinect2Utils* ku, BodyRGBViewer* view) {
 	mtx.unlock();
 	//ofstream ofs = ofstream("test.txt");
 	while (_rec) {
-		IBodyFrame* bodyFrame = ku->getLastBodyFrameFromDefault();
+		IBodyFrame* bodyFrame = NULL;
+		IFaceFrame* faceFrame = ku->getLastFaceFrameFromDefault();
+
+		Face face;
+		if (faceFrame) {
+			face = Kinect2Utils::getFaceFromFaceFrame(faceFrame, true); // true - infrared, false color
+			if (view != NULL && !face.getIsEmpty()) 
+				view->setFaceFrameToDraw(face);
+			//facial_gesture.push_back(face);
+			if (bodyFrame == NULL) {
+				IBodyFrameReference* bfr = NULL;
+				faceFrame->get_BodyFrameReference(&bfr);
+				bfr->AcquireFrame(&bodyFrame);
+				SafeRelease(bfr);
+			}
+		}
+		/*else {
+			bodyFrame = ku->getLastBodyFrameFromDefault();
+		}*/
+
 		if (bodyFrame) {
 			view->setBodyFrameToDraw(bodyFrame);
 			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, id, first);
-			//cout << "\t" << sk.getTrackingID() << " " << sk.getHandTrackingConfidence()[0] <<endl;
+			ku->setFaceTrackingId(sk.getTrackingID());
 			if (!first && id == sk.getTrackingID()) {
 				gesture.push_back(sk);
+				facial_gesture.push_back(face);
 				//Joint* j = sk.getJoints();
 				//ofs << Utils::euclideanDistance(j[JointType_ShoulderLeft], j[JointType_ShoulderRight]) << endl;
 			}
 			else if (first && id != sk.getTrackingID()) {
 				id = sk.getTrackingID(); // Even though the skeleton is empty -i.e. id == -1- this doesn't change nything
 				gesture.push_back(sk);
+				facial_gesture.push_back(face);
 				first = false;
 			}
 		}
 		SafeRelease(bodyFrame); // If not the bodyFrame is not got again
+		SafeRelease(faceFrame);
 		mtx.lock();
 		_rec = recording;
 		mtx.unlock();
 	}
 	//ofs.close();
-	return gesture;
+	return make_pair(gesture, facial_gesture);
 }
 
 void printHelp() {
@@ -100,19 +136,38 @@ void playStoredGestures(BodyRGBViewer& gestview, string gestToPlay, bool enableC
 			string gestName = sFolder.substr(sFolder.find_last_of("\\") + 1, sFolder.size()); // Damn it windows and his backslashes..
 			if (gestToPlay != "" && gestName != gestToPlay) continue;
 
-			cout << "\tPlaying the " << nGestures/2 << " recorded gestures of type \"" << gestName << "\"." << endl;
+			cout << "\tPlaying the " << nGestures/3 << " recorded gestures of type \"" << gestName << "\"." << endl;
 
 			// Play the gestures
 			for (fit = tr2::sys::directory_iterator(folder); fit != tr2::sys::directory_iterator(); ++fit) {
-				if (string(fit->path()).find("_features") != string::npos) continue;
+				if ((string(fit->path()).find("_features") != string::npos) || (string(fit->path()).find("_faces") != string::npos)) continue;
 				cout << "\tPlaying \"" << fit->path() << "\"..." << endl;
 				vector<Skeleton> gesture = Skeleton::gestureFromCSV(fit->path());
-				gestview.playGesture(gesture, enableControl, false); // Will return false in the last gesture
+				vector<Face> face_gest;
+				try { 
+					string pth = string(fit->path());
+					pth = pth.substr(0, pth.find(".csv"));
+					pth += "_faces.csv";
+					face_gest = Face::faceGestureFromCSV(pth); 
+				}
+				catch (std::exception ex) {}
+				gestview.playGesture(gesture, face_gest, enableControl, false); // Will return false in the last gesture
 				if (!enableControl) Sleep(GESTUREDELAY); // To make a little space
 			}
 		}
 	}
 	gestview.closeWindow();
+}
+
+void setConsolePosition(BodyRGBViewer& body_view) {
+	if (!body_view.isRunning()) throw std::exception("Cannot compute size if BodyViewer is not running!");
+	std::array<int, 2> viewR;
+	bool wpos = body_view.getWindowSize(viewR[0], viewR[1]);
+	if (!wpos) viewR = { { 976, 647 } };
+	HWND console = GetConsoleWindow();
+	RECT r;
+	GetWindowRect(console, &r); //stores the console's current dimensions
+	SetWindowPos(console, HWND_NOTOPMOST, 0, viewR[1], r.right - r.left + 150, r.bottom - r.top - 95, /*SWP_NOSIZE | */SWP_NOZORDER);
 }
 
 int main(int argc, _TCHAR* argv[])
@@ -123,12 +178,15 @@ int main(int argc, _TCHAR* argv[])
 	if (!SUCCEEDED(hr)) return -1;
 
 	hr = ku.openBodyFrameReader();
+	hr = ku.openFaceFrameReader(c_FaceFrameFeatures);
 	BodyRGBViewer view(&ku);
-	thread iface = view.RunThreaded(false, true, false);
+	thread iface = view.RunThreaded(0, true, false);
+	setConsolePosition(view);
 
 	vector<vector<vector<Skeleton>>> gestures; // Recorded gestures for each gesture type
+	vector<vector<vector<Face>>> facial_gestures; // Recorded facial gesture for each gesture type
 	vector<string> gestureNames;
-	future<vector<Skeleton>> recorder;
+	future<pair<vector<Skeleton>, vector<Face>>> recorder;
 
 	// Main loop
 	bool playStored = false; // Play ALL stored gestures...
@@ -138,6 +196,7 @@ int main(int argc, _TCHAR* argv[])
 	cin >> gestName;
 	gestureNames.push_back(gestName);
 	gestures.push_back(vector<vector<Skeleton>>());
+	facial_gestures.push_back(vector<vector<Face>>());
 	createFolders(BASEPATH + gestName);
 	int id = getNextGestureIdFromFile(gestName);
 	printHelp();
@@ -164,12 +223,14 @@ int main(int argc, _TCHAR* argv[])
 				mtx.lock();
 				recording = false;
 				mtx.unlock();
-				vector<Skeleton> gesture = recorder.get();
+				pair<vector<Skeleton>, vector<Face>> gesture = recorder.get();
 				string gesturePath = BASEPATH + gestName + "/" + gestName + to_string(id) + ".csv";
-				Skeleton::gestureToCSV(gesture, gesturePath);
+				Skeleton::gestureToCSV(gesture.first, gesturePath);
+				Face::faceGestureToCSV(gesture.second, BASEPATH + gestName + "/" + gestName + to_string(id) + "_faces.csv");
 				string featurePath = BASEPATH + gestName + "/" + gestName + to_string(id) + "_features.csv";
-				Skeleton::gestureFeaturesToCSV(gesture, featurePath);
-				gestures[gestures.size() - 1].push_back(gesture);
+				Skeleton::gestureFeaturesToCSV(gesture.first, featurePath);
+				gestures[gestures.size() - 1].push_back(gesture.first);
+				facial_gestures[facial_gestures.size() - 1].push_back(gesture.second);
 				cout << "\tEnd of record. File written in " << gesturePath << ". "<< endl << endl;
 				++id;
 			}
@@ -184,6 +245,7 @@ int main(int argc, _TCHAR* argv[])
 			cout << endl;
 			gestureNames.push_back(gestName);
 			gestures.push_back(vector<vector<Skeleton>>());
+			facial_gestures.push_back(vector<vector<Face>>());
 			createFolders(BASEPATH + gestName);
 			id = getNextGestureIdFromFile(gestName);
 		}
@@ -232,7 +294,7 @@ int main(int argc, _TCHAR* argv[])
 		for (int i = 0; i < gestureNames.size(); ++i) {
 			cout << "\tPlaying the " << gestures[i].size() << " recorded gestures of type \"" << gestureNames[i] << "\"." << endl;
 			for (int j = 0; j < gestures[i].size(); ++j) {
-				gestview.playGesture(gestures[i][j], controlPlaying, i + 1 == gestureNames.size() && j + 1 == gestures[i].size()); // Will return false in the last gesture
+				gestview.playGesture(gestures[i][j], facial_gestures[i][j], controlPlaying, i + 1 == gestureNames.size() && j + 1 == gestures[i].size()); // Will return false in the last gesture
 				Sleep(GESTUREDELAY); // To make a little space
 			}
 		}

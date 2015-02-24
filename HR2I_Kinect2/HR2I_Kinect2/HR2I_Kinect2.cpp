@@ -27,7 +27,7 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 		//if (msf == NULL) continue;
 
 		IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
-		IBodyFrame* bodyFrame = k2u->getLastBodyFrameFromDefault();
+		IBodyFrame* bodyFrame = NULL; 
 		IFaceFrame* faceFrame = k2u->getLastFaceFrameFromDefault();
 		
 		//std::cout << "Faceframe: " << faceFrame << std::endl;
@@ -35,7 +35,16 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 		if (faceFrame) {
 			Face f = Kinect2Utils::getFaceFromFaceFrame(faceFrame, false); // true - infrared, false color
 			if (body_view != NULL && !f.getIsEmpty()) body_view->setFaceFrameToDraw(f);
+			if (bodyFrame == NULL) {
+				IBodyFrameReference* bfr = NULL;
+				faceFrame->get_BodyFrameReference(&bfr);
+				bfr->AcquireFrame(&bodyFrame);
+				SafeRelease(bfr);
+			}
 		}
+		/*else {
+			bodyFrame = k2u->getLastBodyFrameFromDefault();
+		}*/
 
 		if (bodyFrame) {
 			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, id, first);

@@ -49,5 +49,6 @@ private:
 	bool isEmpty;
 
 	bool checkAllZero();
+	void setToZero();
 };
 

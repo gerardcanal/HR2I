@@ -15,6 +15,7 @@ Face::Face(RectI box, PointF points[], Vector4 rotation, DetectionResult propert
 
 Face::Face() {
 	isEmpty = true;
+	inInfraredSpace = true;
 }
 
 
@@ -69,7 +70,7 @@ std::ostream& operator<<(std::ostream& os, const Face& f) {
 	// Face Rotation
 	os << f.faceRotation.x << " " << f.faceRotation.y << " " << f.faceRotation.z << " " << f.faceRotation.w << ", ";
 
-	// Face Propertoes
+	// Face Properties
 	for (int i = 0; i < FaceProperty::FaceProperty_Count; ++i) {
 		os << f.faceProperties[i] << ((i + 1 == FaceProperty::FaceProperty_Count) ? "" : ", ");
 	}
@@ -96,7 +97,10 @@ void Face::faceGestureToCSV(std::vector<Face> gesture, std::string path) {
 	ofs << std::endl;
 
 	// Add the elements for each gesture
-	for (int i = 0; i < gesture.size(); ++i) ofs << gesture[i];
+	for (int i = 0; i < gesture.size(); ++i) {
+		if (gesture[i].isEmpty) gesture[i].setToZero();
+		ofs << gesture[i];
+	}
 	ofs.close();
 }
 std::vector<Face> Face::faceGestureFromCSV(std::string path) {
@@ -137,13 +141,14 @@ std::vector<Face> Face::faceGestureFromCSV(std::string path) {
 		// Face Properties
 		int aux;
 		for (int i = 0; i < FaceProperty::FaceProperty_Count; ++i) {
-			iss >> aux;
+			iss >> aux >> delim;
 			frame.faceProperties[i] = static_cast<DetectionResult>(aux);
 		}
 		iss >> delim;
 
 		// Not empty
 		if (!frame.checkAllZero()) frame.isEmpty = false;
+		else frame.isEmpty = true;
 
 		// Store this frame
 		gesture.push_back(frame);
@@ -152,4 +157,23 @@ std::vector<Face> Face::faceGestureFromCSV(std::string path) {
 
 	ifs.close();
 	return gesture;
+}
+
+
+void Face::setToZero() {
+	// Bounding Box
+	faceBBox.Top = faceBBox.Bottom = faceBBox.Left = faceBBox.Right = 0;
+
+	// Face points
+	for (int i = 0; i < FacePointType::FacePointType_Count; ++i) {
+		facePoints[i].X = facePoints[i].Y = 0;
+	}
+
+	// Face Rotation
+	faceRotation.x = faceRotation.y = faceRotation.z = faceRotation.w = 0;
+
+	// Face Properties
+	for (int i = 0; i < FaceProperty::FaceProperty_Count; ++i) {
+		faceProperties[i] = DetectionResult::DetectionResult_No;
+	}
 }

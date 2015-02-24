@@ -36,7 +36,7 @@ public:
 	void setBodyFrameToDraw(IBodyFrame*);
 	void setFaceFrameToDraw(Face& f);
 	void closeWindow();
-	void playGesture(std::vector<Skeleton> gesture, bool enableContols, bool closeAfterPlaying);
+	void playGesture(std::vector<Skeleton> gesture, std::vector<Face> facial_gesture, bool enableContols, bool closeAfterPlaying);
 	void nextGestureFrame();
 	void previousGestureFrame();
 	void changeMode(int showRGB_Depth, bool showSkel);

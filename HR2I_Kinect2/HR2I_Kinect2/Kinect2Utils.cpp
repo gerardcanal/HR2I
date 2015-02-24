@@ -225,6 +225,7 @@ IBodyFrame* Kinect2Utils::getBodyFrame(IMultiSourceFrame* msf) {
 	IBodyFrame* bf = NULL;
 	HRESULT hr = bfRef->AcquireFrame(&bf);
 	if (!SUCCEEDED(hr)) return NULL;
+	SafeRelease(bfRef);
 	return bf;
 }
 
@@ -234,6 +235,7 @@ IColorFrame* Kinect2Utils::getColorFrame(IMultiSourceFrame* msf) {
 	IColorFrame* cf = NULL;
 	HRESULT hr = cfRef->AcquireFrame(&cf);
 	if (!SUCCEEDED(hr)) return NULL;
+	SafeRelease(cfRef);
 	return cf;
 }
 
@@ -243,6 +245,7 @@ IDepthFrame* Kinect2Utils::getDepthFrame(IMultiSourceFrame* msf) {
 	IDepthFrame* df = NULL;
 	HRESULT hr = dfRef->AcquireFrame(&df);
 	if (!SUCCEEDED(hr)) return NULL;
+	SafeRelease(dfRef);
 	return df;
 }
 

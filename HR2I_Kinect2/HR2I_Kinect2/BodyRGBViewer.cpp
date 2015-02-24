@@ -1158,7 +1158,7 @@ void BodyRGBViewer::setFaceFrameToDraw(Face& f) {
 	mtx.unlock();
 }
 
-void BodyRGBViewer::playGesture(std::vector<Skeleton> gesture, bool enableControls, bool closeAfterPlaying) {
+void BodyRGBViewer::playGesture(std::vector<Skeleton> gesture, std::vector<Face> facial_gesture, bool enableControls, bool closeAfterPlaying) {
 	playingGesture = true;
 	if (!running) { // Window is closed, create it for the first time...
 		running = true;
@@ -1216,6 +1216,10 @@ void BodyRGBViewer::playGesture(std::vector<Skeleton> gesture, bool enableContro
 		// Paint frame
 		if (i < gesture.size()) {
 			int _time = time(NULL);
+			mtx.lock();
+			if (i < facial_gesture.size()) faceToDraw = facial_gesture[i];
+			else faceToDraw = Face();
+			mtx.unlock();
 			ProcessAndPaintBody(_time, 1, NULL, &gesture[i]);
 			
 			if (enableControls) {
