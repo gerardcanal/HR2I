@@ -16,6 +16,8 @@ public:
 	static float euclideanDistance(std::vector<float> a, std::vector<float> b);
 	static float L1Distance(std::vector<float> a, std::vector<float> b);
 	static float L1Distance(std::vector<float> a, std::vector<float> b, float alpha);
+	template<typename T>
+	static float HammingDistance(std::vector<T> a, std::vector<T> b);
 	static float getAngleBetween(Joint a, Joint mid, Joint c, bool rad);
 	static float magnitude(float vec[3]);
 	static float magnitude(std::vector<float> vec);
@@ -38,4 +40,14 @@ public:
 template<typename T>
 int Utils::sgn(T val) {
 	return (T(0) < val) - (val < T(0));
+}
+
+template<typename T>
+float Utils::HammingDistance(std::vector<T> a, std::vector<T> b) {
+	assert(a.size() == b.size());
+	float hd = 0;
+	for (int i = 0; i < a.size(); ++i) {
+		hd += a[i] != b[i];
+	}
+	return hd;
 }

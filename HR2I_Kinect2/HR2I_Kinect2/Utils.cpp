@@ -17,6 +17,8 @@ Utils::~Utils()
 {
 }
 
+
+// Distances
 float Utils::euclideanDistance(std::vector<float> a, std::vector<float> b) {
 	assert(a.size() == b.size());
 	float _sum = 0;
@@ -49,6 +51,8 @@ float Utils::euclideanDistance(Joint a, Joint b) {
 	return sqrt(sq);
 }
 
+
+//Geometry
 /// Returns de angle between a->mid and mid->c. For example shoulder->elbow->hand
 float Utils::getAngleBetween(Joint a, Joint mid, Joint c, bool rad) {
 	// Vector mid->a

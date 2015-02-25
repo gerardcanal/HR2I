@@ -106,7 +106,7 @@ int getNextGestureIdFromFile(string gestName) {
 	tr2::sys::path p(BASEPATH + gestName);
 	vector<tr2::sys::path> files;
 	for (tr2::sys::directory_iterator it(p); it != tr2::sys::directory_iterator(); ++it) {
-		if (string(it->path()).find("_features") != string::npos) continue;
+		if ((string(it->path()).find("_features") != string::npos) || (string(it->path()).find("_faces") != string::npos)) continue;
 		files.push_back(it->path());
 	}
 	if (files.size() == 0) return 0;

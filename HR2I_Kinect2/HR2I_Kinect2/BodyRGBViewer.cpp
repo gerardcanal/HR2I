@@ -1352,8 +1352,10 @@ bool BodyRGBViewer::ValidateFaceBoxAndPoints(const RectI* pFaceBox, const PointF
 
 	if (pFaceBox != nullptr)
 	{
-		INT32 screenWidth = (showRGB_Depth == 1) ? cColorWidth : cDepthWidth;
-		INT32 screenHeight = (showRGB_Depth == 1) ? cColorHeight : cDepthHeight;
+		RECT rct;
+		GetClientRect(GetDlgItem(m_hWnd, IDC_VIDEOVIEW), &rct);
+		INT32 screenWidth = (showRGB_Depth == 1) ? cColorWidth : rct.right; // cDepthWidth;
+		INT32 screenHeight = (showRGB_Depth == 1) ? cColorHeight : rct.bottom; // cDepthHeight;
 
 		INT32 width = pFaceBox->Right - pFaceBox->Left;
 		INT32 height = pFaceBox->Bottom - pFaceBox->Top;
