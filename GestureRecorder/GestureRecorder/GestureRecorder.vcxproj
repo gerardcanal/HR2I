@@ -105,7 +105,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\Gerard\Dropbox\MAI\3dSemester\TFM\src\ROS_KINECT_TESTS\ROS_KINECT_TESTS;%(AdditionalIncludeDirectories);C:\Users\Gerard\Dropbox\MAI\3dSemester\TFM\src\HR2I\HR2I_Kinect2\HR2I_Kinect2</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Gerard\Dropbox\MAI\3dSemester\TFM\src\ROS_KINECT_TESTS\ROS_KINECT_TESTS;%(AdditionalIncludeDirectories);C:\Users\upcnet\Desktop\gerard.canal\HR2I\HR2I_Kinect2\HR2I_Kinect2;C:\Users\Gerard\Dropbox\MAI\3dSemester\TFM\src\HR2I\HR2I_Kinect2\HR2I_Kinect2</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
