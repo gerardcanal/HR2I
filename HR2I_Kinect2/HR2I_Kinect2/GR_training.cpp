@@ -94,7 +94,7 @@ void showValuesGestTh() {
 
 		// Conventional version
 		GestureRecognition gr;
-		vector<vector<float>> M = gr.conventionalDTW(modelf, inputf, ALPH[i]);
+		vector<vector<float>> M = gr.conventionalDTW(POINT_AT,  modelf, inputf, ALPH[i]);
 		int LR = M.size() - 1;
 		float _min = M[M.size() - 1][0];
 		for (int j = 0; j < M[0].size(); ++j) _min = min(_min, M[LR][j]);
@@ -102,17 +102,17 @@ void showValuesGestTh() {
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence0_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(POINT_AT, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][235] << " " << M[LR][429] << " ";
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence3_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(POINT_AT, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][314] << " " << M[LR][927] << " " << M[LR][1204] << " ";
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence4_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(POINT_AT, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][249] << " " << M[LR][331] << " " << M[LR][625] << " " << endl << endl;
 	}
 
@@ -127,7 +127,7 @@ void showValuesGestTh() {
 
 		// Conventional version
 		GestureRecognition gr;
-		vector<vector<float>> M = gr.conventionalDTW(modelf, inputf, ALPH[i]);
+		vector<vector<float>> M = gr.conventionalDTW(WAVE, modelf, inputf, ALPH[i]);
 		int LR = M.size() - 1;
 		float _min = M[M.size() - 1][0];
 		for (int j = 0; j < M[0].size(); ++j) _min = min(_min, M[LR][j]);
@@ -135,17 +135,17 @@ void showValuesGestTh() {
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence0_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(WAVE, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][114] << " " << M[LR][323] << " " << M[LR][543] << " ";
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence2_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(WAVE, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][104] << " " << M[LR][164] << " " << M[LR][855] << " ";
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence4_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(WAVE, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][108] << " " << M[LR][144] << " " << M[LR][509] << " " << endl;
 	}
 
@@ -230,7 +230,7 @@ void testEqualDTWMethods() { // Some changes must be done in GestRec.h and in th
 
 	// Conventional version
 	GestureRecognition gr;
-	vector<vector<float>> M = gr.conventionalDTW(modelf, modelf, ALPH);
+	vector<vector<float>> M = gr.conventionalDTW(WAVE, modelf, modelf, ALPH);
 	ofstream of("DTWconventional2.txt");
 	for (int i = 0; i < M.size(); ++i) {
 		for (int j = 0; j < M[i].size(); ++j) of << M[i][j] << ((j + 1 == M[i].size()) ? "" : " ");

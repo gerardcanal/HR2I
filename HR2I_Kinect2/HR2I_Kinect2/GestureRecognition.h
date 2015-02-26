@@ -8,13 +8,16 @@
 #include "Utils.h"
 #include "Skeleton.h"
 #include <omp.h>
+#include<map>
 
 #define WAIT_FRAME_SLEEP_MS 10
 
 static enum Gesture {
 	/// Add here the Dynamic Gestures
 	WAVE,
-	N_DYNAMIC_GESTURES = (WAVE + 1), // SHOULD BE <<LAST DYNAMIC GESTURE>> + 1
+	NOD,
+	NEGATE,
+	N_DYNAMIC_GESTURES = (NEGATE + 1), // SHOULD BE <<LAST DYNAMIC GESTURE>> + 1
 
 	/// Add here the Static Gestures
 	POINT_AT = N_DYNAMIC_GESTURES, // FIRST STATIC GESTURE! DO NOT CHANGE!! To make the gesture sequence continuous, it's equal to the last dynamic gesture + 1
@@ -23,6 +26,19 @@ static enum Gesture {
 
 	/// Total number of Gestures
 	N_GESTURES = (N_DYNAMIC_GESTURES + N_STATIC_GESTURES)
+};
+
+// Available distance metrics
+static enum DistanceMetrics {
+	L1, // L1 Distance Metric
+	HAMMING // Hamming distance metric
+};
+
+// Indicates which distance metric is to be used with each DYNAMIC gesture
+static const std::map<Gesture, DistanceMetrics> Gesture2Metric = {
+	{ WAVE, L1 },
+	{ NOD, HAMMING},
+	{ NEGATE, HAMMING }
 };
 
 struct GroundTruth {
@@ -67,7 +83,7 @@ public:
 	static GRParameters readParameters(std::string path);
 	static std::vector<GroundTruth> readGrountTruth(std::string path);
 
-	std::vector<std::vector<float>> conventionalDTW(const std::vector<std::vector<float>>& model, std::vector<std::vector<float>> input, float ALPHA);
+	std::vector<std::vector<float>> conventionalDTW(int gestureId, const std::vector<std::vector<float>>& model, std::vector<std::vector<float>> input, float ALPHA);
 	std::deque<int> getWPath(const std::vector<std::vector<float>> &M, int t);
 
 private:
@@ -84,7 +100,7 @@ private:
 	// Private training utilities
 	float getDynamicSequencesOverlap(int gestureId, const std::vector<std::vector<float>>& model, const std::vector<std::vector<std::vector<float>>>& sequences,
 							  const std::vector<std::vector<std::set<int>>>& gt, float ALPHA, float MU);
-	float getDynamicSequenceOverlap(const std::vector<std::vector<float>>& model, const std::vector<std::vector<float>>& sequence,
+	float getDynamicSequenceOverlap(int gestureId, const std::vector<std::vector<float>>& model, const std::vector<std::vector<float>>& sequence,
 							 const std::set<int>& gt, float ALPHA, float MU);
 	float getStaticSequenceOverlap(const std::vector<std::vector<float>>& sequence, const std::set<int>& gt, std::vector<float>& pointAtTh);
 	float getStaticSequencesOverlap(int gestureId, const std::vector<std::vector<std::vector<float>>>& sequences, const std::vector<std::vector<std::set<int>>>& gt, std::vector<float> staticThresholds);

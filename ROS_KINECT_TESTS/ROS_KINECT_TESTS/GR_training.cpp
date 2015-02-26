@@ -12,7 +12,7 @@ void trainDTWParameters() {
 	// Get the models...
 	cout << "Loading the models..." << endl;
 	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
-	models[SALUTE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
+	models[WAVE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
 	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModelShort_features.csv");
 
 	// Load sequences -> I assume nobody changed the sequences names from TestSequenceX.csv!!!
@@ -63,7 +63,7 @@ void trainDTWParameters() {
 	/*Extended with info from SHORT PA model -> iteration 1*/
 	//std::vector<float> restTh = { 0.2f, 0.23f, 0.25f, 0.27f, 0.3f, 0.32f, 0.35f, 0.4f };
 	std::vector<std::vector<float>> gestTh(N_DYNAMIC_GESTURES);
-	gestTh[SALUTE] = {6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 8.5f, 8.75f, 9.0f, 9.25f };
+	gestTh[WAVE] = {6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 8.5f, 8.75f, 9.0f, 9.25f };
 	//gestTh[POINT_AT] = {6.5f, 7.0f, 7.5f, 7.75f, 8.0f, 8.25f, 8.5f, 8.75f };
 	std::vector<float> alphas = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f, 0.5f, 0.55f, 0.60f, 0.65f, 0.75f };
 
@@ -93,7 +93,7 @@ void showValuesGestTh() {
 
 		// Conventional version
 		GestureRecognition gr;
-		vector<vector<float>> M = gr.conventionalDTW(modelf, inputf, ALPH[i]);
+		vector<vector<float>> M = gr.conventionalDTW(POINT_AT, modelf, inputf, ALPH[i]);
 		int LR = M.size() - 1;
 		float _min = M[M.size() - 1][0];
 		for (int j = 0; j < M[0].size(); ++j) _min = min(_min, M[LR][j]);
@@ -101,17 +101,17 @@ void showValuesGestTh() {
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence0_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(POINT_AT, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][235] << " " << M[LR][429] << " ";
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence3_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(POINT_AT, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][314] << " " << M[LR][927] << " " << M[LR][1204] << " ";
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence4_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(POINT_AT, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][249] << " " << M[LR][331] << " " << M[LR][625] << " " << endl << endl;
 	}
 
@@ -126,7 +126,7 @@ void showValuesGestTh() {
 
 		// Conventional version
 		GestureRecognition gr;
-		vector<vector<float>> M = gr.conventionalDTW(modelf, inputf, ALPH[i]);
+		vector<vector<float>> M = gr.conventionalDTW(WAVE, modelf, inputf, ALPH[i]);
 		int LR = M.size() - 1;
 		float _min = M[M.size() - 1][0];
 		for (int j = 0; j < M[0].size(); ++j) _min = min(_min, M[LR][j]);
@@ -134,17 +134,17 @@ void showValuesGestTh() {
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence0_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(WAVE, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][114] << " " << M[LR][323] << " " << M[LR][543] << " ";
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence2_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(WAVE, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][104] << " " << M[LR][164] << " " << M[LR][855] << " ";
 
 		path2 = "C:\\Users\\Gerard\\Dropbox\\MAI\\3dSemester\\TFM\\src\\GestureRecorder\\GestureRecorder\\gestures\\TestSequence\\TestSequence4_features.csv";
 		inputf = Skeleton::gestureFeaturesFromCSV(path2);
-		M = gr.conventionalDTW(modelf, inputf, ALPH[i]); LR = M.size() - 1;
+		M = gr.conventionalDTW(WAVE, modelf, inputf, ALPH[i]); LR = M.size() - 1;
 		cout << M[LR][108] << " " << M[LR][144] << " " << M[LR][509] << " " << endl;
 	}
 
@@ -229,7 +229,7 @@ void testEqualDTWMethods() { // Some changes must be done in GestRec.h and in th
 
 	// Conventional version
 	GestureRecognition gr;
-	vector<vector<float>> M = gr.conventionalDTW(modelf, modelf, ALPH);
+	vector<vector<float>> M = gr.conventionalDTW(WAVE, modelf, modelf, ALPH);
 	ofstream of("DTWconventional2.txt");
 	for (int i = 0; i < M.size(); ++i) {
 		for (int j = 0; j < M[i].size(); ++j) of << M[i][j] << ((j + 1 == M[i].size()) ? "" : " ");
@@ -270,7 +270,7 @@ void LOOCV_main() {
 	// Get the models...
 	cout << "Loading the models..." << endl;
 	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
-	models[SALUTE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
+	models[WAVE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
 
 	// Load sequences -> I assume nobody changed the sequences names from TestSequenceX.csv!!!
 	cout << "Loading the test sequences... 0.00%";
@@ -295,7 +295,7 @@ void LOOCV_main() {
 
 	// Parameter pool
 	std::vector<std::vector<float>> gestTh(N_DYNAMIC_GESTURES);
-	gestTh[SALUTE] = { 6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 8.5f, 8.75f, 8.95f, 9.0f, 9.15f, 9.25f, 9.5f };
+	gestTh[WAVE] = { 6.75f, 7.0f, 7.25f, 7.5f, 8.0f, 8.5f, 8.75f, 8.95f, 9.0f, 9.15f, 9.25f, 9.5f };
 	std::vector<float> alphas = { 0.0f, 0.1f, 0.15f, 0.2f, 0.25f,0.3f, 0.5f, 0.55f, 0.60f, 0.65f, 0.75f };
 	std::vector<float> handhipdists = {0.1f, 0.2f, 0.25f, 0.3f, 0.35f, 0.4f, 0.45f};
 	std::vector<float> elbowAngles = {2.0f, 2.15f, 2.25f, 2.3f, 2.35f, 2.4f, 2.45f, 2.55f};

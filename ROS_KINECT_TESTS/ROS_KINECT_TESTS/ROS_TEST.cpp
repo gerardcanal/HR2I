@@ -74,7 +74,7 @@ void recognizeGestures(const vector<vector<vector<float>>>& models, Kinect2Utils
 	get_data = false;
 	mtx.unlock();
 	datagetter.join();
-	cout << "Recognized gesture: " << ((gest == SALUTE)? "HELLO!" : "POINT_AT!") << endl;
+	cout << "Recognized gesture: " << ((gest == WAVE)? "HELLO!" : "POINT_AT!") << endl;
 	if (gest == POINT_AT) {
 		// Take the mean joint points
 		vector<float> Hand(3, 0.0);
@@ -221,10 +221,15 @@ void showLivePCtest() {
 	}
 }
 
+extern void facestests();
+
 // MAIN
 extern void LOOCV_main();
 int _tmain(int argc, _TCHAR * argv[])
 {
+	facestests();
+	int x; cin >> x;
+	exit(1);
 	LOOCV_main();
 	exit(1);
 	/*pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);

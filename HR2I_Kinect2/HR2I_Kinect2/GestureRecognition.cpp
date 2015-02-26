@@ -42,7 +42,7 @@ Gesture GestureRecognition::RecognizeGesture(std::vector<std::vector<std::vector
 	std::vector<std::vector<float>> alphas_thread(_N_THREADS - 1);
 	std::vector<std::vector<float>> mus_thread(_N_THREADS - 1);
 
-	for (int i = 1; i < _N_THREADS; ++i) { // Distribute each gesture
+	for (int i = 1; i < _N_THREADS; ++i) { // Distribute each dynamic gesture i.e. loop starts at 1
 		for (int j = 0; j < dynamic_x_thread; ++j) {
 			gID_thread[i].push_back(gid);
 			alphas_thread[i - 1].push_back(params.ALPHA[gid]);
@@ -152,7 +152,20 @@ std::pair<Gesture, float> GestureRecognition::RealTimeDTW(const std::vector<int>
 
 			for (int i = 1; i < NM; ++i) {
 				float neighbors[] = { (*M)[t][i - 1], (*M)[t - 1][i - 1], (*M)[t - 1][i] }; // Upper, upper-left and left neighbors
-				(*M)[t][i] = Utils::L1Distance((*(models[gid]))[i - 1], input, ALPHA[gestureId]) + *std::min_element(neighbors, neighbors + 3); // i-1 as i goes from 1 to N, and the indices in model from 0 to N-1
+				
+				float distance;
+				if (Gesture2Metric.at(static_cast<Gesture>(gestureId)) == L1) {
+					distance = Utils::L1Distance((*(models[gid]))[i - 1], input, ALPHA[gestureId]);
+				}
+				else if (Gesture2Metric.at(static_cast<Gesture>(gestureId)) == HAMMING) {
+					distance = Utils::HammingDistance((*(models[gid]))[i - 1], input);
+				}
+				else {
+					std::cerr << "An error ocurred as there is no distance metric for gesture " << gestureId << std::endl;
+					throw std::exception("An error ocurred as there is no distance metric for a gesture.");
+				}
+				
+				(*M)[t][i] = distance + *std::min_element(neighbors, neighbors + 3); // i-1 as i goes from 1 to N, and the indices in model from 0 to N-1
 			}
 
 			// Check for gesture recognition
@@ -194,7 +207,20 @@ float GestureRecognition::_RealTimeDTW(int gestureId, const std::vector<std::vec
 
 		for (int i = 1; i < NM; ++i) {
 			float neighbors[] = { M[t][i - 1], M[t - 1][i - 1], M[t - 1][i] }; // Upper, upper-left and left neighbors
-			M[t][i] = Utils::L1Distance(model[i-1], input, ALPHA) + *std::min_element(neighbors, neighbors + 3); // i-1 as i goes from 1 to N, and the indices in model from 0 to N-1
+			
+			float distance;
+			if (Gesture2Metric.at(static_cast<Gesture>(gestureId)) == L1) {
+				distance = Utils::L1Distance(model[i - 1], input, ALPHA);
+			}
+			else if (Gesture2Metric.at(static_cast<Gesture>(gestureId)) == HAMMING) {
+				distance = Utils::HammingDistance(model[i - 1], input);
+			}
+			else {
+				std::cerr << "An error ocurred as there is no distance metric for gesture " << gestureId << std::endl;
+				throw std::exception("An error ocurred as there is no distance metric for a gesture.");
+			}
+			
+			M[t][i] = distance + *std::min_element(neighbors, neighbors + 3); // i-1 as i goes from 1 to N, and the indices in model from 0 to N-1
 		}
 
 		// Check for gesture recognition
@@ -214,7 +240,7 @@ float GestureRecognition::_RealTimeDTW(int gestureId, const std::vector<std::vec
 	return INF;
 }
 
-std::vector<std::vector<float>> GestureRecognition::conventionalDTW(const std::vector<std::vector<float>>& model, std::vector<std::vector<float>> input, float ALPHA) {
+std::vector<std::vector<float>> GestureRecognition::conventionalDTW(int gestureId, const std::vector<std::vector<float>>& model, std::vector<std::vector<float>> input, float ALPHA) {
 	int NM = model.size() + 1;
 	int NI = input.size() + 1;
 
@@ -226,8 +252,21 @@ std::vector<std::vector<float>> GestureRecognition::conventionalDTW(const std::v
 	for (int t = 1; t < NI; ++t) {
 		for (int i = 1; i < NM; ++i) {
 			float neighbors[] = {M[i-1][t], M[i-1][t-1], M[i][t-1]}; // Upper, upper-left and left neighbors
-			float min = *std::min_element(neighbors, neighbors + 3);
-			M[i][t] = Utils::L1Distance(model[i - 1], input[t-1], ALPHA) + *std::min_element(neighbors, neighbors + 3); // i-1 as i goes from 1 to N, and the indices in model from 0 to N-1
+			//float min = *std::min_element(neighbors, neighbors + 3);
+
+			float distance;
+			if (Gesture2Metric.at(static_cast<Gesture>(gestureId)) == L1) {
+				distance = Utils::L1Distance(model[i - 1], input[t - 1], ALPHA);
+			}
+			else if (Gesture2Metric.at(static_cast<Gesture>(gestureId)) == HAMMING) {
+				distance = Utils::HammingDistance(model[i - 1], input[t - 1]);
+			}
+			else {
+				std::cerr << "An error ocurred as there is no distance metric for gesture " << gestureId << std::endl;
+				throw std::exception("An error ocurred as there is no distance metric for a gesture.");
+			}
+
+			M[i][t] = distance + *std::min_element(neighbors, neighbors + 3); // i-1 as i goes from 1 to N, and the indices in model from 0 to N-1
 		}
 	}
 	return M;
@@ -348,11 +387,11 @@ float GestureRecognition::computeAccuracy(int gestId, const std::vector<GroundTr
 	return ndetections / (nfalse_positive+nGt);
 }
 
-float GestureRecognition::getDynamicSequenceOverlap(const std::vector<std::vector<float>>& model, const std::vector<std::vector<float>>& sequence,
+float GestureRecognition::getDynamicSequenceOverlap(int gestureId, const std::vector<std::vector<float>>& model, const std::vector<std::vector<float>>& sequence,
 											 const std::set<int>& gt, float ALPHA, float MU) {
 	std::set<int> detectedFrames;
 	// Get M
-	std::vector<std::vector<float>> M = conventionalDTW(model, sequence, ALPHA);
+	std::vector<std::vector<float>> M = conventionalDTW(gestureId, model, sequence, ALPHA);
 	// Iterate over the last row to find all paths < threshold
 	int NM = M.size() - 1; // Num of rows
 	for (int j = 0; j < M[0].size(); ++j) { // for each column...
@@ -413,7 +452,7 @@ float GestureRecognition::getDynamicSequencesOverlap(int gestureId, const std::v
 	float seq_ovlp = 0;
 	for (int s = 0; s < sequences.size(); ++s) { // And do it for each sequence...
 
-		seq_ovlp += getDynamicSequenceOverlap(model, sequences[s], gt[s][gestureId], ALPHA, MU);
+		seq_ovlp += getDynamicSequenceOverlap(gestureId, model, sequences[s], gt[s][gestureId], ALPHA, MU);
 
 	}
 	return seq_ovlp/sequences.size();
@@ -639,7 +678,7 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 				gest_overlap += st_ovlp;
 			}
 			else {
-				dy_ovlp =  getDynamicSequenceOverlap(_models[j], dynamicFeatures[i], gt_sets[i][j], dy_gr.ALPHA[j], dy_gr.gestTh[j]);
+				dy_ovlp =  getDynamicSequenceOverlap(j, _models[j], dynamicFeatures[i], gt_sets[i][j], dy_gr.ALPHA[j], dy_gr.gestTh[j]);
 				gest_overlap += dy_ovlp;
 			}
 		}

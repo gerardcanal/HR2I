@@ -6,7 +6,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerEnvironment>PATH=C:\Program Files\PCL\PCL\bin;C:\Program Files\PCL\VTK\bin;$(Path) $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
+    <LocalDebuggerEnvironment>PATH=C:\Program Files\PCL\PCL\bin;C:\Program Files\PCL\VTK\bin;$(KINECTSDK20_DIR)\bin;$(Path) $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>
