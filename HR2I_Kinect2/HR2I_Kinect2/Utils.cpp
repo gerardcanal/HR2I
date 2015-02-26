@@ -1,7 +1,6 @@
 // Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "stdafx.h"
 #include "Utils.h"
-#include <assert.h>
 #include <algorithm>
 #include <iterator>
 #include <limits>
@@ -19,7 +18,7 @@ Utils::~Utils()
 
 
 // Distances
-float Utils::euclideanDistance(std::vector<float> a, std::vector<float> b) {
+float Utils::euclideanDistance(const std::vector<float>& a, const std::vector<float>& b) {
 	assert(a.size() == b.size());
 	float _sum = 0;
 	for (int i = 0; i < a.size(); ++i) {
@@ -29,14 +28,14 @@ float Utils::euclideanDistance(std::vector<float> a, std::vector<float> b) {
 	return sqrt(_sum);
 }
 
-float Utils::L1Distance(std::vector<float> a, std::vector<float> b) {
+float Utils::L1Distance(const std::vector<float>& a, const std::vector<float>& b) {
 	assert(a.size() == b.size());
 	float _sum = 0;
 	for (int i = 0; i < a.size(); ++i) _sum += abs(a[i] - b[i]);
 	return _sum;
 }
 
-float Utils::L1Distance(std::vector<float> a, std::vector<float> b, float alpha) {
+float Utils::L1Distance(const std::vector<float>& a, const std::vector<float>& b, float alpha) {
 	assert(a.size() == b.size());
 	float _sum = abs(a[0] - b[0])*alpha;
 	for (int i = 1; i < a.size(); ++i) _sum += abs(a[i] - b[i]);
@@ -44,7 +43,7 @@ float Utils::L1Distance(std::vector<float> a, std::vector<float> b, float alpha)
 	return _sum;
 }
 
-float Utils::euclideanDistance(Joint a, Joint b) {
+float Utils::euclideanDistance(const Joint& a, const Joint& b) {
 	float sq = pow(a.Position.X - b.Position.X, 2);
 	sq += pow(a.Position.Y - b.Position.Y, 2);
 	sq += pow(a.Position.Z - b.Position.Z, 2);
@@ -54,7 +53,7 @@ float Utils::euclideanDistance(Joint a, Joint b) {
 
 //Geometry
 /// Returns de angle between a->mid and mid->c. For example shoulder->elbow->hand
-float Utils::getAngleBetween(Joint a, Joint mid, Joint c, bool rad) {
+float Utils::getAngleBetween(const Joint& a, const Joint& mid, const Joint& c, bool rad) {
 	// Vector mid->a
 	float vec1[3] = { a.Position.X - mid.Position.X,
 					  a.Position.Y - mid.Position.Y,
@@ -75,7 +74,7 @@ float Utils::magnitude(float vec[3]) {
 	return sqrt(vec[0]*vec[0] + vec[1]*vec[1] + vec[2]*vec[2]);
 }
 
-float Utils::magnitude(std::vector<float> vec) {
+float Utils::magnitude(const std::vector<float>& vec) {
 	float mag = 0;
 	for (int i = 0; i < vec.size(); ++i) mag += (vec[i] * vec[i]);
 	return sqrt(mag);
@@ -84,12 +83,13 @@ float Utils::magnitude(std::vector<float> vec) {
 void Utils::printPercentage(int cur, int total) {
 	float perc = 100*((float)cur / total);
 	float prev = 100*((float)(cur - 1) / total);
+	float prev_2dec = roundf(prev * 100) / 100; // 2 decimals
 	std::streamsize precis = std::cout.precision();
 
 	std::cout.precision(2);
 	std::cout << std::fixed << "\b\b\b\b\b"; // Remove number, decimals, point and %
-	if (prev >= 10) std::cout << "\b"; // Remove desen digit
-	if (prev >= 100) std::cout << "\b"; // Remove centen digit
+	if (prev_2dec >= 10) std::cout << "\b"; // Remove desen digit
+	if (prev_2dec >= 100) std::cout << "\b"; // Remove centen digit
 	std::cout << perc << "%" << std::defaultfloat;
 	std::cout.precision(precis);
 }
@@ -109,7 +109,7 @@ float Utils::overlap(const std::set<int>& detections, const std::set<int>& gt) {
 }
 
 
-float Utils::dotProduct(std::vector<float> a, std::vector<float> b) {
+float Utils::dotProduct(const std::vector<float>& a, const std::vector<float>& b) {
 	assert(a.size() == b.size());
 	float dp = 0;
 	for (int i = 0; i < a.size(); ++i) 
@@ -117,7 +117,7 @@ float Utils::dotProduct(std::vector<float> a, std::vector<float> b) {
 	return dp;
 }
 
-std::vector<float> Utils::subtract(std::vector<float> a, std::vector<float> b) {
+std::vector<float> Utils::subtract(const std::vector<float>& a, const std::vector<float>& b) {
 	assert(a.size() == b.size());
 	std::vector<float> s(a.size());
 	for (int i = 0; i < a.size(); ++i) s[i] = a[i] - b[i];
@@ -127,7 +127,7 @@ std::vector<float> Utils::subtract(std::vector<float> a, std::vector<float> b) {
 /// Line-Plane intersection
 /// l0 is a point of the line. l is the vector of the line
 /// p0 is a point of the plane. n is the normal vector to the plane
-std::vector<float> Utils::linePlaneIntersection(std::vector<float> l0, std::vector<float> l, std::vector<float> p0, std::vector<float> n) {
+std::vector<float> Utils::linePlaneIntersection(const std::vector<float>& l0, const std::vector<float>& l, const std::vector<float>& p0, const std::vector<float>& n) {
 	float ln = Utils::dotProduct(l, n);
 	if (ln == 0) return std::vector<float>();
 	float ppn = Utils::dotProduct(Utils::subtract(p0, l0), n);
@@ -139,7 +139,7 @@ std::vector<float> Utils::linePlaneIntersection(std::vector<float> l0, std::vect
 }
 
 
-bool Utils::sameDirection(std::vector<float> a, std::vector<float> b, float threshold) {
+bool Utils::sameDirection(const std::vector<float>& a, const std::vector<float>& b, float threshold) {
 	float cosangle = Utils::dotProduct(a, b)/(Utils::magnitude(a)*Utils::magnitude(b));
 	return acos(cosangle) <= threshold;
 }
@@ -177,4 +177,8 @@ void Utils::ExtractFaceRotationInDegrees(const Vector4* pQuaternion, double* pPi
 	*pPitch = static_cast<int>(floor((dPitch + increment / 2.0 * (dPitch > 0 ? 1.0 : -1.0)) / increment) * increment);
 	*pYaw = static_cast<int>(floor((dYaw + increment / 2.0 * (dYaw > 0 ? 1.0 : -1.0)) / increment) * increment);
 	*pRoll = static_cast<int>(floor((dRoll + increment / 2.0 * (dRoll > 0 ? 1.0 : -1.0)) / increment) * increment);
+}
+
+float Utils::F1measure(int TP, int FP, int FN) {
+	return float(2 * TP) / float(2 * TP + FP + FN);
 }

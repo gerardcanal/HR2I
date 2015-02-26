@@ -6,29 +6,33 @@
 #include <iostream>
 #include <vector>
 #include <set>
+#include <assert.h>
 
 class Utils
 {
 public:
 	Utils();
 	~Utils();
-	static float euclideanDistance(Joint a, Joint b);
-	static float euclideanDistance(std::vector<float> a, std::vector<float> b);
-	static float L1Distance(std::vector<float> a, std::vector<float> b);
-	static float L1Distance(std::vector<float> a, std::vector<float> b, float alpha);
+	static float euclideanDistance(const Joint& a, const Joint& b);
+	static float euclideanDistance(const std::vector<float>& a, const std::vector<float>& b);
+	static float L1Distance(const std::vector<float>& a, const std::vector<float>& b);
+	static float L1Distance(const std::vector<float>& a, const std::vector<float>& b, float alpha);
 	template<typename T>
-	static float HammingDistance(std::vector<T> a, std::vector<T> b);
-	static float getAngleBetween(Joint a, Joint mid, Joint c, bool rad);
+	static float HammingDistance(const std::vector<T>& a, const std::vector<T>& b);
+	
+	static float getAngleBetween(const Joint& a, const Joint& mid, const Joint& c, bool rad);
 	static float magnitude(float vec[3]);
-	static float magnitude(std::vector<float> vec);
+	static float magnitude(const std::vector<float>& vec);
 	static void printPercentage(int cur, int total);
 	static float overlap(const std::set<int>& detections, const std::set<int>& gt);
-	static std::vector<float> linePlaneIntersection(std::vector<float> l0, std::vector<float> l, std::vector<float> p0, std::vector<float> n);
-	static float dotProduct(std::vector<float> a, std::vector<float> b);
-	static std::vector<float> subtract(std::vector<float> a, std::vector<float> b);
-	static bool sameDirection(std::vector<float> a, std::vector<float> b, float threshold);
+	static std::vector<float> linePlaneIntersection(const std::vector<float>& l0, const std::vector<float>& l, const std::vector<float>& p0, const std::vector<float>& n);
+	static float dotProduct(const std::vector<float>& a, const std::vector<float>& b);
+	static std::vector<float> subtract(const std::vector<float>& a, const std::vector<float>& b);
+	static bool sameDirection(const std::vector<float>& a, const std::vector<float>& b, float threshold);
 
 	static void ExtractFaceRotationInDegrees(const Vector4* pQuaternion, double* pPitch, double* pYaw, double* pRoll);
+
+	static float F1measure(int TP, int FP, int FN);
 
 	template <typename T> 
 	static int sgn(T val); 
@@ -43,7 +47,7 @@ int Utils::sgn(T val) {
 }
 
 template<typename T>
-float Utils::HammingDistance(std::vector<T> a, std::vector<T> b) {
+float Utils::HammingDistance(const std::vector<T>& a, const std::vector<T>& b) {
 	assert(a.size() == b.size());
 	float hd = 0;
 	for (int i = 0; i < a.size(); ++i) {
