@@ -49,9 +49,9 @@ struct GroundTruth {
 };
 
 struct GRParameters {
-	float ALPHA[N_DYNAMIC_GESTURES]; // L1 distance threshold
+	std::vector<float> DynParams[N_DYNAMIC_GESTURES]; // Dynamic Gesture parameters: L1 distance threshold for WAVE, feature params for facial gestures (in order: difference between frames and number of frames between samplings)...
 	float pointAtTh[3]; // SIGMA. [0] = hand-hip distance, [1] = elbow angle and [3] consecutive frames -> test values 0.25, 2.8, 25
-	float gestTh[N_DYNAMIC_GESTURES]; // MU - threshold per each gesture type for the DTW
+	float gestMU[N_DYNAMIC_GESTURES]; // MU - threshold per each gesture type for the DTW
 	float ovlps[N_GESTURES]; // Overlap per gesture
 	float bestOvlp; // Best overlap
 };
@@ -64,7 +64,7 @@ public:
 	~GestureRecognition();
 
 	Gesture RecognizeGesture(std::vector<std::vector<std::vector<float>>> models, GRParameters params);
-	void addFrame(const std::vector<float>& Dynamic_feat, const std::vector<float>& Static_Feat);
+	void addFrame(const std::vector<std::vector<float>>& Dynamic_feat, const std::vector<float>& Static_Feat);
 	
 	// Training
 	std::vector<std::vector<std::set<int>>> constructGTsets(int nSequences, const std::vector<std::vector<GroundTruth>>& gt);

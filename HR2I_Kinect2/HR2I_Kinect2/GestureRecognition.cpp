@@ -1,7 +1,7 @@
+// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "GestureRecognition.h"
 #include <assert.h>
 #include <numeric>
-// Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include <ctime>
 #include <iostream>
 #include <fstream>
@@ -45,9 +45,9 @@ Gesture GestureRecognition::RecognizeGesture(std::vector<std::vector<std::vector
 	for (int i = 1; i < _N_THREADS; ++i) { // Distribute each dynamic gesture i.e. loop starts at 1
 		for (int j = 0; j < dynamic_x_thread; ++j) {
 			gID_thread[i].push_back(gid);
-			alphas_thread[i - 1].push_back(params.ALPHA[gid]);
-			mus_thread[i - 1].push_back(params.gestTh[gid]);
-			models_thread[i - 1].push_back(&models[i - 1]);
+			alphas_thread[i - 1].push_back(params.DynParams[gid][0]); // It will pick things which are not alpha in case of face gestures but does not matter
+			mus_thread[i - 1].push_back(params.gestMU[gid]);
+			models_thread[i - 1].push_back(&models[gid]);
 			gid++;
 		}
 	}
@@ -148,7 +148,8 @@ std::pair<Gesture, float> GestureRecognition::RealTimeDTW(const std::vector<int>
 				#pragma omp flush
 			}
 			std::vector<float> input = getNextFrame(gestureId);
-			if (input[0] == -1.0 && input[1] == -1) continue; // Frame which means end of sequence... nothing was recognized
+			//if (input[0] == -1.0 && input[1] == -1) continue; // Frame which means end of sequence... nothing was recognized
+			if (input.size() == 0) continue;
 
 			for (int i = 1; i < NM; ++i) {
 				float neighbors[] = { (*M)[t][i - 1], (*M)[t - 1][i - 1], (*M)[t - 1][i] }; // Upper, upper-left and left neighbors
@@ -169,7 +170,7 @@ std::pair<Gesture, float> GestureRecognition::RealTimeDTW(const std::vector<int>
 			}
 
 			// Check for gesture recognition
-			if ((*M)[t][NM - 1] < MU[gestureId]) return std::make_pair(static_cast<Gesture>(gestureId),(*M)[t][NM - 1]);
+			if ((*M)[t][NM - 1] < MU[gid]) return std::make_pair(static_cast<Gesture>(gestureId),(*M)[t][NM - 1]);
 			// End of loop checks
 			if (slide)  // Reached the limit of the matrix...
 				(*M).slide();
@@ -317,11 +318,11 @@ std::deque<int> GestureRecognition::getWPath(const SlidingMatrix<float> &M, int 
 	return path;
 }
 
-void GestureRecognition::addFrame(const std::vector<float>& Dynamic_feat, const std::vector<float>& Static_feat) {
+void GestureRecognition::addFrame(const std::vector<std::vector<float>>& Dynamic_feat, const std::vector<float>& Static_feat) {
 	omp_set_lock(&omp_lock);
 	// Dynamic frames
 	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) {
-		inputFrames[i].push(Dynamic_feat);
+		inputFrames[i].push(Dynamic_feat[i]);
 	}
 	// Static frames
 	for (int i = POINT_AT; i < (POINT_AT + N_STATIC_GESTURES); ++i) {
@@ -518,8 +519,8 @@ GRParameters GestureRecognition::trainDynamicThresholds(std::vector<std::vector<
 					{
 						if (ovlp > params.ovlps[g]) {
 							params.ovlps[g] = ovlp;
-							params.gestTh[g] = gestTh[g][t];
-							params.ALPHA[g] = alphas[a];
+							params.gestMU[g] = gestTh[g][t];
+							params.DynParams[g][0] = alphas[a];
 							#pragma omp flush
 						}
 					}
@@ -541,8 +542,8 @@ GRParameters GestureRecognition::trainDynamicThresholds(std::vector<std::vector<
 	}
 	if (verbose) {
 		std::cout << "\nDone! Dynamic parameters are:" << std::endl;
-		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tALPHA for gesture " << i << ": " << params.ALPHA[i] << std::endl;
-		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tMU for gesture " << i << ": " << params.gestTh[i] << std::endl;
+		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tALPHA for gesture " << i << ": " << params.DynParams[i][0] << std::endl;
+		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tMU for gesture " << i << ": " << params.gestMU[i] << std::endl;
 		//std::cout << "\trestThreshold: " << params.restTh << std::endl;
 		for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) std::cout << "\tOverlap for gesture " << i << ": " << params.ovlps[i] << std::endl;
 		std::cout << "\tBest overlap: " << params.bestOvlp << std::endl;
@@ -678,7 +679,7 @@ float GestureRecognition::LOOCV(const std::vector<std::vector<std::vector<float>
 				gest_overlap += st_ovlp;
 			}
 			else {
-				dy_ovlp =  getDynamicSequenceOverlap(j, _models[j], dynamicFeatures[i], gt_sets[i][j], dy_gr.ALPHA[j], dy_gr.gestTh[j]);
+				dy_ovlp =  getDynamicSequenceOverlap(j, _models[j], dynamicFeatures[i], gt_sets[i][j], dy_gr.DynParams[j][0], dy_gr.gestMU[j]);
 				gest_overlap += dy_ovlp;
 			}
 		}
@@ -725,14 +726,16 @@ void GestureRecognition::writeParameters(GRParameters params, std::string path) 
 		std::cerr << err << std::endl;
 		throw std::exception(err.c_str());
 	}
-	of << "ALPHA = ";
-	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) of << " " << params.ALPHA[i]; 
-	of << std::endl;
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) {
+		of << "DYNANMIC_GESTURE_" << i << " = " << params.DynParams[i].size();
+		for (int j = 0; j < params.DynParams[i].size(); ++j) of << " " << params.DynParams[i][j];
+		of << std::endl;
+	}
 	of << "PointAtThresholds =";
 	for (int i = 0; i < _countof(params.pointAtTh); ++i) of << " " << params.pointAtTh[i];
 	of << std::endl;
 	of << "MU =";
-	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) of << " " << params.gestTh[i];
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) of << " " << params.gestMU[i];
 	of << std::endl;
 	of << "gestOverlapings =";
 	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) of << " " << params.ovlps[i];
@@ -752,8 +755,14 @@ GRParameters GestureRecognition::readParameters(std::string path) {
 	}
 	std::string s;
 	// ALPHA
-	ifs >> s >> s; // ALPHA =
-	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) ifs >> params.ALPHA[i]; //values
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) {
+		ifs >> s >> s; // DYNAMIC_GESTURE_i =
+		int sze; ifs >> sze; // number of parameters
+		for (int j = 0; j < sze; ++j) {
+			float x;  ifs >> x;
+			params.DynParams[i].push_back(x); //values
+		}
+	}
 	
 	// POINT AT
 	ifs >> s >> s;
@@ -761,7 +770,7 @@ GRParameters GestureRecognition::readParameters(std::string path) {
 
 	// MU
 	ifs >> s >> s; // MU =
-	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) ifs >> params.gestTh[i]; //values
+	for (int i = 0; i < N_DYNAMIC_GESTURES; ++i) ifs >> params.gestMU[i]; //values
 
 	// ovlps
 	ifs >> s >> s;

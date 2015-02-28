@@ -1,0 +1,5 @@
+ALPHA =  0.25
+PointAtThresholds = 0.25 2.35 25
+MU = 9
+gestOverlapings = 0.564187
+bestOverlapping = 0.564187

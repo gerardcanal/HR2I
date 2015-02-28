@@ -177,3 +177,115 @@ void Face::setToZero() {
 		faceProperties[i] = DetectionResult::DetectionResult_No;
 	}
 }
+
+std::vector<float> Face::computeFrameFeatures(int dbf, int numoff, int lastusedframe, const std::vector<float>& orientation_pyr, const std::vector<float>& oldorient_pyr) {
+	std::vector<float> feats;
+	if (lastusedframe%numoff == 0){ // Every numoff frames
+
+		double difpitch = orientation_pyr[0] - oldorient_pyr[0]; //pitch - oldpitch;
+		double difyaw = orientation_pyr[1] - oldorient_pyr[1]; //yaw - oldyaw;
+		double difroll = orientation_pyr[2] - oldorient_pyr[2]; //roll - oldroll;
+
+		if (abs(difroll) >= dbf) difroll = (0 < difroll) - (difroll < 0);
+		else difroll = 0;
+		if (abs(difyaw) >= dbf) difyaw = (0 < difyaw) - (difyaw < 0);
+		else difyaw = 0;
+		if (abs(difpitch) >= dbf) difpitch = (0 < difpitch) - (difpitch < 0);
+		else difpitch = 0;
+
+		feats = { (float)difpitch, (float)difyaw, (float)difroll };
+	}
+	return feats;
+}
+
+std::vector<std::vector<float>> Face::getFeatures(int dbf, int numoff, std::vector<Face>& seq) { // Distance between two used frames to be considered as diferences, number of frames to wait before using another frame (we pick a frame every numoff frames)
+	int lastFrame = 0;
+	std::vector<std::vector<float>> feat;
+	//double oldpitch = 0, oldyaw = 0, oldroll = 0;
+	std::vector<float> oldorient(3, 0);
+	for (int i = 0; i < seq.size(); ++i) {
+		double pitch, yaw, roll;
+		Utils::ExtractFaceRotationInDegrees(&seq[i].getFaceRotation(), &pitch, &yaw, &roll);
+		std::vector<float> orientation = { (float)pitch, (float)yaw, (float)roll };
+		std::vector<float> frame_feat = computeFrameFeatures(dbf, numoff, ++lastFrame, orientation, oldorient);
+		if (frame_feat.size() > 0) {
+			feat.push_back(frame_feat);
+			oldorient = orientation;
+		}
+
+		/*if (++lastFrame%numoff == 0){ // Every numoff frames
+			double pitch, yaw, roll;
+			Utils::ExtractFaceRotationInDegrees(&seq[i].getFaceRotation(), &pitch, &yaw, &roll);
+
+			double difroll = roll - oldroll;
+			double difyaw = yaw - oldyaw;
+			double difpitch = pitch - oldpitch;
+
+			if (abs(difroll) >= dbf) difroll = (0 < difroll) - (difroll < 0);
+			else difroll = 0;
+			if (abs(difyaw) >= dbf) difyaw = (0 < difyaw) - (difyaw < 0);
+			else difyaw = 0;
+			if (abs(difpitch) >= dbf) difpitch = (0 < difpitch) - (difpitch < 0);
+			else difpitch = 0;
+
+			feat.push_back({ (float)difpitch, (float)difyaw, (float)difroll });
+
+			oldyaw = yaw; oldroll = roll; oldpitch = pitch;
+
+			//lastFrame = 0;
+		}*/
+	}
+	return feat;
+}
+
+void Face::gestureFeaturesToCSV(std::vector<Face>& gesture, int dbf, int numoff, std::string path) {
+	if (path.substr(path.size() - 4, 4) != ".csv") path = path + ".csv";
+	std::ofstream ofs(path, std::ofstream::out);
+	if (!ofs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
+
+	std::vector<std::vector<float>> features = Face::getFeatures(dbf, numoff, gesture);
+	// Write header
+	ofs << "sep=, " << std::endl;
+	for (int j = 0; j < features[0].size(); ++j) ofs << "Feature" << j << ((j + 1 == features[0].size()) ? "" : ", ");
+	ofs << std::endl;
+	ofs << std::setprecision(std::numeric_limits<float>::max_digits10); // Set max precision
+	for (int i = 0; i < features.size(); ++i) {
+		for (int j = 0; j < features[i].size(); ++j) ofs << features[i][j] << ((j + 1 == features[i].size()) ? "" : ", ");
+		ofs << std::endl;
+	}
+	ofs.close();
+}
+
+std::vector<std::vector<float>> Face::gestureFeaturesFromCSV(std::string path) {
+	if (path.substr(path.size() - 4, 4) != ".csv") path = path + ".csv";
+	std::ifstream ifs(path, std::ifstream::in);
+	if (!ifs.is_open()) {
+		std::string err = "ERROR: file " + path + " could not be opened. Is the path okay?";
+		std::cerr << err << std::endl;
+		throw std::exception(err.c_str());
+	}
+	std::vector<std::vector<float>> gestureFeatures;
+	std::string line;
+	std::getline(ifs, line); // Read header line
+	while (line.find("sep") != line.npos)
+		std::getline(ifs, line);
+
+	std::string delim;
+	float aux;
+	while (std::getline(ifs, line)) {
+		std::vector<float> feat;
+		std::istringstream iss(line);
+		while (iss) {
+			iss >> aux >> delim; // First feature
+			assert(delim == ","); // Just to avoid errors while programming...
+			feat.push_back(aux); // Second feature
+		}
+		gestureFeatures.push_back(feat);
+	}
+	ifs.close();
+	return gestureFeatures;
+}

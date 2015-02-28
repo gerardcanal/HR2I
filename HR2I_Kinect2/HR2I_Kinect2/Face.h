@@ -36,6 +36,10 @@ public:
 	static void faceGestureToCSV(std::vector<Face> gesture, std::string path);
 	static std::vector<Face> faceGestureFromCSV(std::string path);
 
+	static std::vector<std::vector<float>> getFeatures(int difbetweenframes, int framesbeforesampling, std::vector<Face>& seq);
+	static void gestureFeaturesToCSV(std::vector<Face>& gesture, int difbetweenframes, int framesbeforesampling, std::string path);
+	static std::vector<std::vector<float>> gestureFeaturesFromCSV(std::string path);
+	static std::vector<float> computeFrameFeatures(int difbetweenframes, int framesbeforesampling, int lastusedframe, const std::vector<float>& orientation_pyr, const std::vector<float>& oldorient_pyr);
 
 	friend std::ostream& operator<<(std::ostream& os, const Face& f);
 

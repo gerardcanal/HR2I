@@ -19,22 +19,39 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 	UINT64 id = 0;
 	gr_mtx.unlock();
 
+	// Face features aux variables
+	std::vector<float> yes_oldFaceOrient(3, 0);
+	std::vector<float> no_oldFaceOrient(3, 0);
+	int framenum = 0;
+
 	ICoordinateMapper* cmapper = NULL;
 	k2u->getCoordinateMapper(cmapper);
 
 	while (_work) {
-		//IMultiSourceFrame* msf = k2u->getLastMultiSourceFrameFromDefault();
-		//if (msf == NULL) continue;
-
 		IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
 		IBodyFrame* bodyFrame = NULL; 
 		IFaceFrame* faceFrame = k2u->getLastFaceFrameFromDefault();
 		
-		//std::cout << "Faceframe: " << faceFrame << std::endl;
+		std::vector<float> yes_face_frame_feat; // Face Frame features
+		std::vector<float> no_face_frame_feat; // Face Frame features
+
 		
 		if (faceFrame) {
 			Face f = Kinect2Utils::getFaceFromFaceFrame(faceFrame, false); // true - infrared, false color
-			if (body_view != NULL && !f.getIsEmpty()) body_view->setFaceFrameToDraw(f);
+			if (!f.getIsEmpty()) {
+				if (body_view != NULL) body_view->setFaceFrameToDraw(f);
+				//// Get features
+				double pitch, yaw, roll;
+				Utils::ExtractFaceRotationInDegrees(&f.getFaceRotation(), &pitch, &yaw, &roll);
+				std::vector<float> orientation = { (float)pitch, (float)yaw, (float)roll };
+				
+				yes_face_frame_feat = Face::computeFrameFeatures(params.DynParams[NOD][0], params.DynParams[NOD][1], ++framenum, orientation, yes_oldFaceOrient);
+				if (yes_face_frame_feat.size() > 0) yes_oldFaceOrient = orientation;
+				
+				no_face_frame_feat = Face::computeFrameFeatures(params.DynParams[NEGATE][0], params.DynParams[NEGATE][1], framenum, orientation, no_oldFaceOrient);
+				if (no_face_frame_feat.size() > 0) no_oldFaceOrient = orientation;
+				////
+			}
 			if (bodyFrame == NULL) {
 				IBodyFrameReference* bfr = NULL;
 				faceFrame->get_BodyFrameReference(&bfr);
@@ -56,17 +73,17 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 			/// temporal cheat -> Don't use person ID
 			if (sk.getTrackingID() > 0) {
 				k2u->setFaceTrackingId(sk.getTrackingID());
-				gr->addFrame(sk.getDynamicGestureRecognitionFeatures(rightBody), sk.getStaticGestureRecognitionFeatures(rightBody, true));
+				gr->addFrame({ sk.getDynamicGestureRecognitionFeatures(rightBody), yes_face_frame_feat, no_face_frame_feat }, sk.getStaticGestureRecognitionFeatures(rightBody, true));
 				inputFrames.push_back(sk);
 			} // end of cheat
 			else if (!first && sk.getTrackingID() == id) {
-				gr->addFrame(sk.getDynamicGestureRecognitionFeatures(rightBody), sk.getStaticGestureRecognitionFeatures(rightBody, true));
+				gr->addFrame({ sk.getDynamicGestureRecognitionFeatures(rightBody), yes_face_frame_feat, no_face_frame_feat }, sk.getStaticGestureRecognitionFeatures(rightBody, true));
 				inputFrames.push_back(sk);
 			}
 			else if (first && id != sk.getTrackingID()) {
 				id = sk.getTrackingID(); // Even though the skeleton is empty -i.e. id == -1- this doesn't change nything
 				first = false;
-				gr->addFrame(sk.getDynamicGestureRecognitionFeatures(rightBody), sk.getStaticGestureRecognitionFeatures(rightBody, true));
+				gr->addFrame({ sk.getDynamicGestureRecognitionFeatures(rightBody), yes_face_frame_feat, no_face_frame_feat }, sk.getStaticGestureRecognitionFeatures(rightBody, true));
 				inputFrames.push_back(sk);
 			}
 		}
@@ -105,8 +122,9 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 	datagetter.join();
 
 	// Process recognized gesture
-	cout << "Recognized gesture: " << ((gest == WAVE) ? "HELLO!" : "POINT_AT!") << endl;
+	cout << "Recognized gesture: ";
 	if (gest == POINT_AT) {
+		cout << "POINT_AT!" << endl;
 		// Take the mean joint points
 		vector<float> Hand(3, 0.0);
 		vector<float> Elbow(3, 0.0);
@@ -152,7 +170,18 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 			cout << "\tPointing was not directed to the ground!!!" << endl;
 		}
 	}
-	else if (gest == WAVE) result.gestureId = result.idHello;
+	else if (gest == WAVE) {
+		cout << "WAVE!" << endl;
+		result.gestureId = result.idHello;
+	}
+	else if (gest == NOD) {
+		cout << "NOD!" << endl;
+		result.gestureId = result.idNod;
+	}
+	else if (gest == NEGATE) {
+		cout << "NEGATE!" << endl;
+		result.gestureId = result.idNegate;
+	}
 	else result.gestureId = -2; // Strange failure
 	result.header.frame_id = "Kinect2";
 
@@ -167,6 +196,8 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 vector<vector<vector<float>>> HR2I_Kinect2::readDynamicModels(string gestPath) {
 	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
 	models[WAVE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
+	models[NOD] = Face::gestureFeaturesFromCSV(gestPath + "YesFacialModel/YesFacialModel_faces_features.csv");
+	models[NEGATE] = Face::gestureFeaturesFromCSV(gestPath + "NoFacialModel/NoFacialModel_faces_features.csv");
 	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModel_features.csv");
 	//models[POINT_AT] = GestureRecognition::addThirdFeature(models[POINT_AT]);
 	return models;

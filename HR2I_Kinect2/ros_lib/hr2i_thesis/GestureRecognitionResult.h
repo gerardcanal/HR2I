@@ -19,7 +19,9 @@ namespace hr2i_thesis
       geometry_msgs::Point ground_point;
       geometry_msgs::Point person_position;
       enum { idHello =  0 };
-      enum { idPointAt =  1 };
+      enum { idNod =  1 };
+      enum { idNegate =  2 };
+      enum { idPointAt =  3 };
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -55,7 +57,7 @@ namespace hr2i_thesis
     }
 
     const char * getType(){ return "hr2i_thesis/GestureRecognitionResult"; };
-    const char * getMD5(){ return "7508312598b09634611c1ab54295f931"; };
+    const char * getMD5(){ return "4e1fefd62608506500be3c579f51926f"; };
 
   };
 
