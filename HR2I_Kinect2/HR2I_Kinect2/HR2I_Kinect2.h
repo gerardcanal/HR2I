@@ -1,6 +1,6 @@
 // Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "stdafx.h"
-//#define USE_ROS_HR2I
+#define USE_ROS_HR2I
 #define USE_PCL_HR2I
 // Std
 #include <thread>

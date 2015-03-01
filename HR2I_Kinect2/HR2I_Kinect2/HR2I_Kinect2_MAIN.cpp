@@ -206,9 +206,9 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	////////////////// Main code ///////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	while (body_view.isRunning()) {
-		//hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
+		hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
 		//// TEST ^uncomment
-		hr2i_thesis::Kinect2Command cmd;  cmd.command = cmd.recGestCmd;
+		//hr2i_thesis::Kinect2Command cmd;  cmd.command = cmd.recGestCmd;
 		//// TEST
 		if (cmd.command == cmd.recGestCmd) {
 			hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
