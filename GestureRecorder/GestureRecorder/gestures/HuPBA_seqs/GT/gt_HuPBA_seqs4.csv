@@ -1,0 +1,7 @@
+sep=, 
+GestureType, FirstFrame, LastFrame
+0, 64, 95
+3, 156, 178
+2, 219, 278
+1, 287, 355
+-1, 368, 424

@@ -140,7 +140,7 @@ void playStoredGestures(BodyRGBViewer& gestview, string gestToPlay, bool enableC
 
 			// Play the gestures
 			for (fit = tr2::sys::directory_iterator(folder); fit != tr2::sys::directory_iterator(); ++fit) {
-				if ((string(fit->path()).find("_features") != string::npos) || (string(fit->path()).find("_faces") != string::npos)) continue;
+				if ((string(fit->path()).find("_features") != string::npos) || (string(fit->path()).find("_faces") != string::npos) || tr2::sys::is_directory(fit->path())) continue;
 				cout << "\tPlaying \"" << fit->path() << "\"..." << endl;
 				vector<Skeleton> gesture = Skeleton::gestureFromCSV(fit->path());
 				vector<Face> face_gest;
