@@ -11,3 +11,11 @@
 *.suo
 *.opensdf
 *.exe
+x64/
+x86/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
