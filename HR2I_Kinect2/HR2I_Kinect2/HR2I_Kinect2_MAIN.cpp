@@ -11,8 +11,6 @@
 #include "hr2i_thesis/GestureRecognitionResult.h"
 #include "hr2i_thesis/PointCloudClusterCentroids.h"
 #include "hr2i_thesis/Kinect2Command.h"
-//#define USE_ROS_HR2I
-//#define USE_PCL_HR2I
 
 #define GR_TOPIC_NAME "recognized_gesture"
 #define CLUSTERS_TOPIC_NAME "kinect2_clusters"

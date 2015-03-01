@@ -34,7 +34,7 @@ Gesture GestureRecognition::RecognizeGesture(std::vector<std::vector<std::vector
 	std::vector<float> gest(static_cast<int>(N_GESTURES), INF);
 
 	// Thread distribution
-	int _N_THREADS = min(omp_get_max_threads() - 2, N_GESTURES); // Subtract one thread for the interface and the data getter (should in fact be more...)
+	int _N_THREADS = 2;// min(omp_get_max_threads() - 2, N_GESTURES); // Subtract one thread for the interface and the data getter (should in fact be more...)
 	int dynamic_x_thread = ceil(N_DYNAMIC_GESTURES / (_N_THREADS - 1));
 	std::vector<std::vector<int>> gID_thread(_N_THREADS); // First one will be the Dynamic Gesture
 	int gid = WAVE;

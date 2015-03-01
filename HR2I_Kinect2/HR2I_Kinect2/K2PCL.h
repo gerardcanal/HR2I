@@ -35,7 +35,7 @@
 class K2PCL
 {
 public:
-	static pcl::PointCloud<pcl::PointXYZ>::Ptr depthFrameToPointCloud(IDepthFrame* depthFrame, ICoordinateMapper* cmapper);
+	static pcl::PointCloud<pcl::PointXYZ>::Ptr depthFrameToPointCloud(IDepthFrame*& depthFrame, ICoordinateMapper* cmapper, bool release_depthframe = true);
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr extractIndices(pcl::PointIndices::Ptr indices, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud);
 	static pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::downSample(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, float leafSize);
 	static std::pair<pcl::PointIndices::Ptr, pcl::ModelCoefficients::Ptr> segmentPlane(pcl::PointCloud<pcl::PointXYZ>::Ptr pc, double dist_thresh = PLANE_DIST_TH, int max_iter = MAX_ITER_DEF, bool verbose = false);

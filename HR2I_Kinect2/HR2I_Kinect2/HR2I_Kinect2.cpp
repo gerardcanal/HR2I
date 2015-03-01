@@ -11,6 +11,7 @@ HR2I_Kinect2::HR2I_Kinect2(BodyRGBViewer* view, HR2ISceneViewer* pcl_viewer, Kin
 }
 HR2I_Kinect2::~HR2I_Kinect2() {}
 
+#define FRAMES_BETWEEN_DF 15
 void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 	bool rightBody = true;
 	gr_mtx.lock();
@@ -23,19 +24,19 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 	std::vector<float> yes_oldFaceOrient(3, 0);
 	std::vector<float> no_oldFaceOrient(3, 0);
 	int framenum = 0;
+	int df_count = 0;
 
 	ICoordinateMapper* cmapper = NULL;
 	k2u->getCoordinateMapper(cmapper);
 
 	while (_work) {
-		IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
-		IBodyFrame* bodyFrame = NULL; 
+		IBodyFrame* bodyFrame = NULL;
 		IFaceFrame* faceFrame = k2u->getLastFaceFrameFromDefault();
-		
+
 		std::vector<float> yes_face_frame_feat; // Face Frame features
 		std::vector<float> no_face_frame_feat; // Face Frame features
 
-		
+
 		if (faceFrame) {
 			Face f = Kinect2Utils::getFaceFromFaceFrame(faceFrame, false); // true - infrared, false color
 			if (!f.getIsEmpty()) {
@@ -44,10 +45,10 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 				double pitch, yaw, roll;
 				Utils::ExtractFaceRotationInDegrees(&f.getFaceRotation(), &pitch, &yaw, &roll);
 				std::vector<float> orientation = { (float)pitch, (float)yaw, (float)roll };
-				
+
 				yes_face_frame_feat = Face::computeFrameFeatures(params.DynParams[NOD][0], params.DynParams[NOD][1], ++framenum, orientation, yes_oldFaceOrient);
 				if (yes_face_frame_feat.size() > 0) yes_oldFaceOrient = orientation;
-				
+
 				no_face_frame_feat = Face::computeFrameFeatures(params.DynParams[NEGATE][0], params.DynParams[NEGATE][1], framenum, orientation, no_oldFaceOrient);
 				if (no_face_frame_feat.size() > 0) no_oldFaceOrient = orientation;
 				////
@@ -87,11 +88,14 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 				inputFrames.push_back(sk);
 			}
 		}
-
-		if (df && pcl_viewer != NULL) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
-		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
-		SafeRelease(df);
 		SafeRelease(faceFrame);
+		SafeRelease(bodyFrame); // If not the bodyFrame is not get again
+
+		if (++df_count % FRAMES_BETWEEN_DF == 0) {
+			IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
+			if (df && pcl_viewer != NULL) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
+			SafeRelease(df);
+		}
 		
 		if (inputFrames.size() >= params.pointAtTh[2]) inputFrames.pop_front();
 		gr_mtx.lock();
@@ -429,17 +433,33 @@ hr2i_thesis::Kinect2Command HR2I_Kinect2::waitForCommandState() {
 
 	while (cmd.command == -1) {
 		// Display kinect PCL info
-		IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
-		IBodyFrame* bodyFrame = k2u->getLastBodyFrameFromDefault();
+		IBodyFrame* bodyFrame = NULL;// k2u->getLastBodyFrameFromDefault();
+		IFaceFrame* faceFrame = k2u->getLastFaceFrameFromDefault();
+
+		if (faceFrame) {
+			Face f = Kinect2Utils::getFaceFromFaceFrame(faceFrame, false); // true - infrared, false color
+			if (body_view != NULL && !f.getIsEmpty()) body_view->setFaceFrameToDraw(f);
+			if (bodyFrame == NULL) {
+				IBodyFrameReference* bfr = NULL;
+				faceFrame->get_BodyFrameReference(&bfr);
+				bfr->AcquireFrame(&bodyFrame);
+				SafeRelease(bfr);
+			}
+		}
 
 		if (bodyFrame) {
 			Skeleton sk = Kinect2Utils::getTrackedSkeleton(bodyFrame, 0, true);
+			if (sk.getTrackingID() > 0) k2u->setFaceTrackingId(sk.getTrackingID());
 			if (body_view != NULL) body_view->setBodyFrameToDraw(bodyFrame);
 			if (pcl_viewer != NULL) pcl_viewer->setPerson(sk);
 		}
+		SafeRelease(faceFrame);
+		SafeRelease(bodyFrame);
+
+		IDepthFrame* df = k2u->getLastDepthFrameFromDefault();
 		if (df && pcl_viewer != NULL) pcl_viewer->setScene(K2PCL::depthFrameToPointCloud(df, cmapper));
 		SafeRelease(df);
-		SafeRelease(bodyFrame);
+
 #ifdef USE_ROS_HR2I
 		nh->spinOnce();
 #endif

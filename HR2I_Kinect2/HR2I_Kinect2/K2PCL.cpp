@@ -1,8 +1,9 @@
 // Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "K2PCL.h"
+#include "stdafx.h"
 
 //#define MIRROR_PCL // To mirror de PCL
-pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* depthFrame, ICoordinateMapper* cMapper) {
+pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame*& depthFrame, ICoordinateMapper* cMapper, bool release_depthframe) {
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pc(new pcl::PointCloud<pcl::PointXYZ>());
 	UINT bsize = 0;
 	UINT16* depthBuffer = NULL;
@@ -16,7 +17,11 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::depthFrameToPointCloud(IDepthFrame* d
 	frameDesc->get_Width(&nDepthWidth); frameDesc->get_Height(&nDepthHeight);
 	nPoints = nDepthWidth * nDepthHeight;
 	CameraSpacePoint* _cameraCoordinates = new CameraSpacePoint[nPoints];
+	
 	hr = cMapper->MapDepthFrameToCameraSpace(nPoints, depthBuffer, nPoints, _cameraCoordinates);
+	
+	if (release_depthframe) SafeRelease(depthFrame);
+	
 	if (!SUCCEEDED(hr)) return pc;
 	int filtered = 0;
 	for (int i = 0; i < nPoints; ++i) {
