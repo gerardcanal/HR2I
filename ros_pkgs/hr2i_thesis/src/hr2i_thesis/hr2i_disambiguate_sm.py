@@ -1,11 +1,12 @@
 #!/usr/bin/env python
+# Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 import math
 import rospy
 import random
 
 from smach import StateMachine, CBState
 from nao_smach_utils.tts_state import SpeechFromPoolSM
-from nao_smach_utils.get_user_speech_answer import GetUserAnswer
+from hr2i_yesno_from_user import GetYesNoFromUser
 from hr2i_thesis.msg import PointCloudClusterCentroids
 
 
@@ -37,11 +38,14 @@ class DisambiguateBlobs(StateMachine):
                              transitions={'disambiguate': 'ASK_QUESTION', 'succeeded': 'SAY_FOUND'})
 
             StateMachine.add('ASK_QUESTION', SpeechFromPoolSM(), remapping={'pool': 'speech_pool'},
-                             transitions={'succeeded': 'LISTEN_USER', 'preempted': 'LISTEN_USER', 'aborted': 'LISTEN_USER'})
+                             transitions={'succeeded': 'LISTEN_WATCH_USER', 'preempted': 'LISTEN_WATCH_USER', 'aborted': 'LISTEN_WATCH_USER'})
 
-            StateMachine.add('LISTEN_USER', GetUserAnswer(get_one=True, ask_for_repetition=True),
-                             remapping={'recognition_result': 'user_answer'},
-                             transitions={'succeeded': 'CHECK_RECOGNITION', 'preempted': 'LISTEN_USER', 'aborted': 'LISTEN_USER'})
+            #StateMachine.add('LISTEN_USER', GetUserAnswer(get_one=True, ask_for_repetition=True),
+            #                 remapping={'recognition_result': 'user_answer'},
+            #                 transitions={'succeeded': 'CHECK_RECOGNITION', 'preempted': 'LISTEN_USER', 'aborted': 'LISTEN_USER'})
+            StateMachine.add('LISTEN_WATCH_USER', GetYesNoFromUser(),
+                             remapping={'user_answer': 'user_answer'},
+                             transitions={'succeeded': 'CHECK_RECOGNITION', 'preempted': 'LISTEN_WATCH_USER', 'aborted': 'LISTEN_WATCH_USER'})
 
             def check_yesno(ud):
                 rospy.logwarn('Recognized speech is: ' + ud.user_answer)

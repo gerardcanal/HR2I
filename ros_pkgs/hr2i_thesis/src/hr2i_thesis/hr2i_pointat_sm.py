@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 import rospy
 import math
 

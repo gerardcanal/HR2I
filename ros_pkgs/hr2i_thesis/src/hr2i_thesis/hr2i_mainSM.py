@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 from smach import StateMachine
 from nao_smach_utils.tts_state import SpeechFromPoolSM
 from hr2i_smach_states import WaitForGestureRecognitionSM, NaoSayHello
@@ -16,7 +17,8 @@ class HR2I_SM(StateMachine):
 
             StateMachine.add('WAIT_FOR_GESTURE', WaitForGestureRecognitionSM(),
                              remapping={'out_ground_point': 'ground_point', 'out_person_position': 'person_position'},
-                             transitions={'hello_recognized': 'SAY_HELLO', 'pointat_recognized': 'POINT_AT_SM'})
+                             transitions={'hello_recognized': 'SAY_HELLO', 'pointat_recognized': 'POINT_AT_SM',
+                                          'nod_recognized': 'SAY_NOD', 'negate_recognized': 'SAY_NEGATE'})
 
             StateMachine.add('SAY_HELLO', NaoSayHello(), remapping={'riding_wifibot': 'NAO_riding_wb'},
                              transitions={'succeeded': 'WAIT_FOR_GESTURE'})
@@ -38,3 +40,14 @@ class HR2I_SM(StateMachine):
             StateMachine.add('SAY_DONE', SpeechFromPoolSM(pool=text_pool),
                              transitions={'succeeded': 'WAIT_FOR_GESTURE', 'preempted': 'WAIT_FOR_GESTURE',
                                           'aborted': 'WAIT_FOR_GESTURE'})
+
+            nod_pool = ['I see you nodded. Yes what? What can I do?', 'Yes! What should I do now?', 'Yes, will you point somewhere?',
+                        'You nodded but I do not know why. How may I help you?']
+            StateMachine.add('SAY_NOD', SpeechFromPoolSM(pool=nod_pool),
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})
+
+            negate_pool = ['I see you made no with the head. No what? What can I do?', 'No? What should I do now?',
+                           'No what? You can make more gestures', 'You made a no gesture but I do not know why. How may I help you?',
+                           'No? What now?']
+            StateMachine.add('SAY_NEGATE', SpeechFromPoolSM(pool=negate_pool),
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 import rospy
 import math
 import sys
@@ -109,7 +110,8 @@ class ReadObjectSegmentationTopic(StateMachine):
 class WaitForGestureRecognitionSM(StateMachine):
 
     def __init__(self):
-        StateMachine.__init__(self, outcomes=['pointat_recognized', 'hello_recognized'], output_keys=['out_ground_point', 'out_person_position'])
+        StateMachine.__init__(self, outcomes=['pointat_recognized', 'hello_recognized', 'nod_recognized', 'negate_recognized'],
+                              output_keys=['out_ground_point', 'out_person_position'])
 
         with self:
             StateMachine.add('SEND_RECOGNIZE_GESTURE_CMD', SendCommandState(Kinect2Command.recGestCmd),
@@ -130,10 +132,15 @@ class WaitForGestureRecognitionSM(StateMachine):
                     else:
                         ud.ground_point = ud.gesture_rec_result.ground_point
                         ud.person_position = ud.gesture_rec_result.person_position
+
                     if ud.gesture_rec_result.gestureId == GestureRecognitionResult.idHello:
                         return 'hello_recognized'
                     elif ud.gesture_rec_result.gestureId == GestureRecognitionResult.idPointAt:
                         return 'pointat_recognized'
+                    elif ud.gesture_rec_result.gestureId == GestureRecognitionResult.idNod:
+                        return 'nod_recognized'
+                    elif ud.gesture_rec_result.gestureId == GestureRecognitionResult.idNegate:
+                        return 'negate_recognized'
                     else:
                         return 'failed_recognition'
                 else:  # In fact should never reach this point...

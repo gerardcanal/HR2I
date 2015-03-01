@@ -1,5 +1,7 @@
 int8 idHello = 0
-int8 idPointAt = 1
+int8 idNod = 1
+int8 idNegate = 2
+int8 idPointAt = 3
 
 std_msgs/Header header
 int8 gestureId
