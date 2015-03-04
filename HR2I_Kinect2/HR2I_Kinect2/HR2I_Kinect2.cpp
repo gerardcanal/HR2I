@@ -11,7 +11,7 @@ HR2I_Kinect2::HR2I_Kinect2(BodyRGBViewer* view, HR2ISceneViewer* pcl_viewer, Kin
 }
 HR2I_Kinect2::~HR2I_Kinect2() {}
 
-#define FRAMES_BETWEEN_DF 15
+#define FRAMES_BETWEEN_DF 20
 void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 	bool rightBody = true;
 	gr_mtx.lock();
@@ -371,7 +371,7 @@ void HR2I_Kinect2::clusterObjectsState(ros::Publisher* clusters_pub) {
 	if (strcmp(_k2cmdcp.header.frame_id, "wifibot") == 0) { // Convert pose from wifibot to Kinect: wb+x = kinect+z, wb+y = kinect+x 
 		// Translate the point back to 0
 		newPpoint.x = pointingPoint.x - _k2cmdcp.current_pose.y;
-		newPpoint.y = pointingPoint.y*1.30; // 1.15 before It's the same height, but as the kinect is inclined it looks like above. This is only for displaying purposes
+		newPpoint.y = pointingPoint.y*1.15; // 1.15 before It's the same height, but as the kinect is inclined it looks like above. This is only for displaying purposes. 1.30 in the UPC
 		newPpoint.z = pointingPoint.z - _k2cmdcp.current_pose.x;
 		// Rotate the point
 		_k2cmdcp.current_pose.theta = -_k2cmdcp.current_pose.theta/OVERANGLE_CORRECTION; // As the wifibot turns less than what it should, the angle is overincremented to make it reach goals.
