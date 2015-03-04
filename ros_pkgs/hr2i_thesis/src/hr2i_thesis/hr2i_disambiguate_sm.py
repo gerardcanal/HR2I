@@ -44,12 +44,17 @@ class DisambiguateBlobs(StateMachine):
             #                 remapping={'recognition_result': 'user_answer'},
             #                 transitions={'succeeded': 'CHECK_RECOGNITION', 'preempted': 'LISTEN_USER', 'aborted': 'LISTEN_USER'})
             StateMachine.add('LISTEN_WATCH_USER', GetYesNoFromUser(),
-                             remapping={'user_answer': 'user_answer'},
+                             remapping={'speech_user_answer': 'speech_user_answer', 'gesture_user_answer': 'gesture_user_answer'},
                              transitions={'succeeded': 'CHECK_RECOGNITION', 'preempted': 'LISTEN_WATCH_USER', 'aborted': 'LISTEN_WATCH_USER'})
 
             def check_yesno(ud):
-                rospy.logwarn('Recognized speech is: ' + ud.user_answer)
-                if ud.user_answer == 'yes':  # We have it!
+                if (ud.speech_user_answer is not None):
+                    user_answer = ud.speech_user_answer
+                    rospy.logwarn('Recognized speech is: "' + user_answer + '"')
+                else:
+                    user_answer = ud.gesture_user_answer
+                    rospy.logwarn('Recognized gesture is: "' + user_answer + '"')
+                if user_answer == 'yes':  # We have it!
                     ud.selected_cluster_centroid = ud.sorted_info.cluster_centroids[ud.in_asked_id]
                     ud.out_speech_pool = ['I found it!', 'Of course it is!', 'Yes, I knew it.', 'Yiiii!']
                     return 'answer_yes'
@@ -76,7 +81,7 @@ class DisambiguateBlobs(StateMachine):
                         ud.out_speech_pool = map(lambda s: s % 'left', self.position_pool)  # USER'S LEFT, ROBOT'S RIGHT. All the other position references are in the robot's point of view.
                 return 'answer_no'
             StateMachine.add('CHECK_RECOGNITION', CBState(check_yesno, outcomes=['answer_yes', 'answer_no', 'remaining_one'],
-                                                          input_keys=['user_answer', 'used_metric', 'sorted_info', 'in_asked_id'],
+                                                          input_keys=['speech_user_answer', 'gesture_user_answer', 'used_metric', 'sorted_info', 'in_asked_id'],
                                                           output_keys=['selected_cluster_centroid', 'out_asked_id', 'out_speech_pool']),
                              remapping={'in_asked_id': 'asked_id', 'out_asked_id': 'asked_id', 'out_speech_pool': 'speech_pool'},
                              transitions={'answer_yes': 'SAY_FOUND',

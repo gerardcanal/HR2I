@@ -85,7 +85,7 @@ class ReadObjectSegmentationTopic(StateMachine):
                                                                               output_key_name='received_clusters',
                                                                               timeout=timeout),
                              remapping={'received_clusters': 'received_clusters'},
-                             transitions={'succeeded': 'TRANSFORM_COORDINATES', 'timeouted': 'timeouted'})
+                             transitions={'succeeded': 'TRANSFORM_COORDINATES', 'timeouted': 'timeouted', 'preempted': 'timeouted'})
 
             def transf_centroids(ud):
                 if len(ud.in_clusters.cluster_sizes) == 0:
@@ -110,7 +110,7 @@ class ReadObjectSegmentationTopic(StateMachine):
 class WaitForGestureRecognitionSM(StateMachine):
 
     def __init__(self):
-        StateMachine.__init__(self, outcomes=['pointat_recognized', 'hello_recognized', 'nod_recognized', 'negate_recognized'],
+        StateMachine.__init__(self, outcomes=['pointat_recognized', 'hello_recognized', 'nod_recognized', 'negate_recognized', 'preempted'],
                               output_keys=['out_ground_point', 'out_person_position'])
 
         with self:
@@ -122,7 +122,7 @@ class WaitForGestureRecognitionSM(StateMachine):
                                                                 output_key_name='gesture_rec_result',
                                                                 timeout=30),
                              remapping={'gesture_rec_result': 'gesture_rec_result'},
-                             transitions={'succeeded': 'CHECK_GESTURE_RESULT', 'timeouted': 'SAY_NO_RECOGNITION'})
+                             transitions={'succeeded': 'CHECK_GESTURE_RESULT', 'timeouted': 'SAY_NO_RECOGNITION', 'preempted': 'preempted'})
 
             def check_result_cb(ud):
                 if ud.gesture_rec_result:  # We have recognized something
@@ -150,12 +150,15 @@ class WaitForGestureRecognitionSM(StateMachine):
             StateMachine.add('CHECK_GESTURE_RESULT', CBState(check_result_cb,
                                                              input_keys=['gesture_rec_result'],
                                                              output_keys=['ground_point', 'person_position'],
-                                                             outcomes=['pointat_recognized', 'hello_recognized', 'failed_recognition']),
+                                                             outcomes=['pointat_recognized', 'hello_recognized', 'failed_recognition',
+                                                                       'negate_recognized', 'nod_recognized']),
                              remapping={'gesture_rec_result': 'gesture_rec_result',
                                         'ground_point': 'out_ground_point',
                                         'person_position': 'out_person_position'},
                              transitions={'pointat_recognized': 'pointat_recognized',
                                           'hello_recognized': 'hello_recognized',
+                                          'nod_recognized': 'nod_recognized',
+                                          'negate_recognized': 'negate_recognized',
                                           'failed_recognition': 'SAY_FAILED_GESTURE'})
 
             text_pool = ['I did not see you moving. Are you there?', 'I could not see any gesture I understand.', 'Please, do a gesture',
@@ -282,8 +285,8 @@ class NaoGoToLocationInFront(StateMachine):
                 translated_loc.theta = ud.in_alpha  # Alpha is already the other rotation.
 
                 ##### FIXME: to avoid NAO going left
-                translated_loc.theta -= 0.185
-                translated_loc.y -= 0.05
+                translated_loc.theta -= 0.185  # 0.185
+                translated_loc.y -= 0.1  # 0.05
                 ################ END FIXME
 
                 ud.out_new_loc = translated_loc
@@ -323,7 +326,7 @@ class SendCommandState(StateMachine):
 
         with self:
             StateMachine.add('GET_ODOM', ReadTopicState(topic_name='/wifibot/odom', topic_type=Odometry, output_key_name='wb_odom', timeout=None),
-                             transitions={'succeeded': 'PUBLISH_COMMAND', 'timeouted': 'GET_ODOM'})
+                             transitions={'succeeded': 'PUBLISH_COMMAND', 'timeouted': 'GET_ODOM', 'preempted': 'GET_ODOM'})
 
             def publish_command(ud):
                 msg = Kinect2Command()

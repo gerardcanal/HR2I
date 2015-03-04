@@ -57,7 +57,7 @@ class PointAtResponseExecutionSM(StateMachine):
                              transitions={'succeeded': 'GET_ODOM'})
 
             StateMachine.add('GET_ODOM', ReadTopicState(topic_name='/wifibot/odom', topic_type=Odometry, output_key_name='wb_odom', timeout=None),
-                             transitions={'succeeded': 'UPDATE_GROUND_POINT', 'timeouted': 'GET_ODOM'})
+                             transitions={'succeeded': 'UPDATE_GROUND_POINT', 'timeouted': 'GET_ODOM', 'preempted': 'GET_ODOM'})
 
             def update_gp(ud):
                 aux = ud.in_gp

@@ -18,7 +18,8 @@ class HR2I_SM(StateMachine):
             StateMachine.add('WAIT_FOR_GESTURE', WaitForGestureRecognitionSM(),
                              remapping={'out_ground_point': 'ground_point', 'out_person_position': 'person_position'},
                              transitions={'hello_recognized': 'SAY_HELLO', 'pointat_recognized': 'POINT_AT_SM',
-                                          'nod_recognized': 'SAY_NOD', 'negate_recognized': 'SAY_NEGATE'})
+                                          'nod_recognized': 'SAY_NOD', 'negate_recognized': 'SAY_NEGATE',
+                                          'preempted': 'WAIT_FOR_GESTURE'})
 
             StateMachine.add('SAY_HELLO', NaoSayHello(), remapping={'riding_wifibot': 'NAO_riding_wb'},
                              transitions={'succeeded': 'WAIT_FOR_GESTURE'})
