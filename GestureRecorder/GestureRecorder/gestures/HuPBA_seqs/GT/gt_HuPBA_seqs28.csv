@@ -1,0 +1,7 @@
+sep=, 
+UserId, GestureType, FirstFrame, LastFrame
+5, 0, 75, 125
+5, 3, 468, 211
+5, 1, 250, 319
+5, 2, 329, 383
+5, -1, 420, 518

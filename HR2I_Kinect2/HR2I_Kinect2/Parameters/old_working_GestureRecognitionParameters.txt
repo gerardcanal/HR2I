@@ -1,0 +1,7 @@
+DYNANMIC_GESTURE_0 = 1 0.25
+DYNANMIC_GESTURE_1 = 2 10 9
+DYNANMIC_GESTURE_2 = 2 5 12
+PointAtThresholds = 0.25 2.35 25
+MU = 9 9 5
+gestOverlapings = 0.564187 0.564187 0.564187
+bestOverlapping = 0.564187

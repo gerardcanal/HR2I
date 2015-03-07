@@ -182,3 +182,31 @@ void Utils::ExtractFaceRotationInDegrees(const Vector4* pQuaternion, double* pPi
 float Utils::F1measure(int TP, int FP, int FN) {
 	return float(2 * TP) / float(2 * TP + FP + FN);
 }
+
+float Utils::overlap(int firstgt, int lastgt, int firstdet, int lastdet) {
+	float inters = (min(lastgt, lastdet) - max(firstgt, firstdet) + 1) * (max(firstgt, firstdet) <= min(lastgt, lastdet));
+	float _union = max(lastgt, lastdet) - min(firstgt, firstdet) + 1;
+	return inters / _union;
+}
+
+
+std::vector<std::pair<int, int>> Utils::detectionsUnion(const std::vector<std::pair<int, int>>& detections) {
+	if (detections.size() == 0) return detections;
+	std::vector<std::pair<int, int>> det_union;
+	std::vector<bool> united(detections.size(), false);
+
+	for (int i = 0; i < detections.size(); ++i) {
+		if (united[i]) continue;
+		std::pair<int, int> curr = detections[i];
+		united[i] = true;
+		for (int j = i+1; j < detections.size(); ++j) {
+			if (max(curr.first, detections[j].first) <= min(curr.second, detections[j].second)) {
+				curr.first = min(curr.first, detections[j].first);
+				curr.second = max(curr.second, detections[j].second);
+				united[j] = true;
+			}
+		}
+		det_union.push_back(curr);
+	}
+	return det_union;
+}
