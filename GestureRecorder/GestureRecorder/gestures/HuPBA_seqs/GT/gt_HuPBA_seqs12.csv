@@ -1,8 +1,7 @@
 sep=, 
-GestureType, FirstFrame, LastFrame
-0, 93, 136
-0, 136, 183
-1, 278, 385
-2, 423, 511
-3, 568, 605
--1, 670, 771
+UserId, GestureType, FirstFrame, LastFrame
+2, 0, 93, 183
+2, 1, 278, 385
+2, 2, 423, 511
+2, 3, 568, 605
+2, -1, 670, 771

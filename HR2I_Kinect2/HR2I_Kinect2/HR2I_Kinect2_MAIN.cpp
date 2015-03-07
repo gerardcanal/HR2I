@@ -104,9 +104,12 @@ void cmd_subs_cb(const hr2i_thesis::Kinect2Command& cmd) {
 	cout << endl;
 }
 
-
+#include "GRValidation.h"
 // MAIN 
 int _tmain(int argc, _TCHAR * argv[]) {
+	//GRValidation::computeAndWriteBestParams(true, "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs", "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs\\GT", "..\\..\\GestureRecorder\\GestureRecorder\\gestures", 0.25);
+	GRValidation::exhaustiveLOSOCV("..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs", "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs\\GT", "..\\..\\GestureRecorder\\GestureRecorder\\gestures");
+	exit(1);
 	const string GROUND_PARAMS_PATH = "Parameters\\GroundPlaneCoeffs.txt";
 	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt";
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";

@@ -63,6 +63,9 @@
     <ClInclude Include="Face.h">
       <Filter>Archivos de encabezado</Filter>
     </ClInclude>
+    <ClInclude Include="GRValidation.h">
+      <Filter>Archivos de encabezado</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -72,9 +75,6 @@
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
     <ClCompile Include="GestureRecognition.cpp">
-      <Filter>Archivos de código fuente</Filter>
-    </ClCompile>
-    <ClCompile Include="GR_training.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
     <ClCompile Include="HR2ISceneViewer.cpp">
@@ -104,9 +104,6 @@
     <ClCompile Include="..\ros_lib\WindowsSocket.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
-    <ClCompile Include="example_ROS_TESTS.cpp">
-      <Filter>Archivos de código fuente</Filter>
-    </ClCompile>
     <ClCompile Include="HR2I_Kinect2.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
@@ -114,6 +111,9 @@
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
     <ClCompile Include="Face.cpp">
+      <Filter>Archivos de código fuente</Filter>
+    </ClCompile>
+    <ClCompile Include="GRValidation.cpp">
       <Filter>Archivos de código fuente</Filter>
     </ClCompile>
   </ItemGroup>

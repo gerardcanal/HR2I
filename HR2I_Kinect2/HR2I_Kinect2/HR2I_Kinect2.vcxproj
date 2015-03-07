@@ -96,6 +96,7 @@
     <ClInclude Include="BodyRGBViewer.h" />
     <ClInclude Include="Face.h" />
     <ClInclude Include="GestureRecognition.h" />
+    <ClInclude Include="GRValidation.h" />
     <ClInclude Include="HR2ISceneViewer.h" />
     <ClInclude Include="HR2I_Kinect2.h" />
     <ClInclude Include="K2PCL.h" />
@@ -114,12 +115,8 @@
     <ClCompile Include="BodyRGBViewer.cpp" />
     <ClCompile Include="Face.cpp" />
     <ClCompile Include="GestureRecognition.cpp" />
-    <ClCompile Include="GR_training.cpp" />
+    <ClCompile Include="GRValidation.cpp" />
     <ClCompile Include="HR2ISceneViewer.cpp" />
-    <ClCompile Include="example_ROS_TESTS.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="HR2I_Kinect2.cpp" />
     <ClCompile Include="HR2I_Kinect2_MAIN.cpp" />
     <ClCompile Include="K2PCL.cpp" />

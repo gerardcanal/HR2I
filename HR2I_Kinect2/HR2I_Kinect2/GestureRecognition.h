@@ -42,18 +42,20 @@ static const std::map<Gesture, DistanceMetrics> Gesture2Metric = {
 };
 
 struct GroundTruth {
+	int userId;
 	int firstFrame;
 	int lastFrame;
 	Gesture type;
-	GroundTruth(int first, int last, Gesture g) : firstFrame(first), lastFrame(last), type(g) {}
+	GroundTruth(int userid, int first, int last, Gesture g) : userId(userid), firstFrame(first), lastFrame(last), type(g) {}
 };
 
 struct GRParameters {
 	std::vector<float> DynParams[N_DYNAMIC_GESTURES]; // Dynamic Gesture parameters: L1 distance threshold for WAVE, feature params for facial gestures (in order: difference between frames and number of frames between samplings)...
 	float pointAtTh[3]; // SIGMA. [0] = hand-hip distance, [1] = elbow angle and [3] consecutive frames -> test values 0.25, 2.8, 25
 	float gestMU[N_DYNAMIC_GESTURES]; // MU - threshold per each gesture type for the DTW
-	float ovlps[N_GESTURES]; // Overlap per gesture
-	float bestOvlp; // Best overlap
+	float scores[N_GESTURES]; // Score per gesture
+	float bestScore; // Best general score (mean per gesture)
+	bool f1score; // If the scores are f1 (true) or overlaps (false)
 };
 
 /// Class to handle Gesture Recognition Algorithms
@@ -81,10 +83,9 @@ public:
 	// I/O
 	static void writeParameters(GRParameters params, std::string path);
 	static GRParameters readParameters(std::string path);
-	static std::vector<GroundTruth> readGrountTruth(std::string path);
 
-	std::vector<std::vector<float>> conventionalDTW(int gestureId, const std::vector<std::vector<float>>& model, std::vector<std::vector<float>> input, float ALPHA);
-	std::deque<int> getWPath(const std::vector<std::vector<float>> &M, int t);
+	static std::vector<std::vector<float>> conventionalDTW(int gestureId, const std::vector<std::vector<float>>& model, std::vector<std::vector<float>> input, float ALPHA);
+	static std::deque<int> getWPath(const std::vector<std::vector<float>> &M, int t);
 
 private:
 	std::pair<Gesture, float> RealTimeDTW(const std::vector<int>& gIds, const std::vector<std::vector<std::vector<float>>*>& models, int nInputframes, std::vector<float> ALPHA, std::vector<float> MU);
@@ -104,7 +105,6 @@ private:
 							 const std::set<int>& gt, float ALPHA, float MU);
 	float getStaticSequenceOverlap(const std::vector<std::vector<float>>& sequence, const std::set<int>& gt, std::vector<float>& pointAtTh);
 	float getStaticSequencesOverlap(int gestureId, const std::vector<std::vector<std::vector<float>>>& sequences, const std::vector<std::vector<std::set<int>>>& gt, std::vector<float> staticThresholds);
-	float computeAccuracy(int gestId, const std::vector<GroundTruth>& gt, std::vector<int> finalframedetections);
 
 
 
