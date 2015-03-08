@@ -95,7 +95,8 @@ float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh
 			#pragma omp flush
 		}
 		std::vector<float> input = getNextFrame(gestureId);
-		if (input[0] == -1.0 && input[1] == -1) break; // Frame which means end of sequence... nothing was recognized
+		//if (input[0] == -1.0 && input[1] == -1) continue; // Frame which means end of sequence... nothing was recognized
+		if (input.size() == 0) continue;
 
 		if (input[0] > pointAtTh[0] && input[1] > pointAtTh[1]) {
 			++consFrames;

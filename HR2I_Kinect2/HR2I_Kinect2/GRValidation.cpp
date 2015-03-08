@@ -95,7 +95,7 @@ void GRValidation::loadData(std::string path, std::string gt_path, bool filterun
 	}
 	use_user = std::vector<bool>(gt.size(), true);
 	if (verbose) {
-		std::cout << ". It took " << float(time(NULL)-begin) / 60.0 << " seconds. " << std::endl;
+		std::cout << ". It took " << float(time(NULL)-begin) / 60.0 << " minutes. " << std::endl;
 	}
 }
 

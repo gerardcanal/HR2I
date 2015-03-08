@@ -129,7 +129,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr K2PCL::segmentPlaneByDirection(pcl::PointClo
 
 /// Returns the clusters found in the scene. The input cloud does not have the segmented clusters at the end of the function call
 std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> K2PCL::segmentObjectsFromScene(pcl::PointCloud<pcl::PointXYZ>::Ptr&  cloud, int max_size, int min_size, double cluster_tolerance) {
-	const float PERC_POINTS = 0.3;
+	const float PERC_POINTS = 0.45; // original: 0.3. Working: 0.2
 	// Add downsample if needed...
 
 	//Segment planes to take them out of the clustering method

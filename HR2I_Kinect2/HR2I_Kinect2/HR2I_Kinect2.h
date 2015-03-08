@@ -1,6 +1,6 @@
 // Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "stdafx.h"
-//#define USE_ROS_HR2I
+#define USE_ROS_HR2I
 #define USE_PCL_HR2I
 // Std
 #include <thread>
@@ -25,7 +25,7 @@
 #include "hr2i_thesis/PointCloudClusterCentroids.h"
 
 #define OBJECT_RADIUS 0.55 // Distance between the point and the objects which are to be segmented
-#define OBJECT_RADIUS_CLOSE 0.55 // Distance between the point and the objects which are to be segmented
+#define OBJECT_RADIUS_CLOSE 0.65 // Distance between the point and the objects which are to be segmented
 #define SHOWING_GESTURE_TIME 15000
 #define SHOWING_CLUSTERS_TIME 20000
 #define OVERANGLE_CORRECTION 1.6
