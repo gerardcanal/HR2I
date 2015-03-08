@@ -33,10 +33,10 @@ void GRValidation::constructBinaryGTsequences(int donotcare, bool verbose) {
 
 				// Prepare dont care mask
 				if (donotcare > 0) {
-					for (int j = max(0, gt[u][s][g].firstFrame - int(donotcare / 2.0)); j <= (gt[u][s][g].firstFrame + int(donotcare / 2.0)); ++j) {
+					for (int j = max(0, gt[u][s][g].firstFrame - int(donotcare / 2.0)); j <= min((gt[u][s][g].firstFrame + int(donotcare / 2.0)), dc_masks[u][s][gid].size()-1); ++j) {
 						dc_masks[u][s][gid][j] = 0; // Set the surroundings to 0
 					}
-					for (int j = max(0, gt[u][s][g].lastFrame - int(donotcare / 2.0)); j <= (gt[u][s][g].lastFrame + int(donotcare / 2.0)); ++j) {
+					for (int j = max(0, gt[u][s][g].lastFrame - int(donotcare / 2.0)); j <= min((gt[u][s][g].lastFrame + int(donotcare / 2.0)), dc_masks[u][s][gid].size()-1); ++j) {
 						dc_masks[u][s][gid][j] = 0; // Set the surroundings to 0
 					}
 				}
@@ -107,6 +107,7 @@ float GRValidation::binaryOverlap(const std::vector<int>& gt, const std::vector<
 		_intersect += ((gt[i] * dncmask[i]) == 1) && ((det[i] * dncmask[i]) == 1);
 		_union += ((gt[i] * dncmask[i]) == 1) || ((det[i] * dncmask[i]) == 1);
 	}
+	if (_intersect == 0) return 0;
 	return _intersect / _union;
 }
 
@@ -219,11 +220,15 @@ void GRValidation::syncFaceFrames(int fbs, int user, int seq, int gest) {
 	// Recompute donotcare
 	dc_masks[user][seq][gest] = std::vector<int>(_new.size(), 1);
 	if (dc_frames > 0) {
-		for (int j = max(0, gt[user][seq][gest].firstFrame - int(dc_frames / 2.0)); j <= (gt[user][seq][gest].firstFrame + int(dc_frames / 2.0)); ++j) {
-			dc_masks[user][seq][gest][j] = 0; // Set the surroundings to 0
-		}
-		for (int j = max(0, gt[user][seq][gest].lastFrame - int(dc_frames / 2.0)); j <= (gt[user][seq][gest].lastFrame + int(dc_frames / 2.0)); ++j) {
-			dc_masks[user][seq][gest][j] = 0; // Set the surroundings to 0
+		for (int _g = 0; _g < gt[user][seq].size(); ++_g) { // For each gesture of the sequence
+			int gid = gt[user][seq][_g].type;
+			if (gid != gest) continue;
+			for (int j = max(0, gt[user][seq][_g].firstFrame - int(dc_frames / 2.0)); j <= min((gt[user][seq][_g].firstFrame + int(dc_frames / 2.0)), dc_masks[user][seq][gid].size()-1); ++j) {
+				dc_masks[user][seq][gid][j] = 0; // Set the surroundings to 0
+			}
+			for (int j = max(0, gt[user][seq][_g].lastFrame - int(dc_frames / 2.0)); j <= min((gt[user][seq][_g].lastFrame + int(dc_frames / 2.0)), dc_masks[user][seq][gid].size()-1); ++j) {
+				dc_masks[user][seq][gid][j] = 0; // Set the surroundings to 0
+			}
 		}
 	}
 }
@@ -481,7 +486,7 @@ GRParameters GRValidation::bestParametersSelection(bool usef1, float ovlp_th, co
 		if (usef1) std::cout << "\tF1's overlap threshold: " << ovlp_th << std::endl;
 		
 	}
-	if (verbose || printPercent) std::cout << "\tIt took " << float(time(NULL) - begin) / 60.0 << " minutes." << std::endl;
+	if (verbose || printPercent) std::cout << "\tIt took " << float(time(NULL) - begin) << " seconds (" << float(time(NULL) - begin) / 60.0 << " minutes)." << std::endl;
 	bests.f1score = usef1;
 	return bests;
 }
@@ -491,12 +496,12 @@ void GRValidation::LOSOCV(bool usef1, float ovlp_th, const std::vector<std::vect
 						  const std::vector<std::vector<std::vector<float>>>& dyn_params, const std::vector<std::vector<float>>& dyn_mu,
 					      const std::vector<std::vector<float>>& st_params, bool verbose) {
 	time_t begin = time(NULL);
-	if (verbose) std::cout << "LOOCV method..." << std::endl;
+	if (verbose) std::cout << "LOSOCV method..." << std::endl;
 
 	std::vector<std::vector<std::vector<float>>> scores(gt.size()); // Each user, each sequence, each gesture a score
 
 	for (int u = 0; u < gt.size(); ++u) { // u is the left-out user
-		if (verbose) std::cout << "User fold " << u << "..." << std::endl;
+		if (verbose) std::cout << "User fold " << u+1 << "/" << gt.size() << "..." << std::endl;
 		use_user[u] = false;
 		scores[u] = std::vector<std::vector<float>>(gt[u].size(), std::vector<float>(N_GESTURES));
 
@@ -511,12 +516,22 @@ void GRValidation::LOSOCV(bool usef1, float ovlp_th, const std::vector<std::vect
 				}
 			}
 			else if (g == NOD || g == NEGATE) {
+				// Backup pre syncronization
+				std::vector<std::vector<std::vector<GroundTruth>>> gt_bak = gt;
+				binaryGTseqs gt_seqs_bak = gt_seqs;
+				dontcaremasks dc_masks_bak = dc_masks;
+
 				// Compute new model and feature sequences
 				std::vector<std::vector<float>> _model = Face::getFeatures(pars.DynParams[g][0], pars.DynParams[g][1], face_models[g]);
 				for (int s = 0; s < gt[u].size(); ++s) {
+					syncFaceFrames(pars.DynParams[g][1], u, s, g);
 					feat[u][s][g] = Face::getFeatures(pars.DynParams[g][0], pars.DynParams[g][1], face_seqs[u][s]);
 					scores[u][s][g] = getDynamicSequenceScore(usef1, g, u, s, _model, feat[u][s][g], 0.0, pars.gestMU[g], ovlp_th); // Alpha is not used
 				}
+				// Restore baks
+				gt = gt_bak;
+				gt_seqs = gt_seqs_bak;
+				dc_masks = dc_masks_bak;
 			}
 			else if (g == POINT_AT) {
 				std::vector<float> pa_th = { pars.pointAtTh[0], pars.pointAtTh[1], pars.pointAtTh[2] };
@@ -531,8 +546,8 @@ void GRValidation::LOSOCV(bool usef1, float ovlp_th, const std::vector<std::vect
 	// Write results
 	std::string scoretype = (usef1 ? "f1" : "ovlp");
 	std::string fname = "Parameters/LOSO_results_" + scoretype + ".csv";
-	bool write_header = std::tr2::sys::exists(std::tr2::sys::path(fname));
-	std::ofstream f(fname, std::ofstream::out | std::ios_base::ate);
+	bool write_header = !std::tr2::sys::exists(std::tr2::sys::path(fname));
+	std::ofstream f(fname, std::ios_base::app);
 	if (write_header) {
 		f << "sep=, " << std::endl;
 		if (usef1) f << "Ovlp_th, ";
@@ -602,8 +617,9 @@ void GRValidation::getTestParams(std::vector<std::vector<std::vector<float>>>& d
 void GRValidation::computeAndWriteBestParams(bool usef1, std::string seqpath, std::string gtpath, std::string modelspath, float ovlp_th) {
 	//time_t begin = time(NULL);
 	GRValidation grv;
+	int dnc = (usef1)? 0 : int(ovlp_th);
 	grv.loadData(seqpath, gtpath, true);
-	grv.constructBinaryGTsequences(0);
+	grv.constructBinaryGTsequences(dnc);
 	
 	// Models
 	std::vector<std::vector<float>> wave_model = Skeleton::gestureFeaturesFromCSV(modelspath + "/HelloModel/HelloModel_features.csv");
@@ -629,6 +645,7 @@ void GRValidation::exhaustiveLOSOCV(std::string seqpath, std::string gtpath, std
 	f.open("Parameters/LOSO_results_ovlp.csv", std::ofstream::out | std::ofstream::trunc);
 	f.close();*/
 
+	time_t begin = time(NULL);
 	GRValidation grv;
 	grv.loadData(seqpath, gtpath, true);
 	grv.constructBinaryGTsequences(0);
@@ -645,14 +662,21 @@ void GRValidation::exhaustiveLOSOCV(std::string seqpath, std::string gtpath, std
 	std::vector<std::vector<float>> st_params(3);
 	GRValidation::getTestParams(dyn_params, dyn_mu, st_params);
 
-	/*for (int th = 0.05; th <= 1.0; th += 0.05) {
-		grv.LOSOCV(true, th, wave_model, face_models, dyn_params, dyn_mu, st_params, true);
-	}*/
+	std::cout << "F1 tests..." << std::endl;
 
-	//std::vector<int> dc_frames = { 0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
-	std::vector<int> dc_frames = { 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
+	for (float th = 0.05; th <= 1.0; th += 0.05) {
+		grv.LOSOCV(true, th, wave_model, face_models, dyn_params, dyn_mu, st_params, true);
+		std::cout << std::endl;
+	}
+
+	std::cout << "Overlap tests..." << std::endl;
+
+	std::vector<int> dc_frames = { 0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
 	for (int i = 0; i < dc_frames.size(); ++i) {
 		grv.constructBinaryGTsequences(dc_frames[i], false);
 		grv.LOSOCV(false, 0.0, wave_model, face_models, dyn_params, dyn_mu, st_params, true); // th is not used in this case...
+		std::cout << std::endl;
 	}
+	time_t end = time(NULL);
+	std::cout << "Exhaustive LOSO CV took " << float(end - begin) / 60.0 << " minutes (" << float(end - begin) / 3600.0 << " hours)." << std::endl;
 }
