@@ -37,16 +37,18 @@ class NaoSayHello(Concurrence):
                              default_outcome='succeeded', outcome_map={'succeeded': {'SAY_HELLO': 'succeeded', 'HELLO_GESTURE': 'succeeded'}})
 
         if not text_pool:
-            text_pool = ['Hello there!', 'Hello!', 'Hi!', 'Oh, hello!', 'olla!' 'allo!', 'Hey!']
+            hello_pool = ['Hello there!', 'Hello!', 'Hi!', 'Oh, hello!', 'olla!' 'allo!', 'Hey!']
+            bye_pool = ['Bye bye!', 'Bye!', 'Good bye!', 'Adios!']
         elif isinstance(str, text_pool):
-            text_pool = [text_pool]
+            hello_pool = [text_pool]
         hello_riding_gest = 'HR2I_simple_hello_gesture_wb'
         hello_standing_gest = 'HR2I_simple_hello_gesture_stand'
         _checkInstalledBehavior(hello_riding_gest)
         _checkInstalledBehavior(hello_standing_gest)
+        self.saidHello = False
 
         with self:
-            Concurrence.add('SAY_HELLO', SpeechFromPoolSM(pool=text_pool, blocking=True, wait_before_speak=2.95))
+            Concurrence.add('SAY_HELLO', SpeechFromPoolSM(pool=hello_pool, blocking=True, wait_before_speak=2.95))
 
             hello_gest_sm = StateMachine(outcomes=['succeeded', 'aborted', 'preempted'], input_keys=['riding_wifibot'])
             with hello_gest_sm:
@@ -285,8 +287,8 @@ class NaoGoToLocationInFront(StateMachine):
                 translated_loc.theta = ud.in_alpha  # Alpha is already the other rotation.
 
                 ##### FIXME: to avoid NAO going left
-                translated_loc.theta -= 0.185  # 0.185
-                translated_loc.y -= 0.1  # 0.05
+                translated_loc.theta -= 0.2  # 0.185
+                translated_loc.y -= 0.15  # 0.05
                 ################ END FIXME
 
                 ud.out_new_loc = translated_loc

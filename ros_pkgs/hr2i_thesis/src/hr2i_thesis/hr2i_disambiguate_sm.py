@@ -12,7 +12,7 @@ from hr2i_thesis.msg import PointCloudClusterCentroids
 
 class DisambiguateBlobs(StateMachine):
     ''' It assumes max 3 blobs has been detected '''
-    DIST_TH = 0.1   # metres
+    DIST_TH = 0.07   # 0.1 metres
     SIZE_TH = 0.75  # If ratio between sizemax/sizemin > SIZE_TH then we assume ambiguous size
     REFLECT_DIST_TH = 0.15  # Distance at which a reflection is considered as it
     REFLECT_Z_TH = 0.10  # If abs(obj.z - reflec.z) > th it is a reflection
