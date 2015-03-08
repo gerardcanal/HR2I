@@ -671,7 +671,7 @@ void GRValidation::exhaustiveLOSOCV(std::string seqpath, std::string gtpath, std
 
 	std::cout << "Overlap tests..." << std::endl;
 
-	std::vector<int> dc_frames = { 0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21 };
+	std::vector<int> dc_frames = { 0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45, 47, 51, 53, 55, 57, 59, 61 };
 	for (int i = 0; i < dc_frames.size(); ++i) {
 		grv.constructBinaryGTsequences(dc_frames[i], false);
 		grv.LOSOCV(false, 0.0, wave_model, face_models, dyn_params, dyn_mu, st_params, true); // th is not used in this case...
