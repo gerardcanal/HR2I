@@ -107,6 +107,9 @@ void cmd_subs_cb(const hr2i_thesis::Kinect2Command& cmd) {
 #include "GRValidation.h"
 // MAIN 
 int _tmain(int argc, _TCHAR * argv[]) {
+	/*GRValidation::computeAndWriteBestParams(false, "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs", 
+		"..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs\\GT", "..\\..\\GestureRecorder\\GestureRecorder\\gestures", 1);
+	exit(1);*/
 	const string GROUND_PARAMS_PATH = "Parameters\\GroundPlaneCoeffs.txt";
 	const string GR_PARAMS_PATH = "Parameters\\GestureRecognitionParameters.txt";
 	const string GESTURE_MODELS_PATH = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\";
@@ -208,9 +211,9 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	////////////////// Main code ///////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	while (body_view.isRunning()) {
-		//hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
+		hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
 		//// TEST ^uncomment
-		hr2i_thesis::Kinect2Command cmd;  cmd.command = cmd.recGestCmd;
+		//hr2i_thesis::Kinect2Command cmd;  cmd.command = cmd.recGestCmd;
 		//// TEST
 		if (cmd.command == cmd.recGestCmd) {
 			hr2i.recognizeGestureState(GESTURE_MODELS_PATH, &gest_pub);
