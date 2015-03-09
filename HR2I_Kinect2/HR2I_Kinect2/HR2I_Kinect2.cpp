@@ -111,11 +111,11 @@ void HR2I_Kinect2::dataGetter(GestureRecognition* gr, GRParameters params) {
 	}
 }
 
-hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const string& GRParams_path, const vector<vector<vector<float>>>& models) {
+hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const vector<vector<vector<float>>>& models) {
 	const float DESCEND_DIREC_TH = -0.05;
 	inputFrames.clear();
 	GestureRecognition gr;
-	GRParameters params = GestureRecognition::readParameters(GRParams_path);
+
 	hr2i_thesis::GestureRecognitionResult result;
 
 	// Start data getter thread and start gesture recognition from this data
@@ -202,13 +202,31 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const stri
 	return result;
 }
 
+void HR2I_Kinect2::loadParameters(const string& GRParams_path) {
+	this->params = GestureRecognition::readParameters(GRParams_path);
+}
+
 vector<vector<vector<float>>> HR2I_Kinect2::readDynamicModels(string gestPath) {
 	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
+	// WAVE
 	models[WAVE] = Skeleton::gestureFeaturesFromCSV(gestPath + "HelloModel/HelloModel_features.csv");
+	
+	// Regenerate facial features for the models
+	std::vector<Face> gesture = Face::faceGestureFromCSV(gestPath + "YesFacialModel/YesFacialModel_faces.csv");
+	models[NOD] = Face::getFeatures(params.DynParams[NOD][0], params.DynParams[NOD][1], gesture);
+	gesture = Face::faceGestureFromCSV(gestPath + "YesFacialModel/YesFacialModel_faces.csv");
+	models[NEGATE] = Face::getFeatures(params.DynParams[NEGATE][0], params.DynParams[NEGATE][1], gesture);
+
+	// The precomputed features seem to work better than the actual ones...
 	models[NOD] = Face::gestureFeaturesFromCSV(gestPath + "YesFacialModel/YesFacialModel_faces_features.csv");
 	models[NEGATE] = Face::gestureFeaturesFromCSV(gestPath + "NoFacialModel/NoFacialModel_faces_features.csv");
+	
+	
 	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModel_features.csv");
 	//models[POINT_AT] = GestureRecognition::addThirdFeature(models[POINT_AT]);
+	
+	
+	this->_models = models;
 	return models;
 }
 
@@ -343,11 +361,11 @@ void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, b
 #define X_OFFSET 0.07 // To correct user deviations
 #define Z_OFFSET 0.125 // To correct user deviations
 // ROS handling and States
-void HR2I_Kinect2::recognizeGestureState(const string& gr_params_path, const string& gr_models_path, ros::Publisher* gesture_pub) {
+void HR2I_Kinect2::recognizeGestureState(const string& gr_models_path, ros::Publisher* gesture_pub) {
 	currentState = GESTURE_RECOGNITION;
 	cout << "State: Recognizing gestures..." << endl;
 	// Call gesture recognition
-	hr2i_thesis::GestureRecognitionResult gr_res = recognizeGestures(gr_params_path, readDynamicModels(gr_models_path));
+	hr2i_thesis::GestureRecognitionResult gr_res = recognizeGestures(this->_models);
 	gesture_pub->publish(&gr_res);
 	currentState = WAITING; // As we already made the recognition
 	if (gr_res.gestureId == gr_res.idPointAt) {

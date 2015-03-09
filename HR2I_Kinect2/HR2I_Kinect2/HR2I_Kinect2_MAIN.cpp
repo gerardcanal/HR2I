@@ -190,6 +190,8 @@ int _tmain(int argc, _TCHAR * argv[]) {
 #else
 	HR2I_Kinect2 hr2i(&body_view, NULL, &k2u, &nh);
 #endif
+	hr2i.loadParameters(GR_PARAMS_PATH);
+	hr2i.readDynamicModels(GESTURE_MODELS_PATH);
 	hr2iPtr = &hr2i;
 	ros::Subscriber < hr2i_thesis::Kinect2Command > k2cmdSub("kinect2_command", &cmd_subs_cb);
 	nh.subscribe(k2cmdSub);
@@ -206,12 +208,12 @@ int _tmain(int argc, _TCHAR * argv[]) {
 	////////////////// Main code ///////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////
 	while (body_view.isRunning()) {
-		hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
+		//hr2i_thesis::Kinect2Command cmd = hr2i.waitForCommandState();
 		//// TEST ^uncomment
-		//hr2i_thesis::Kinect2Command cmd;  cmd.command = cmd.recGestCmd;
+		hr2i_thesis::Kinect2Command cmd;  cmd.command = cmd.recGestCmd;
 		//// TEST
 		if (cmd.command == cmd.recGestCmd) {
-			hr2i.recognizeGestureState(GR_PARAMS_PATH, GESTURE_MODELS_PATH, &gest_pub);
+			hr2i.recognizeGestureState(GESTURE_MODELS_PATH, &gest_pub);
 		}
 		else if (cmd.command == cmd.segmentBlobs) {
 			hr2i.clusterObjectsState(&cluster_pub);

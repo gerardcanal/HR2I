@@ -1,6 +1,6 @@
 // Author: Gerard Canal Camprodon (gcanalcamprodon@gmail.com - github.com/gerardcanal)
 #include "stdafx.h"
-#define USE_ROS_HR2I
+//#define USE_ROS_HR2I
 #define USE_PCL_HR2I
 // Std
 #include <thread>
@@ -40,8 +40,9 @@ public:
 	~HR2I_Kinect2();
 
 	// Gesture methods
-	hr2i_thesis::GestureRecognitionResult recognizeGestures(const string& GRParams_path, const vector<vector<vector<float>>>& models);
+	hr2i_thesis::GestureRecognitionResult recognizeGestures(const vector<vector<vector<float>>>& models);
 	vector<vector<vector<float>>> readDynamicModels(string gestPath = "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\");
+	void loadParameters(const string& paramsFilePath = "Parameters\\GestureRecognitionParameters.txt");
 	
 	// Ground methods
 	std::vector<float> computeGroundCoefficientsFromUser();
@@ -56,7 +57,7 @@ public:
 	void k2CommandReceivedCb(const hr2i_thesis::Kinect2Command& cmd);
 
 	// States
-	void recognizeGestureState(const string& gr_params_path, const string& gr_models_path, ros::Publisher* gesture_pub);
+	void recognizeGestureState(const string& gr_models_path, ros::Publisher* gesture_pub);
 	hr2i_thesis::Kinect2Command waitForCommandState();
 	void clusterObjectsState(ros::Publisher* clusters_pub);
 
@@ -70,6 +71,8 @@ private:
 	vector<float> groundplane_point;
 	Kinect2Utils* k2u;
 	State currentState = GESTURE_RECOGNITION; // 0 - Waiting for command, 1 gesture recognition, 2 obj segmentation
+	GRParameters params;
+	vector<vector<vector<float>>> _models;
 
 	// ROS
 	ros::NodeHandle* nh;
