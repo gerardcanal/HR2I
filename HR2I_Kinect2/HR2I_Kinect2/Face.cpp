@@ -186,7 +186,7 @@ std::vector<float> Face::computeFrameFeatures(int dbf, int numoff, int lastusedf
 		double difyaw = orientation_pyr[1] - oldorient_pyr[1]; //yaw - oldyaw;
 		double difroll = orientation_pyr[2] - oldorient_pyr[2]; //roll - oldroll;
 
-		if (abs(difroll) >= dbf) difroll = (0 < difroll) - (difroll < 0);
+		if (abs(difroll) >= dbf) difroll = (0 < difroll) - (difroll < 0); // It is actually the same as difroll = Utils::sgn(difroll);
 		else difroll = 0;
 		if (abs(difyaw) >= dbf) difyaw = (0 < difyaw) - (difyaw < 0);
 		else difyaw = 0;
