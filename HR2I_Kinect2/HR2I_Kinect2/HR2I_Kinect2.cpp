@@ -214,12 +214,13 @@ vector<vector<vector<float>>> HR2I_Kinect2::readDynamicModels(string gestPath) {
 	// Regenerate facial features for the models
 	std::vector<Face> gesture = Face::faceGestureFromCSV(gestPath + "YesFacialModel/YesFacialModel_faces.csv");
 	models[NOD] = Face::getFeatures(params.DynParams[NOD][0], params.DynParams[NOD][1], gesture);
-	gesture = Face::faceGestureFromCSV(gestPath + "YesFacialModel/YesFacialModel_faces.csv");
+	gesture = Face::faceGestureFromCSV(gestPath + "NoFacialModel/NoFacialModel_faces.csv");
 	models[NEGATE] = Face::getFeatures(params.DynParams[NEGATE][0], params.DynParams[NEGATE][1], gesture);
 
-	// The precomputed features seem to work better than the actual ones...
+	/*// The precomputed features seem to work better than the actual ones...
 	models[NOD] = Face::gestureFeaturesFromCSV(gestPath + "YesFacialModel/YesFacialModel_faces_features.csv");
 	models[NEGATE] = Face::gestureFeaturesFromCSV(gestPath + "NoFacialModel/NoFacialModel_faces_features.csv");
+	*/
 	
 	
 	//models[POINT_AT] = Skeleton::gestureFeaturesFromCSV(gestPath + "PointAtModel/PointAtModel_features.csv");
