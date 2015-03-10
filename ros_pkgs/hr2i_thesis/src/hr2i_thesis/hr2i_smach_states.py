@@ -287,8 +287,8 @@ class NaoGoToLocationInFront(StateMachine):
                 translated_loc.theta = ud.in_alpha  # Alpha is already the other rotation.
 
                 ##### FIXME: to avoid NAO going left
-                translated_loc.theta -= 0.2  # 0.185
-                translated_loc.y -= 0.15  # 0.05
+                translated_loc.theta -= 0.15  # 0.185
+                translated_loc.y -= 0.05  # 0.05
                 ################ END FIXME
 
                 ud.out_new_loc = translated_loc

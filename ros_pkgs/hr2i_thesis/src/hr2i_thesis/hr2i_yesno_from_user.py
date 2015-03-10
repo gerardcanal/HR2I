@@ -3,7 +3,7 @@
 from smach import Concurrence, StateMachine, CBState
 from nao_smach_utils.get_user_speech_answer import GetUserAnswer
 from hr2i_smach_states import WaitForGestureRecognitionSM
-from nao_smach_utils.speech_recognition_states import StopRecognitionState,StartRecognitionState
+from nao_smach_utils.speech_recognition_states import StopRecognitionState, StartRecognitionState
 from nao_smach_utils.tts_state import SpeechFromPoolSM
 
 
