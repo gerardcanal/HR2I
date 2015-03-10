@@ -358,7 +358,7 @@ void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, b
 }
 
 #define Y_FACTOR 1.03 // 1.15 before
-#define X_OFFSET 0.07 // To correct user deviations
+#define X_OFFSET 0.1 // To correct user deviations
 #define Z_OFFSET 0.125 // To correct user deviations
 // ROS handling and States
 void HR2I_Kinect2::recognizeGestureState(const string& gr_models_path, ros::Publisher* gesture_pub) {
@@ -377,7 +377,7 @@ void HR2I_Kinect2::recognizeGestureState(const string& gr_models_path, ros::Publ
 		_newpoint.z += Z_OFFSET+0.03;
 		/// END USER CORRECTION
 
-		getAndDrawScene(pointingPoint, true, true, OBJECT_RADIUS);
+		getAndDrawScene(_newpoint, true, true, OBJECT_RADIUS);
 		// Sleep for some time unless we get the message... Sleep(SHOWING_GESTURE_TIME);
 		for (int i = 0; i < SHOWING_GESTURE_TIME / 50; ++i) {
 			roscmd_mtx.lock();
