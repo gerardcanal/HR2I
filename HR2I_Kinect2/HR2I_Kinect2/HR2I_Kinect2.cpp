@@ -137,8 +137,9 @@ hr2i_thesis::GestureRecognitionResult HR2I_Kinect2::recognizeGestures(const vect
 		vector<float> Hand(3, 0.0);
 		vector<float> Elbow(3, 0.0);
 		vector<float> HandTip(3, 0.0);
-		// Average the frames to have a medium vector
-		int start = std::min(10, (int)inputFrames.size()), numEl = 10;
+		// Average the frames to have a mean joint vector
+		int numEl = 10; // maybe inputFrames.size()/2;could also be good
+		int start = std::max(0, (int)inputFrames.size()-1-numEl);
 		int k = 0;
 		for (int i = start; i < std::min(start+numEl, (int)inputFrames.size()); ++i) {
 			CameraSpacePoint h = inputFrames[i].getJointPosition(JointType_HandRight);
@@ -360,7 +361,7 @@ void HR2I_Kinect2::getAndDrawScene(pcl::PointXYZ pointingPoint, bool drawBody, b
 
 #define Y_FACTOR 1.03 // 1.15 before
 #define X_OFFSET 0.1 // To correct user deviations
-#define Z_OFFSET 0.125 // To correct user deviations
+#define Z_OFFSET 0.2 // 0.125 // To correct user deviations
 // ROS handling and States
 void HR2I_Kinect2::recognizeGestureState(const string& gr_models_path, ros::Publisher* gesture_pub) {
 	currentState = GESTURE_RECOGNITION;
