@@ -32,13 +32,13 @@ class ReleaseNAOFromWifiBotState(ExecuteBehavior):
 
 
 class NaoSayHello(Concurrence):
-    def __init__(self, text_pool=None):
+    def __init__(self, text_pool=None, sayBye=True):
         Concurrence.__init__(self, outcomes=['succeeded', 'aborted', 'preempted'], input_keys=['riding_wifibot'],
-                             default_outcome='succeeded', outcome_map={'succeeded': {'SAY_HELLO': 'succeeded', 'HELLO_GESTURE': 'succeeded'}})
+                             default_outcome='succeeded', outcome_map={'succeeded': {'SALUTE': 'succeeded', 'HELLO_GESTURE': 'succeeded'}})
 
         if not text_pool:
             hello_pool = ['Hello there!', 'Hello!', 'Hi!', 'Oh, hello!', 'olla!' 'allo!', 'Hey!']
-            bye_pool = ['Bye bye!', 'Bye!', 'Good bye!', 'Adios!']
+            bye_pool = ['Bye bye!', 'Bye!', 'Good bye!']
         elif isinstance(str, text_pool):
             hello_pool = [text_pool]
         hello_riding_gest = 'HR2I_simple_hello_gesture_wb'
@@ -48,7 +48,22 @@ class NaoSayHello(Concurrence):
         self.saidHello = False
 
         with self:
-            Concurrence.add('SAY_HELLO', SpeechFromPoolSM(pool=hello_pool, blocking=True, wait_before_speak=2.95))
+            if sayBye:
+                _sm = StateMachine(outcomes=['succeeded', 'aborted', 'preempted'])
+                with _sm:
+                    def check_bye_cb(ud):
+                        if self.saidHello:
+                            self.saidHello = False
+                            return 'say_bye'
+                        self.saidHello = True
+                        return 'say_hello'
+                    StateMachine.add('CHECK_HELLO_BYE', CBState(check_bye_cb, outcomes=['say_hello', 'say_bye']),
+                                     transitions={'say_hello': 'SAY_HELLO_STATE', 'say_bye': 'SAY_BYE_STATE'})
+                    StateMachine.add('SAY_HELLO_STATE', SpeechFromPoolSM(pool=hello_pool, blocking=True, wait_before_speak=2.95))
+                    StateMachine.add('SAY_BYE_STATE', SpeechFromPoolSM(pool=bye_pool, blocking=True, wait_before_speak=2.95))
+                Concurrence.add('SALUTE', _sm)
+            else:
+                Concurrence.add('SALUTE', SpeechFromPoolSM(pool=hello_pool, blocking=True, wait_before_speak=2.95))
 
             hello_gest_sm = StateMachine(outcomes=['succeeded', 'aborted', 'preempted'], input_keys=['riding_wifibot'])
             with hello_gest_sm:
@@ -117,7 +132,7 @@ class WaitForGestureRecognitionSM(StateMachine):
 
         with self:
             StateMachine.add('SEND_RECOGNIZE_GESTURE_CMD', SendCommandState(Kinect2Command.recGestCmd),
-                             transitions={'succeeded': 'WAIT_FOR_GESTURE'})
+                             transitions={'succeeded': 'WAIT_FOR_GESTURE', 'preempted': 'preempted'})
 
             StateMachine.add('WAIT_FOR_GESTURE', ReadTopicState(topic_name='/recognized_gesture',
                                                                 topic_type=GestureRecognitionResult,
@@ -171,7 +186,7 @@ class WaitForGestureRecognitionSM(StateMachine):
                                           'preempted': 'SEND_RECOGNIZE_GESTURE_CMD', 'aborted': 'SEND_RECOGNIZE_GESTURE_CMD'})
 
             fail_pool = ['I could not recognize your gesture. You did not point to the ground.', 'Hey! I can not fly! Please point to the ground.',
-                         'I am affraid you did not point to the ground.', 'I could not recognize that, please try again,']
+                         'I am affraid you did not point to the ground.']  # , 'I could not recognize that, please try again']
             StateMachine.add('SAY_FAILED_GESTURE', SpeechFromPoolSM(pool=fail_pool, blocking=False),
                              transitions={'succeeded': 'SEND_RECOGNIZE_GESTURE_CMD',
                                           'preempted': 'SEND_RECOGNIZE_GESTURE_CMD', 'aborted': 'SEND_RECOGNIZE_GESTURE_CMD'})
@@ -287,7 +302,7 @@ class NaoGoToLocationInFront(StateMachine):
                 translated_loc.theta = ud.in_alpha  # Alpha is already the other rotation.
 
                 ##### FIXME: to avoid NAO going left
-                translated_loc.theta -= 0.15  # 0.185
+                translated_loc.theta -= 0.25  # 0.185
                 translated_loc.y -= 0.05  # 0.05
                 ################ END FIXME
 
@@ -323,12 +338,12 @@ class SendCommandState(StateMachine):
         if command_id != 0 and command_id != 1:
             rospy.logerr('Unknown command for kinect' + str(command_id))
             sys.exit(-1)
-        StateMachine.__init__(self, outcomes=['succeeded'])
+        StateMachine.__init__(self, outcomes=['succeeded', 'preempted'])
         self._pub = rospy.Publisher("/kinect2_command", Kinect2Command, latch=True, queue_size=10)
 
         with self:
             StateMachine.add('GET_ODOM', ReadTopicState(topic_name='/wifibot/odom', topic_type=Odometry, output_key_name='wb_odom', timeout=None),
-                             transitions={'succeeded': 'PUBLISH_COMMAND', 'timeouted': 'GET_ODOM', 'preempted': 'GET_ODOM'})
+                             transitions={'succeeded': 'PUBLISH_COMMAND', 'timeouted': 'GET_ODOM', 'preempted': 'preempted'})
 
             def publish_command(ud):
                 msg = Kinect2Command()
@@ -353,7 +368,7 @@ class SegmentBlobsPipeLine(StateMachine):
                                           'preempted': 'SEND_SEGMENT_CLUSTERS_CMD', 'aborted': 'SEND_SEGMENT_CLUSTERS_CMD'})
 
             StateMachine.add('SEND_SEGMENT_CLUSTERS_CMD', SendCommandState(Kinect2Command.segmentBlobs),
-                             transitions={'succeeded': 'WAIT_FOR_BLOBS'})
+                             transitions={'succeeded': 'WAIT_FOR_BLOBS', 'preempted': 'SEND_SEGMENT_CLUSTERS_CMD'})
 
             StateMachine.add('WAIT_FOR_BLOBS', ReadObjectSegmentationTopic(), remapping={'received_clusters': 'segmented_clusters'},
                              transitions={'succeeded': 'HEAD_FRONT_succeeded', 'timeouted': 'HEAD_FRONT_timoeuted',

@@ -12,9 +12,9 @@ from hr2i_thesis.msg import PointCloudClusterCentroids
 
 class DisambiguateBlobs(StateMachine):
     ''' It assumes max 3 blobs has been detected '''
-    DIST_TH = 0.07   # 0.1 metres
+    DIST_TH = 0.4   # 0.1 metres
     SIZE_TH = 0.75  # If ratio between sizemax/sizemin > SIZE_TH then we assume ambiguous size
-    REFLECT_DIST_TH = 0.15  # Distance at which a reflection is considered as it
+    REFLECT_DIST_TH = 0.21  # 0.15  # Distance at which a reflection is considered as it
     REFLECT_Z_TH = 0.10  # If abs(obj.z - reflec.z) > th it is a reflection
 
     position_pool = ['Is it the one at your %s-hand side?', 'Do you mean the %s-most object?', 'Is this one at your %s, is it?',
@@ -56,7 +56,7 @@ class DisambiguateBlobs(StateMachine):
                     rospy.logwarn('Recognized gesture is: "' + user_answer + '"')
                 if user_answer == 'yes':  # We have it!
                     ud.selected_cluster_centroid = ud.sorted_info.cluster_centroids[ud.in_asked_id]
-                    ud.out_speech_pool = ['I found it!', 'Of course it is!', 'Yes, I knew it.', 'Yiiii!']
+                    ud.out_speech_pool = ['I found it!', 'Of course it is!', 'Yes, I knew it.']  # , 'Yiiii!']
                     return 'answer_yes'
                 # Answer has been 'NO'
                 nel = len(ud.sorted_info.cluster_sizes)
