@@ -21,6 +21,11 @@ GestureRecognition::~GestureRecognition()
 	omp_destroy_lock(&omp_lock);
 }
 
+void GestureRecognition::setGestureFound() {
+	#pragma omp critical (gesturefound)
+	gestureFound = true;
+}
+
 ///Returns the gesture ID, from the Gesture enum.
 Gesture GestureRecognition::RecognizeGesture(std::vector<std::vector<std::vector<float>>> models, GRParameters params) {
 	assert(models.size() == N_DYNAMIC_GESTURES);
@@ -92,6 +97,11 @@ float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh
 	while (!found) { // For t = 0..INF
 		while (inputFrames[gestureId].empty()) { // Wait until we have a new frame...
 			Sleep(WAIT_FRAME_SLEEP_MS);
+			// New for the execution time test
+			#pragma omp critical (gesturefound)
+			found = gestureFound; // To avoid race conditions
+			if (found) return INF;
+			///
 			#pragma omp flush
 		}
 		std::vector<float> input = getNextFrame(gestureId);
@@ -117,7 +127,7 @@ float GestureRecognition::staticGetureRecognition(int gestureId, float pointAtTh
 		}
 
 		#pragma omp critical (gesturefound)
-			found = gestureFound; // To avoid race conditions
+		found = gestureFound; // To avoid race conditions
 	}
 	return INF; // Not found!
 }
@@ -144,10 +154,13 @@ std::pair<Gesture, float> GestureRecognition::RealTimeDTW(const std::vector<int>
 			M = &Ms[gid];
 			int gestureId = gIds[gid];
 
-			while (inputFrames[gestureId].empty()) { // Wait until we have a new frame...
+			if (inputFrames[gestureId].empty()) { // Wait until we have a new frame...
+				continue;
+			}
+			/*while (inputFrames[gestureId].empty()) { // Wait until we have a new frame...
 				Sleep(WAIT_FRAME_SLEEP_MS);
 				#pragma omp flush
-			}
+			}*/
 			std::vector<float> input = getNextFrame(gestureId);
 			//if (input[0] == -1.0 && input[1] == -1) continue; // Frame which means end of sequence... nothing was recognized
 			if (input.size() == 0) continue;
@@ -179,10 +192,15 @@ std::pair<Gesture, float> GestureRecognition::RealTimeDTW(const std::vector<int>
 				slide = t == (NI - 1);
 				t = (slide) ? NI - 1 : t + 1;
 			}
+			//Originally here, moved for the execution time tests and should work in the whole system, but not tested.
 			#pragma omp critical (gesturefound)
 			found = gestureFound; // To avoid race conditions
 			if (found) break;
+			//
 		}
+		#pragma omp critical (gesturefound)
+		found = gestureFound; // To avoid race conditions
+		if (found) break;
 	}
 
 	return std::make_pair(static_cast<Gesture>(gIds[0]), INF); // In case INF is returned, the gesture will not be selected so any gesture of this thread is okay.
@@ -317,6 +335,15 @@ std::deque<int> GestureRecognition::getWPath(const SlidingMatrix<float> &M, int 
 	}
 	path.push_front(j-1); // Last element
 	return path;
+}
+
+int GestureRecognition::getMaxInputFramesSize() {
+	int maxx = inputFrames[0].size();
+	for (int i = 1; i < N_GESTURES; ++i){
+		int s = inputFrames[i].size();
+		if (maxx < s) maxx = s;
+	}
+	return maxx;
 }
 
 void GestureRecognition::addFrame(const std::vector<std::vector<float>>& Dynamic_feat, const std::vector<float>& Static_feat) {

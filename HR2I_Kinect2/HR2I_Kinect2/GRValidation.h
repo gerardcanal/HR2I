@@ -9,6 +9,8 @@
 #include <assert.h>
 #include <algorithm>
 #include <numeric>
+#include <thread>
+#include <mutex>
 
 typedef std::vector<std::vector<std::vector<std::vector<int>>>> binaryGTseqs; // user, sequence, gesture, binary sequence
 typedef std::vector<std::vector<std::vector<std::vector<int>>>> dontcaremasks;
@@ -30,6 +32,8 @@ public:
 	void LOSOCV(bool usef1, float ovlp_th, const std::vector<std::vector<float>>& wave_model, std::vector<std::vector<Face>>& face_models,
 		        const std::vector<std::vector<std::vector<float>>>& dyn_params, const std::vector<std::vector<float>>& dyn_mu,
 		        const std::vector<std::vector<float>>& st_params, bool verbose);
+
+	static void processingTimeTest(const std::string& seqpath, const std::string& gtpath, const std::string& modelspath, const std::string& GRParams_path, const float FPS = 25);
 
 	static void computeAndWriteBestParams(bool usef1, std::string seqpath, std::string gtpath, std::string modelspath, float ovlp_th=0.05);
 	static void exhaustiveLOSOCV(std::string seqpath, std::string gtpath, std::string modelspath);

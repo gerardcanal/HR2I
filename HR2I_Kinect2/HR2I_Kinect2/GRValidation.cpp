@@ -614,6 +614,12 @@ void GRValidation::getTestParams(std::vector<std::vector<std::vector<float>>>& d
 	st_params[2] = { 3, 5, 10, 15, 20, 25, 30, 35 }; // consecutive frames
 }
 
+///
+/* Usage example: 
+		GRValidation::computeAndWriteBestParams(false, "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs", 
+		      								    "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs\\GT",
+												"..\\..\\GestureRecorder\\GestureRecorder\\gestures",
+												7);*/
 void GRValidation::computeAndWriteBestParams(bool usef1, std::string seqpath, std::string gtpath, std::string modelspath, float ovlp_th) {
 	//time_t begin = time(NULL);
 	GRValidation grv;
@@ -638,6 +644,11 @@ void GRValidation::computeAndWriteBestParams(bool usef1, std::string seqpath, st
 	//std::cout << "It took " << float(time(NULL) - begin) / 60.0 << " minutes." << std::endl;
 }
 
+///
+/* Usage example: 
+		GRValidation::exhaustiveLOSOCV("..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs",
+									   "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs\\GT",
+									   "..\\..\\GestureRecorder\\GestureRecorder\\gestures");*/
 void GRValidation::exhaustiveLOSOCV(std::string seqpath, std::string gtpath, std::string modelspath) {
 	// Remove old files
 	/*std::ofstream f("Parameters/LOSO_results_f1.csv", std::ofstream::out | std::ofstream::trunc);
@@ -679,4 +690,107 @@ void GRValidation::exhaustiveLOSOCV(std::string seqpath, std::string gtpath, std
 	}
 	time_t end = time(NULL);
 	std::cout << "Exhaustive LOSO CV took " << float(end - begin) / 60.0 << " minutes (" << float(end - begin) / 3600.0 << " hours)." << std::endl;
+}
+
+/* Usage example:
+		GRValidation::processingTimeTest("..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs",
+									     "..\\..\\GestureRecorder\\GestureRecorder\\gestures\\HuPBA_seqs\\GT",
+									     "..\\..\\GestureRecorder\\GestureRecorder\\gestures",
+										 "Parameters\\GestureRecognitionParameters.txt",
+										 25);
+*/
+void GRValidation::processingTimeTest(const std::string& seqpath, const std::string& gtpath, const std::string& modelspath, const std::string& GRParams_path, const float FPS) {
+	GRValidation grv;
+	// Load data and models
+	grv.loadData(seqpath, gtpath, true);
+
+	GRParameters params = GestureRecognition::readParameters(GRParams_path);
+
+	std::vector<std::vector<std::vector<float>>> models(N_DYNAMIC_GESTURES);
+	// WAVE
+	models[WAVE] = Skeleton::gestureFeaturesFromCSV(modelspath + "/HelloModel/HelloModel_features.csv");
+	// Regenerate facial features for the models
+	std::vector<Face> gesture = Face::faceGestureFromCSV(modelspath + "/YesFacialModel/YesFacialModel_faces.csv");
+	models[NOD] = Face::getFeatures(params.DynParams[NOD][0], params.DynParams[NOD][1], gesture);
+	gesture = Face::faceGestureFromCSV(modelspath + "/NoFacialModel/NoFacialModel_faces.csv");
+	models[NEGATE] = Face::getFeatures(params.DynParams[NEGATE][0], params.DynParams[NEGATE][1], gesture);
+
+	float processed_frames = 0; // Processed skeleton frames
+	float processed_faceframes = 0; // Processed facial frames
+	// Process sequences
+	time_t starttime = time(NULL);
+	std::vector<int> gesturesRec(N_GESTURES, 0);
+	GestureRecognition gr;
+	bool allprocessed = false;
+
+	// Data getter thread
+	std::thread t([&]() {
+		bool use_game_loop = true;
+		const int skipticks = 1000 / FPS;
+		int sleep_time;
+		DWORD next_loop_tick = GetTickCount();
+		bool rightBody = true;
+
+		for (int u = 0; u < grv.sk_seqs.size(); ++u) {// For each user
+			std::cout << "Processing user " << u << "..." << std::endl;
+			for (int s = 0; s < grv.sk_seqs[u].size(); ++s) { // For each sequence
+				std::vector<float> yes_oldFaceOrient(3, 0);
+				std::vector<float> no_oldFaceOrient(3, 0);
+				int framenum = 0;
+				int df_count = 0;
+				for (int frame = 0; frame < grv.sk_seqs[u][s].size(); ++frame) {
+					// Process input frames
+					std::vector<float> yes_face_frame_feat; // Face Frame features
+					std::vector<float> no_face_frame_feat; // Face Frame features
+
+					Face f = grv.face_seqs[u][s][frame]; // true - infrared, false color
+					if (!f.getIsEmpty()) {
+						++processed_faceframes;
+						//// Get features
+						double pitch, yaw, roll;
+						Utils::ExtractFaceRotationInDegrees(&f.getFaceRotation(), &pitch, &yaw, &roll);
+						std::vector<float> orientation = { (float)pitch, (float)yaw, (float)roll };
+
+						yes_face_frame_feat = Face::computeFrameFeatures(params.DynParams[NOD][0], params.DynParams[NOD][1], ++framenum, orientation, yes_oldFaceOrient);
+						if (yes_face_frame_feat.size() > 0) yes_oldFaceOrient = orientation;
+
+						no_face_frame_feat = Face::computeFrameFeatures(params.DynParams[NEGATE][0], params.DynParams[NEGATE][1], framenum, orientation, no_oldFaceOrient);
+						if (no_face_frame_feat.size() > 0) no_oldFaceOrient = orientation;
+					}
+
+					Skeleton sk = grv.sk_seqs[u][s][frame];
+					++processed_frames;
+					gr.addFrame({ sk.getDynamicGestureRecognitionFeatures(rightBody), yes_face_frame_feat, no_face_frame_feat }, sk.getStaticGestureRecognitionFeatures(rightBody, true));
+				
+					// Control FPS
+					if (use_game_loop) {
+						next_loop_tick += skipticks;
+						sleep_time = next_loop_tick - GetTickCount();
+						if (sleep_time >= 0) Sleep(sleep_time);
+						else std::cerr << "No time remaining to mantain fps!" << std::endl;
+					}
+				}
+			}
+		}
+		// Force end recognition with a no gesture frame...
+		gr.addFrame({ std::vector<float>(0), std::vector<float>(0), std::vector<float>(0) }, std::vector<float>(0));
+		while (gr.getMaxInputFramesSize() > 0) Sleep(50);
+		gr.setGestureFound();
+		allprocessed = true;
+	});
+
+
+	while (!allprocessed) { // Not all processed
+		Gesture gest = gr.RecognizeGesture(models, params);
+		std::cout << "\tRecognized a " << ((gest == WAVE) ? "WAVE" : ((gest == POINT_AT) ? "POINT AT" : ((gest == NOD) ? "NOD" : "NEGATE"))) << "!" << std::endl;
+		++gesturesRec[gest];
+	}
+
+	time_t end = time(NULL);
+	t.join();
+	float duration = float(end - starttime);
+	std::cout << "Elapsed time: " << duration / 60.0 << " minutes (" << processed_frames/duration << " FPS, Faces at: " << processed_faceframes/duration << "FPS, Desired: " << FPS << " FPS)." << std::endl;
+	for (int i = 0; i < N_GESTURES; ++i) {
+		std::cout << "Recognized " << ((i == WAVE) ? "WAVE" : ((i == POINT_AT) ? "POINT AT" : ((i ==NOD) ? "NOD" : "NEGATE"))) << "s: " << gesturesRec[i] << std::endl;
+	}
 }

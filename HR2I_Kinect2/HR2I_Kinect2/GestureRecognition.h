@@ -68,6 +68,9 @@ public:
 	Gesture RecognizeGesture(std::vector<std::vector<std::vector<float>>> models, GRParameters params);
 	void addFrame(const std::vector<std::vector<float>>& Dynamic_feat, const std::vector<float>& Static_Feat);
 	
+	void setGestureFound();
+	int getMaxInputFramesSize();
+
 	// Training
 	std::vector<std::vector<std::set<int>>> constructGTsets(int nSequences, const std::vector<std::vector<GroundTruth>>& gt);
 	GRParameters trainDynamicThresholds(std::vector<std::vector<std::vector<float>>> models, std::vector<std::vector<std::vector<float>>> Inputsequences,
