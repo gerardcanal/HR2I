@@ -109,6 +109,8 @@ def execute_soar():
             while i < numberCommands:
                 command = agent.GetCommand(i)
                 command_name = command.GetCommandName()
+                print command, command_name
+                print command.GetParameterValue("a")
                 rospy.loginfo("The name of the %d/%d command is %s" % (i+1, numberCommands, command_name))
                 if (time.time()-first_time) > 270:
                     rospy.logwarn('Timeout!')

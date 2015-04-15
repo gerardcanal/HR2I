@@ -185,7 +185,8 @@ class WaitForGestureRecognitionSM(StateMachine):
                              transitions={'succeeded': 'SEND_RECOGNIZE_GESTURE_CMD',
                                           'preempted': 'SEND_RECOGNIZE_GESTURE_CMD', 'aborted': 'SEND_RECOGNIZE_GESTURE_CMD'})
 
-            fail_pool = ['I could not recognize your gesture. You did not point to the ground.', 'Hey! I can not fly! Please point to the ground.',
+            fail_pool = [#'I could not recognize your gesture. You did not point to the ground.',
+                         'Hey! I can not fly! Please point to the ground.',
                          'I am affraid you did not point to the ground.']  # , 'I could not recognize that, please try again']
             StateMachine.add('SAY_FAILED_GESTURE', SpeechFromPoolSM(pool=fail_pool, blocking=False),
                              transitions={'succeeded': 'SEND_RECOGNIZE_GESTURE_CMD',

@@ -4,16 +4,21 @@ sp {hr2i*propose*say-hello-riding
    (<r> ^ridingWB true  # r.ridingWB = true
         ^received-gesture wave)   # r.received_gesture = wave
 -->
-   (<s> ^operator <op> + =) # Crea un nou operador que es diu op
-   (<op> ^name say-hello-riding) # Parametre del operadors son name = say-hello-riding  -pot tenir-ne d'altres
+   (<s> ^operator <op> +) # Crea un nou operador que es diu op
+   (<op> ^name say-hello-riding-wb) # Parametre del operadors son name = say-hello-riding  -pot tenir-ne d'altres
+      
 }
 
 sp {hr2i*apply*say-hello-riding
-   (state <s> ^operator <op> # Picks the operator created in the propose and has been chosen
-              ^io.output-link <out>) # output channe. "Must be here and that's it"
-   (<op> ^name say-hello-riding) # Check the parameters are the same as in before. If parameters in the operator they should be here too
+   (state <s> ^name hr2i
+              ^operator <op>
+              ^robot <r>
+              ^io.output-link <out>)
+   (<op> ^name say-hello-riding-wb)
 -->
-   (<out> ^say-hello-riding.a true)  # If the previous conditions hold, pick the operator's print and put the loc id
+(<r> ^waved-back false -
+                    true)
+(<out> ^say-hello-riding-wb.a 1)  # If the previous conditions hold, pick the operator's print and put the loc id
 }
 
 

@@ -24,7 +24,6 @@ sp {hr2i*apply*initialize-hr2i
 
    (<d> ^name hr2i-goal
         ^robot <rr>)
-   (<rr> ^hasPointedObject true)
    (<rr> ^waved-back true)
 
 }
